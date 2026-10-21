@@ -1,0 +1,189 @@
+{
+    "form": {
+        "code": "remittance",
+        "name": "Remittance Statement",
+        "short": "Remittance",
+        "icon": "fa-right-left",
+        "color": "#B45309",
+        "description": "Bills to be paid by treasury with recipients bank details.",
+        "group": "Treasury",
+        "sequence": 40
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Remittance",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Issued Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "invoice_currency_id",
+                        "label": "Invoiced Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "payment_currency_id",
+                        "label": "Payment Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "remittance_type",
+                        "label": "Remittance Type",
+                        "type": "text",
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Bills",
+                "min": 1,
+                "columns": [
+                    {
+                        "key": "bill_ref",
+                        "label": "Bill Ref",
+                        "type": "text",
+                        "required": true,
+                        "width_px": 110
+                    },
+                    {
+                        "key": "project_id",
+                        "label": "PC",
+                        "type": "lookup",
+                        "width_px": 150,
+                        "source": "projects"
+                    },
+                    {
+                        "key": "amount",
+                        "label": "Amount",
+                        "type": "money",
+                        "required": true,
+                        "width_px": 110,
+                        "sum": true
+                    },
+                    {
+                        "key": "recipient_id",
+                        "label": "Recipient",
+                        "type": "lookup",
+                        "width_px": 190,
+                        "source": "payees"
+                    },
+                    {
+                        "key": "recipient_bank_name",
+                        "label": "Recipient's Bank Name",
+                        "type": "formula",
+                        "width_px": 170,
+                        "formula": "LOOKUP(recipient_id,\"bank_account_name\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "bank",
+                        "label": "Bank",
+                        "type": "formula",
+                        "width_px": 120,
+                        "formula": "LOOKUP(recipient_id,\"bank\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "iban",
+                        "label": "IBAN",
+                        "type": "formula",
+                        "width_px": 200,
+                        "formula": "LOOKUP(recipient_id,\"iban\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "note",
+                        "label": "Note",
+                        "type": "text",
+                        "width_px": 140
+                    },
+                    {
+                        "key": "recipient_code",
+                        "label": "Recipient code",
+                        "type": "formula",
+                        "formula": "LOOKUP(recipient_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "mustari_numrasi",
+                        "label": "Müşteri numarası",
+                        "type": "formula",
+                        "formula": "LOOKUP(recipient_id,\"mustari_numrasi\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "project_code",
+                        "label": "Project code",
+                        "type": "formula",
+                        "formula": "LOOKUP(project_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_amount",
+                        "label": "Total in Invoiced Currency",
+                        "type": "formula",
+                        "formula": "SUM(lines.amount)",
+                        "fmt": "money",
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "total_amount",
+            "currency": "LOOKUP(invoice_currency_id,\"code\")",
+            "description": "\"Remittance \"&remittance_type",
+            "has_payment": true,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Remittance Statement",
+            "title": "Remittance Statement",
+            "orientation": "landscape",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

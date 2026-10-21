@@ -1,0 +1,329 @@
+{
+    "form": {
+        "code": "fatura",
+        "name": "Turkish Fatura Form",
+        "short": "Fatura",
+        "icon": "fa-receipt",
+        "color": "#BE123C",
+        "description": "Fatura with exchange difference (Kur farki).",
+        "group": "AP",
+        "sequence": 40
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Fatura",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Fatura Tarihi",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "payment_ref",
+                        "label": "Fatura Ödeme Referans No",
+                        "type": "text",
+                        "width": 3
+                    },
+                    {
+                        "key": "payment_date",
+                        "label": "Ödeme Tarihi",
+                        "type": "date",
+                        "width": 3
+                    },
+                    {
+                        "key": "invoice_no",
+                        "label": "Fatura No.",
+                        "type": "text",
+                        "width": 3
+                    },
+                    {
+                        "key": "supplier_id",
+                        "label": "Satıcı (Supplier Code)",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 6,
+                        "source": "suppliers"
+                    },
+                    {
+                        "key": "company_name",
+                        "label": "Firma Adı",
+                        "type": "formula",
+                        "width": 6,
+                        "formula": "LOOKUP(supplier_id,\"trade_name\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "supplier_name",
+                        "label": "Supplier Name",
+                        "type": "formula",
+                        "formula": "LOOKUP(supplier_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "supplier_code",
+                        "label": "Supplier Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(supplier_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    }
+                ]
+            },
+            {
+                "id": "s2",
+                "type": "section",
+                "title": "Tutar",
+                "fields": [
+                    {
+                        "key": "invoice_currency",
+                        "label": "Asıl Fatura Para Cinsi",
+                        "type": "select",
+                        "required": true,
+                        "width": 3,
+                        "default": "TRY",
+                        "options": [
+                            {
+                                "value": "TRY",
+                                "label": "TRY"
+                            },
+                            {
+                                "value": "USD",
+                                "label": "USD"
+                            },
+                            {
+                                "value": "EUR",
+                                "label": "EUR"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "original_amount",
+                        "label": "Asıl Tutarı",
+                        "type": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "invoice_rate",
+                        "label": "Döviz Kuru (Fatura Tarihi)",
+                        "type": "number",
+                        "decimals": 7,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "invoice_try",
+                        "label": "Fatura TL Tutarı",
+                        "type": "formula",
+                        "width": 3,
+                        "formula": "ROUND(original_amount*invoice_rate,2)",
+                        "fmt": "money"
+                    },
+                    {
+                        "key": "paid_currency",
+                        "label": "Ödenen Para Cinsi",
+                        "type": "select",
+                        "width": 3,
+                        "default": "TRY",
+                        "options": [
+                            {
+                                "value": "TRY",
+                                "label": "TRY"
+                            },
+                            {
+                                "value": "USD",
+                                "label": "USD"
+                            },
+                            {
+                                "value": "EUR",
+                                "label": "EUR"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "paid_amount_f",
+                        "label": "Ödenen Para",
+                        "type": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "payment_rate",
+                        "label": "Döviz Kuru (Ödeme Tarihi)",
+                        "type": "number",
+                        "decimals": 7,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "paid_try",
+                        "label": "Ödenen Para TL",
+                        "type": "formula",
+                        "width": 3,
+                        "formula": "paid_amount_f*payment_rate",
+                        "fmt": "money"
+                    },
+                    {
+                        "key": "payment_source_id",
+                        "label": "Ödeme Kaynak",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "list:payment_source"
+                    },
+                    {
+                        "key": "fx_difference",
+                        "label": "Kur Fark",
+                        "type": "formula",
+                        "width": 3,
+                        "formula": "invoice_try-paid_try",
+                        "fmt": "money"
+                    },
+                    {
+                        "key": "profit_loss",
+                        "label": "Kar/Zarar",
+                        "type": "formula",
+                        "width": 3,
+                        "formula": "IF(ABS(fx_difference)>0.0001,IF(fx_difference>0,\"Kar\",\"Zarar\"),\"Kur Fark Yok\")",
+                        "fmt": "text"
+                    }
+                ]
+            },
+            {
+                "id": "s3",
+                "type": "section",
+                "title": "Hesap",
+                "fields": [
+                    {
+                        "key": "account_trac",
+                        "label": "Hesap Kodu (TRAC)",
+                        "type": "text",
+                        "width": 3
+                    },
+                    {
+                        "key": "account_tr_name",
+                        "label": "Hesap Adı",
+                        "type": "formula",
+                        "width": 9,
+                        "formula": "IF(ISBLANK(account_trac),\"\",IF(ISBLANK(FIND(\"accounts\",\"trac\",account_trac,\"id\")),\"Code is Wrong\",FIND(\"accounts\",\"trac\",account_trac,\"tr_account_name\")))",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "description",
+                        "label": "Fatura Açıklaması",
+                        "type": "textarea",
+                        "width": 12
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Kalemler",
+                "min": 0,
+                "columns": [
+                    {
+                        "key": "product",
+                        "label": "Ürün",
+                        "type": "text",
+                        "required": true,
+                        "width_px": 220
+                    },
+                    {
+                        "key": "qty",
+                        "label": "Mıktar",
+                        "type": "number",
+                        "decimals": 2,
+                        "width_px": 80,
+                        "default": 1
+                    },
+                    {
+                        "key": "unit",
+                        "label": "Mıktar Cinsi",
+                        "type": "text",
+                        "width_px": 100
+                    },
+                    {
+                        "key": "unit_price",
+                        "label": "Pirim Fiyatı",
+                        "type": "number",
+                        "decimals": 3,
+                        "width_px": 110
+                    },
+                    {
+                        "key": "amount",
+                        "label": "Kalem Tutarı",
+                        "type": "formula",
+                        "width_px": 110,
+                        "formula": "qty*unit_price",
+                        "fmt": "money",
+                        "sum": true
+                    },
+                    {
+                        "key": "note",
+                        "label": "Not",
+                        "type": "text",
+                        "width_px": 160
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_lines",
+                        "label": "Toplam",
+                        "type": "formula",
+                        "formula": "SUM(lines.amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_qty",
+                        "label": "Kalem sayısı",
+                        "type": "formula",
+                        "formula": "COUNTIF(lines.qty,\"<>0\")",
+                        "fmt": "number",
+                        "width": 3,
+                        "hidden": true,
+                        "print": false
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "original_amount",
+            "currency": "invoice_currency",
+            "description": "TRIM(\"Fatura \"&invoice_no&\" \"&company_name)",
+            "has_payment": false,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Turkish Fatura Form",
+            "title": "Turkish Fatura Form",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

@@ -1,0 +1,239 @@
+{
+    "form": {
+        "code": "recon",
+        "name": "Reconciliation Minutes",
+        "short": "Reconciliation",
+        "icon": "fa-scale-balanced",
+        "color": "#475569",
+        "description": "Reconciliation of recorded transactions.",
+        "group": "AP",
+        "sequence": 60
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Minutes",
+                "fields": [
+                    {
+                        "key": "rec_type",
+                        "label": "Rec Type",
+                        "type": "formula",
+                        "formula": "LOOKUP(rec_type_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "date",
+                        "label": "Issued Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "year",
+                        "label": "Related to records of year",
+                        "type": "number",
+                        "decimals": 0,
+                        "width": 3,
+                        "default": "=YEAR(TODAY())"
+                    },
+                    {
+                        "key": "rec_type_id",
+                        "label": "Reconciliation Type",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "list:rec_txn_type"
+                    },
+                    {
+                        "key": "approver_label",
+                        "label": "Approved by",
+                        "type": "formula",
+                        "width": 3,
+                        "formula": "SWITCH(rec_type,\"Disallowed cost\",\"CEO\",\"Date adjustment\",\"Head of Finance and Operation\",\"Change BL or Allocation rate\",\"Budget Holder\",\"Settle Accounts\",\"Head of Finance and Operation\",\"\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "project_id",
+                        "label": "PC Code",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "projects"
+                    },
+                    {
+                        "key": "cost_center_id",
+                        "label": "CC Code",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "cost_centers"
+                    },
+                    {
+                        "key": "currency_id",
+                        "label": "Currency",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "exchange_rate",
+                        "label": "Exchange rate",
+                        "type": "number",
+                        "decimals": 7,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "cost_center_name",
+                        "label": "Cost Center Name",
+                        "type": "formula",
+                        "formula": "LOOKUP(cost_center_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "cost_center_code",
+                        "label": "Cost Center Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(cost_center_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "project_name",
+                        "label": "Project Name",
+                        "type": "formula",
+                        "formula": "LOOKUP(project_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "project_code",
+                        "label": "Project Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(project_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "related",
+                "title": "Related transactions",
+                "min": 0,
+                "columns": [
+                    {
+                        "key": "t_ref",
+                        "label": "T Ref",
+                        "type": "text",
+                        "required": true,
+                        "width_px": 110
+                    },
+                    {
+                        "key": "date",
+                        "label": "Date",
+                        "type": "date",
+                        "width_px": 130
+                    },
+                    {
+                        "key": "description",
+                        "label": "Description",
+                        "type": "text",
+                        "width_px": 220
+                    },
+                    {
+                        "key": "reason",
+                        "label": "Reason of Reconciliation",
+                        "type": "text",
+                        "width_px": 200
+                    },
+                    {
+                        "key": "adjustment",
+                        "label": "Required Adjustment",
+                        "type": "text",
+                        "width_px": 200
+                    }
+                ]
+            },
+            {
+                "id": "t2",
+                "type": "table",
+                "key": "result",
+                "title": "Reconciliation transactions",
+                "min": 0,
+                "columns": [
+                    {
+                        "key": "t_ref",
+                        "label": "T Ref",
+                        "type": "text",
+                        "required": true,
+                        "width_px": 110
+                    },
+                    {
+                        "key": "date",
+                        "label": "Date",
+                        "type": "date",
+                        "width_px": 130
+                    },
+                    {
+                        "key": "description",
+                        "label": "Description",
+                        "type": "text",
+                        "width_px": 260
+                    },
+                    {
+                        "key": "txn_type_id",
+                        "label": "Transaction Type",
+                        "type": "lookup",
+                        "width_px": 180,
+                        "source": "list:rec_txn_type"
+                    },
+                    {
+                        "key": "txn_type",
+                        "label": "Transaction type",
+                        "type": "formula",
+                        "formula": "LOOKUP(txn_type_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "description": "TRIM(\"Reconciliation \"&rec_type&\" \"&year)",
+            "has_payment": false,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Reconciliation Minutes ",
+            "title": "Reconciliation Minutes",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

@@ -1,0 +1,201 @@
+{
+    "form": {
+        "code": "english_invoice",
+        "name": "English Invoice",
+        "short": "Invoice",
+        "icon": "fa-file-invoice",
+        "color": "#7C3AED",
+        "description": "Supplier invoice with items.",
+        "group": "AP",
+        "sequence": 50
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Invoice",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "supplier_id",
+                        "label": "Supplier",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 5,
+                        "source": "payees"
+                    },
+                    {
+                        "key": "invoice_no",
+                        "label": "Invoice Number",
+                        "type": "text",
+                        "required": true,
+                        "width": 4
+                    },
+                    {
+                        "key": "currency",
+                        "label": "Payment Currency",
+                        "type": "select",
+                        "required": true,
+                        "width": 3,
+                        "default": "TRY",
+                        "options": [
+                            {
+                                "value": "TRY",
+                                "label": "TRY"
+                            },
+                            {
+                                "value": "USD",
+                                "label": "USD"
+                            },
+                            {
+                                "value": "EUR",
+                                "label": "EUR"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "total_amount",
+                        "label": "Total Amount",
+                        "type": "money",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "description",
+                        "label": "Invoice Description",
+                        "type": "textarea",
+                        "width": 12
+                    },
+                    {
+                        "key": "supplier_name",
+                        "label": "Supplier Name",
+                        "type": "formula",
+                        "formula": "LOOKUP(supplier_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "supplier_code",
+                        "label": "Supplier Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(supplier_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Items",
+                "min": 0,
+                "columns": [
+                    {
+                        "key": "item",
+                        "label": "Item",
+                        "type": "text",
+                        "required": true,
+                        "width_px": 240
+                    },
+                    {
+                        "key": "qty",
+                        "label": "Quantity",
+                        "type": "number",
+                        "decimals": 2,
+                        "width_px": 90,
+                        "default": 1
+                    },
+                    {
+                        "key": "unit",
+                        "label": "Unit",
+                        "type": "text",
+                        "width_px": 90
+                    },
+                    {
+                        "key": "unit_price",
+                        "label": "Unit Price",
+                        "type": "number",
+                        "decimals": 3,
+                        "width_px": 110
+                    },
+                    {
+                        "key": "total",
+                        "label": "Total Unit Cost",
+                        "type": "formula",
+                        "width_px": 110,
+                        "formula": "qty*unit_price",
+                        "fmt": "money",
+                        "sum": true
+                    },
+                    {
+                        "key": "note",
+                        "label": "Note",
+                        "type": "text",
+                        "width_px": 160
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "lines_total",
+                        "label": "Total of items",
+                        "type": "formula",
+                        "formula": "SUM(lines.total)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "lines_count",
+                        "label": "Items",
+                        "type": "formula",
+                        "formula": "COUNTIF(lines.qty,\"<>0\")",
+                        "fmt": "number",
+                        "width": 3,
+                        "hidden": true,
+                        "print": false
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "total_amount",
+            "currency": "currency",
+            "description": "TRIM(\"Invoice \"&invoice_no&\" \"&supplier_name)",
+            "has_payment": false,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "English Invoice",
+            "title": "English Invoice",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

@@ -1,0 +1,151 @@
+{
+    "form": {
+        "code": "bank",
+        "name": "Bank Control",
+        "short": "Bank Control",
+        "icon": "fa-building-columns",
+        "color": "#1E40AF",
+        "description": "Bank / cash daily control with running balance.",
+        "group": "Treasury",
+        "sequence": 10
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Statement",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Issued Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Movements",
+                "min": 1,
+                "columns": [
+                    {
+                        "key": "income",
+                        "label": "Income",
+                        "type": "money",
+                        "width_px": 110,
+                        "sum": true
+                    },
+                    {
+                        "key": "outcome",
+                        "label": "Outcome",
+                        "type": "money",
+                        "width_px": 110,
+                        "sum": true
+                    },
+                    {
+                        "key": "balance",
+                        "label": "Balance",
+                        "type": "formula",
+                        "width_px": 120,
+                        "formula": "IF(NOT(ISBLANK(account_info)),0+income,PREV(balance,0)+income-outcome)",
+                        "fmt": "money"
+                    },
+                    {
+                        "key": "bank_ref",
+                        "label": "Bank's Ref",
+                        "type": "text",
+                        "width_px": 110
+                    },
+                    {
+                        "key": "system_ref",
+                        "label": "System Ref",
+                        "type": "text",
+                        "width_px": 110
+                    },
+                    {
+                        "key": "txn_type_id",
+                        "label": "Description",
+                        "type": "lookup",
+                        "width_px": 170,
+                        "source": "list:bank_txn_type"
+                    },
+                    {
+                        "key": "account_info",
+                        "label": "Account Info",
+                        "type": "text",
+                        "width_px": 130,
+                        "help": "Fill on the opening-balance line: the balance restarts from its Income"
+                    },
+                    {
+                        "key": "txn_type",
+                        "label": "Transaction type",
+                        "type": "formula",
+                        "formula": "LOOKUP(txn_type_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_income",
+                        "label": "Income",
+                        "type": "formula",
+                        "formula": "SUM(lines.income)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_outcome",
+                        "label": "Outcome",
+                        "type": "formula",
+                        "formula": "SUM(lines.outcome)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "closing_balance",
+                        "label": "Closing balance",
+                        "type": "formula",
+                        "formula": "IF(COUNT(lines)=0,0,LAST(lines.balance))",
+                        "fmt": "money",
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "closing_balance",
+            "description": "\"Bank / cash control \"&date",
+            "has_payment": false,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Bank Control",
+            "title": "Bank Control",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

@@ -1,0 +1,1 @@
+@include('errors.layout', ['code' => 403, 'icon' => 'fa-lock', 'title' => 'This page is for administrators', 'text' => 'Your account can fill, print and sign forms. Ask an administrator if you need more.'])

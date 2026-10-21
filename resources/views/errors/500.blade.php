@@ -1,0 +1,1 @@
+@include('errors.layout', ['code' => 500, 'icon' => 'fa-triangle-exclamation', 'title' => 'Something went wrong', 'text' => 'The error was recorded. Try again in a moment, or tell the administrator what you were doing.'])

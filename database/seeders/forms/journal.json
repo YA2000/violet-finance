@@ -1,0 +1,382 @@
+{
+    "form": {
+        "code": "journal",
+        "name": "Journal Statement",
+        "short": "Journal",
+        "icon": "fa-book",
+        "color": "#1D4ED8",
+        "description": "Transfers, exchange, settlement and receipts (debit = credit).",
+        "group": "Treasury",
+        "sequence": 20
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Journal",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Issued Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "txn_type",
+                        "label": "Transaction Type",
+                        "type": "select",
+                        "required": true,
+                        "width": 3,
+                        "options": [
+                            {
+                                "value": "Transfer",
+                                "label": "Transfer"
+                            },
+                            {
+                                "value": "Exchange",
+                                "label": "Exchange"
+                            },
+                            {
+                                "value": "Settelment",
+                                "label": "Settlement"
+                            },
+                            {
+                                "value": "Advance Application",
+                                "label": "Advance Application"
+                            },
+                            {
+                                "value": "Receive Payment",
+                                "label": "Receive Payment"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "currency_id",
+                        "label": "Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 2,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "exchange_rate",
+                        "label": "Exchange Rate",
+                        "type": "number",
+                        "decimals": 7,
+                        "required": true,
+                        "width": 2,
+                        "default": 1
+                    },
+                    {
+                        "key": "currency_pair",
+                        "label": "Currency Pair",
+                        "type": "select",
+                        "width": 2,
+                        "options": [
+                            {
+                                "value": "USD/TRY",
+                                "label": "USD/TRY"
+                            },
+                            {
+                                "value": "TRY/USD",
+                                "label": "TRY/USD"
+                            },
+                            {
+                                "value": "EUR/USD",
+                                "label": "EUR/USD"
+                            },
+                            {
+                                "value": "USD/EUR",
+                                "label": "USD/EUR"
+                            },
+                            {
+                                "value": "GBP/USD",
+                                "label": "GBP/USD"
+                            },
+                            {
+                                "value": "USD/GBP",
+                                "label": "USD/GBP"
+                            },
+                            {
+                                "value": "USD/USD",
+                                "label": "USD/USD"
+                            },
+                            {
+                                "value": "EUR/TRY",
+                                "label": "EUR/TRY"
+                            },
+                            {
+                                "value": "TRY/TRY",
+                                "label": "TRY/TRY"
+                            },
+                            {
+                                "value": "KWD/USD",
+                                "label": "KWD/USD"
+                            },
+                            {
+                                "value": "EUR/EUR",
+                                "label": "EUR/EUR"
+                            },
+                            {
+                                "value": "DKK/USD",
+                                "label": "DKK/USD"
+                            },
+                            {
+                                "value": "GBP/GBP",
+                                "label": "GBP/GBP"
+                            },
+                            {
+                                "value": "SYP/USD",
+                                "label": "SYP/USD"
+                            },
+                            {
+                                "value": "USD/SYP",
+                                "label": "USD/SYP"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "description",
+                        "label": "Description",
+                        "type": "text",
+                        "required": true,
+                        "width": 12
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Lines",
+                "min": 2,
+                "columns": [
+                    {
+                        "key": "name",
+                        "label": "Line Description",
+                        "type": "text",
+                        "required": true,
+                        "width_px": 220
+                    },
+                    {
+                        "key": "debit_credit",
+                        "label": "Debit / Credit",
+                        "type": "select",
+                        "required": true,
+                        "width_px": 100,
+                        "options": [
+                            {
+                                "value": "Debit",
+                                "label": "Debit"
+                            },
+                            {
+                                "value": "Credit",
+                                "label": "Credit"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "amount",
+                        "label": "Amount",
+                        "type": "money",
+                        "required": true,
+                        "width_px": 110
+                    },
+                    {
+                        "key": "account_id",
+                        "label": "Account Code",
+                        "type": "lookup",
+                        "required": true,
+                        "width_px": 200,
+                        "source": "accounts"
+                    },
+                    {
+                        "key": "name_code",
+                        "label": "Name Code",
+                        "type": "text",
+                        "width_px": 90,
+                        "help": "Project code (Donation) or cost center code (Units)"
+                    },
+                    {
+                        "key": "entity_name",
+                        "label": "Name (AP/AR)",
+                        "type": "formula",
+                        "width_px": 170,
+                        "formula": "IF(TRIM(name_code)=\"\",\"\",IF(AND(ISNUMBER(TRIM(name_code)),NOT(ISBLANK(FIND(\"projects\",\"code\",TRIM(name_code),\"id\")))),COALESCE(FIND(\"projects\",\"code\",TRIM(name_code),\"qb_name\"),FIND(\"projects\",\"code\",TRIM(name_code),\"name\")),FIND(\"cost_centers\",\"code\",TRIM(name_code),\"name\")))",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "attached_type_id",
+                        "label": "Attached Type",
+                        "type": "lookup",
+                        "width_px": 140,
+                        "source": "list:attachment"
+                    },
+                    {
+                        "key": "attached_no",
+                        "label": "Attached No",
+                        "type": "text",
+                        "width_px": 100
+                    },
+                    {
+                        "key": "account_name",
+                        "label": "Account name",
+                        "type": "formula",
+                        "formula": "LOOKUP(account_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "account_code",
+                        "label": "Account code",
+                        "type": "formula",
+                        "formula": "LOOKUP(account_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "signed_amount",
+                        "label": "Signed amount",
+                        "type": "formula",
+                        "formula": "IF(debit_credit=\"Debit\",0+amount,0-amount)",
+                        "fmt": "money",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_debit",
+                        "label": "Debit",
+                        "type": "formula",
+                        "formula": "SUMIF(lines.debit_credit,\"Debit\",lines.amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_credit",
+                        "label": "Credit",
+                        "type": "formula",
+                        "formula": "SUM(lines.amount)-total_debit",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_amount",
+                        "label": "Total",
+                        "type": "formula",
+                        "formula": "SUM(lines.amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "balanced",
+                        "label": "Balanced",
+                        "type": "formula",
+                        "formula": "ABS(total_debit-total_credit)<0.005",
+                        "fmt": "text",
+                        "width": 3,
+                        "hidden": true,
+                        "print": false
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "total_debit",
+            "currency": "LOOKUP(currency_id,\"code\")",
+            "description": "description",
+            "has_payment": false,
+            "rules": [
+                {
+                    "formula": "balanced",
+                    "message": "The journal is not balanced: Debit {=TEXT(total_debit,2)} / Credit {=TEXT(total_credit,2)}"
+                }
+            ],
+            "exports": [
+                {
+                    "key": "journal_uploader",
+                    "name": "Journal Statment Uploader",
+                    "sheet": "Journal Statment Uploader",
+                    "per": "lines",
+                    "table": "lines",
+                    "columns": [
+                        {
+                            "header": "RefNumber",
+                            "formula": "_number",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "TxnDate",
+                            "formula": "_date",
+                            "fmt": "date"
+                        },
+                        {
+                            "header": "PrivateNote",
+                            "formula": "description",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Currency",
+                            "formula": "LOOKUP(currency_id,\"code\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "ExchangeRate",
+                            "formula": "IF(exchange_rate=0,0,ROUND(1/exchange_rate,7))",
+                            "fmt": "number"
+                        },
+                        {
+                            "header": "Account",
+                            "formula": "account_code",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "LineAmount",
+                            "formula": "signed_amount",
+                            "fmt": "number"
+                        },
+                        {
+                            "header": "LineDesc",
+                            "formula": "name",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Entity",
+                            "formula": "entity_name",
+                            "fmt": "text"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Journal Statment",
+            "title": "Journal Statement",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

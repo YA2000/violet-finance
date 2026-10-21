@@ -1,0 +1,170 @@
+{
+    "form": {
+        "code": "refund",
+        "name": "Refund Statement",
+        "short": "Refund",
+        "icon": "fa-rotate-left",
+        "color": "#15803D",
+        "description": "Refund of a trust payment with running balance.",
+        "group": "Treasury",
+        "sequence": 30
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Refund",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Issued Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "holder_id",
+                        "label": "Advance Holder (EC)",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 5,
+                        "source": "individuals"
+                    },
+                    {
+                        "key": "advance_ref",
+                        "label": "Original Advance Reference No",
+                        "type": "text",
+                        "required": true,
+                        "width": 4
+                    },
+                    {
+                        "key": "currency_id",
+                        "label": "Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "original_balance",
+                        "label": "Original Advance Balance",
+                        "type": "money",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "holder_name",
+                        "label": "Holder Name",
+                        "type": "formula",
+                        "formula": "LOOKUP(holder_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "holder_code",
+                        "label": "Holder Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(holder_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Refunds",
+                "min": 1,
+                "columns": [
+                    {
+                        "key": "amount",
+                        "label": "Amount",
+                        "type": "money",
+                        "required": true,
+                        "width_px": 120,
+                        "sum": true
+                    },
+                    {
+                        "key": "trans_no",
+                        "label": "Trans#",
+                        "type": "text",
+                        "width_px": 120
+                    },
+                    {
+                        "key": "date",
+                        "label": "Date",
+                        "type": "date",
+                        "width_px": 140
+                    },
+                    {
+                        "key": "note",
+                        "label": "Note",
+                        "type": "text",
+                        "width_px": 220
+                    },
+                    {
+                        "key": "balance",
+                        "label": "Balance before",
+                        "type": "formula",
+                        "width_px": 120,
+                        "formula": "original_balance-CUMSUM(amount)+amount",
+                        "fmt": "money"
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_refunded",
+                        "label": "Total refunded",
+                        "type": "formula",
+                        "formula": "SUM(lines.amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "final_balance",
+                        "label": "Final Balance",
+                        "type": "formula",
+                        "formula": "original_balance-total_refunded",
+                        "fmt": "money",
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "total_refunded",
+            "currency": "LOOKUP(currency_id,\"code\")",
+            "description": "TRIM(\"Refund of \"&advance_ref&\" - \"&holder_name)",
+            "has_payment": false,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Refund Statement",
+            "title": "Refund Statement",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

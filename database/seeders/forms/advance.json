@@ -1,0 +1,237 @@
+{
+    "form": {
+        "code": "advance",
+        "name": "Advance Application",
+        "short": "Advance",
+        "icon": "fa-hand-holding-dollar",
+        "color": "#C2410C",
+        "description": "Work advance or petty cash (trust payment).",
+        "group": "AP",
+        "sequence": 70
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Trust payment",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Issued Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "trust_payment_type",
+                        "label": "Trust Payment Type",
+                        "type": "select",
+                        "required": true,
+                        "width": 3,
+                        "default": "Petty Cash",
+                        "options": [
+                            {
+                                "value": "loan",
+                                "label": "loan"
+                            },
+                            {
+                                "value": "Petty Cash",
+                                "label": "Petty Cash"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "amount",
+                        "label": "Amount",
+                        "type": "money",
+                        "required": true,
+                        "width": 2
+                    },
+                    {
+                        "key": "currency_id",
+                        "label": "Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 2,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "exchange_rate",
+                        "label": "Exchange Rate",
+                        "type": "number",
+                        "decimals": 7,
+                        "width": 2,
+                        "default": 1
+                    },
+                    {
+                        "key": "description",
+                        "label": "Description",
+                        "type": "text",
+                        "required": true,
+                        "width": 9
+                    },
+                    {
+                        "key": "payment_method",
+                        "label": "Payment Method",
+                        "type": "select",
+                        "width": 3,
+                        "default": "Cash",
+                        "options": [
+                            {
+                                "value": "Cash",
+                                "label": "Cash"
+                            },
+                            {
+                                "value": "Bank",
+                                "label": "Bank"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "applicant_code",
+                        "label": "Applicant Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(applicant_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "applicant_name",
+                        "label": "Applicant Name",
+                        "type": "formula",
+                        "formula": "LOOKUP(applicant_id,\"name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    }
+                ]
+            },
+            {
+                "id": "s2",
+                "type": "section",
+                "title": "Applicant",
+                "fields": [
+                    {
+                        "key": "applicant_id",
+                        "label": "Applicant Code (EC)",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 4,
+                        "source": "individuals"
+                    },
+                    {
+                        "key": "applicant_iban",
+                        "label": "Bank IBAN",
+                        "type": "formula",
+                        "width": 4,
+                        "formula": "LOOKUP(applicant_id,\"iban\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "applicant_bank",
+                        "label": "Bank Name",
+                        "type": "formula",
+                        "width": 4,
+                        "formula": "LOOKUP(applicant_id,\"bank_name\")",
+                        "fmt": "text"
+                    }
+                ]
+            },
+            {
+                "id": "s3",
+                "type": "section",
+                "title": "Paid from",
+                "fields": [
+                    {
+                        "key": "project_id",
+                        "label": "Project Code (PC)",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "projects"
+                    },
+                    {
+                        "key": "bl1_id",
+                        "label": "BL 1",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "budget_lines"
+                    },
+                    {
+                        "key": "bl2_id",
+                        "label": "BL 2",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "budget_lines"
+                    },
+                    {
+                        "key": "bl3_id",
+                        "label": "BL 3",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "budget_lines"
+                    }
+                ]
+            },
+            {
+                "id": "adv",
+                "type": "section",
+                "title": "Operating advance",
+                "fields": [
+                    {
+                        "key": "holder_id",
+                        "label": "Advance holder",
+                        "type": "lookup",
+                        "source": "advance_holders",
+                        "width": 6,
+                        "help": "When the form is final, the advance opens on this holder's account."
+                    },
+                    {
+                        "key": "settlement_due",
+                        "label": "Settlement due date",
+                        "type": "date",
+                        "width": 3,
+                        "help": "Last day to clear the advance with invoices."
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "amount",
+            "currency": "LOOKUP(currency_id,\"code\")",
+            "description": "description",
+            "advance": {
+                "holder": "holder_id",
+                "amount": "amount",
+                "currency": "currency_id",
+                "due": "settlement_due"
+            },
+            "has_payment": true,
+            "rules": [
+                {
+                    "formula": "OR(ISBLANK(holder_id),NOT(ISBLANK(settlement_due)))",
+                    "message": "Give the settlement due date of the advance."
+                }
+            ],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Advance Application",
+            "title": "Advance Application",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}

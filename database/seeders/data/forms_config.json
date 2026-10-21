@@ -1,0 +1,5404 @@
+{
+ "printouts": {
+  "ptr": {
+   "form": "ptr",
+   "landscape": false,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "PTR",
+    "Turkish PTR"
+   ]
+  },
+  "jar": {
+   "form": "jar",
+   "landscape": false,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "JAR",
+    "JAR Clearance"
+   ]
+  },
+  "jar_turkish": {
+   "form": "jar",
+   "landscape": false,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "JAR-Turkish"
+   ]
+  },
+  "refcover": {
+   "form": "refcover",
+   "landscape": false,
+   "margin_left": 6.0,
+   "margin_right": 6.0,
+   "margin_top": 8.0,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Reference Cover"
+   ]
+  },
+  "advance": {
+   "form": "advance",
+   "landscape": false,
+   "margin_left": 6.0,
+   "margin_right": 6.0,
+   "margin_top": 8.0,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Advance Application"
+   ]
+  },
+  "refund": {
+   "form": "refund",
+   "landscape": false,
+   "margin_left": 6.0,
+   "margin_right": 6.0,
+   "margin_top": 8.0,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Refund Statement"
+   ]
+  },
+  "remittance": {
+   "form": "remittance",
+   "landscape": true,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Remittance Statement"
+   ]
+  },
+  "fatura": {
+   "form": "fatura",
+   "landscape": false,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Turkish Fatura Form"
+   ]
+  },
+  "english_invoice": {
+   "form": "english_invoice",
+   "landscape": false,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "English Invoice"
+   ]
+  },
+  "recon": {
+   "form": "recon",
+   "landscape": false,
+   "margin_left": 6.0,
+   "margin_right": 6.0,
+   "margin_top": 8.0,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Reconciliation Minutes "
+   ]
+  },
+  "bank": {
+   "form": "bank",
+   "landscape": false,
+   "margin_left": 6.0,
+   "margin_right": 6.0,
+   "margin_top": 8.0,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Bank Control"
+   ]
+  },
+  "journal": {
+   "form": "journal",
+   "landscape": false,
+   "margin_left": 6.3,
+   "margin_right": 6.3,
+   "margin_top": 7.6,
+   "margin_bottom": 19.0,
+   "sheets": [
+    "Journal Statment"
+   ]
+  }
+ },
+ "prints": [
+  {
+   "form": "ptr",
+   "report": "ptr",
+   "sequence": 10,
+   "name": "PTR",
+   "sheet": "PTR",
+   "number": "ptr",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nFinance Department",
+   "footer_left": "[page]   Of   [pages]",
+   "footer_center": "The document is contents  [pages] Pages",
+   "footer_right": ""
+  },
+  {
+   "form": "ptr",
+   "report": "ptr",
+   "sequence": 20,
+   "name": "Turkish PTR",
+   "sheet": "Turkish PTR",
+   "number": "turkish_ptr",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org_tr}\nMuhasebe Bölümü",
+   "footer_left": "[page]   Of   [pages]",
+   "footer_center": "The document is contents  [pages] Pages",
+   "footer_right": ""
+  },
+  {
+   "form": "jar",
+   "report": "jar",
+   "sequence": 30,
+   "name": "JAR",
+   "sheet": "JAR",
+   "number": "jar",
+   "header_left": "Template NO:{form_no}\nRelease No: {release_no} Release date: {release_date}",
+   "header_center": "{org}\nFinance Department",
+   "footer_left": "Number of Pages [pages]",
+   "footer_center": "[page] Of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "jar",
+   "report": "jar",
+   "sequence": 40,
+   "name": "JAR Clearance",
+   "sheet": "JAR Clearance",
+   "number": "jar_clearance",
+   "header_left": "Template NO:{form_no}\nRelease No: {release_no} Release date: {release_date}",
+   "header_center": "{org}\nFinance Department",
+   "footer_left": "Number of Pages [pages]",
+   "footer_center": "[page] Of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "jar",
+   "report": "jar_turkish",
+   "sequence": 50,
+   "name": "JAR-Turkish",
+   "sheet": "JAR-Turkish",
+   "number": "jar_turkish",
+   "header_left": "Template NO:{form_no}\nRelease No: {release_no} Release date: {release_date}",
+   "header_center": "Violet  Derneği\nMuhasebe Bölümü",
+   "footer_left": "Number of Pages [pages]",
+   "footer_center": "[page] Of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "refcover",
+   "report": "refcover",
+   "sequence": 60,
+   "name": "Reference Cover",
+   "sheet": "Reference Cover",
+   "number": "reference_cover",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "",
+   "footer_center": "",
+   "footer_right": ""
+  },
+  {
+   "form": "advance",
+   "report": "advance",
+   "sequence": 70,
+   "name": "Advance Application",
+   "sheet": "Advance Application",
+   "number": "advance_application",
+   "header_left": "DOC NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "",
+   "footer_center": "",
+   "footer_right": ""
+  },
+  {
+   "form": "refund",
+   "report": "refund",
+   "sequence": 80,
+   "name": "Refund Statement",
+   "sheet": "Refund Statement",
+   "number": "refund_statement",
+   "header_left": "DOC NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "Job Advance Holder Signature\nBaşvuran İmzası",
+   "footer_center": "Accounting Section \nMühasebe Bölümü",
+   "footer_right": "Finance Manager \nFinans Müdürü"
+  },
+  {
+   "form": "remittance",
+   "report": "remittance",
+   "sequence": 90,
+   "name": "Remittance Statement",
+   "sheet": "Remittance Statement",
+   "number": "remittance_statement",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no}   Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "",
+   "footer_center": "[page] of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "fatura",
+   "report": "fatura",
+   "sequence": 100,
+   "name": "Turkish Fatura Form",
+   "sheet": "Turkish Fatura Form",
+   "number": "turkish_fatura_form",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "Hazırlayan imzası",
+   "footer_center": "[page] of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "english_invoice",
+   "report": "english_invoice",
+   "sequence": 110,
+   "name": "English Invoice",
+   "sheet": "English Invoice",
+   "number": "english_invoice",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "Prepared By",
+   "footer_center": "[page] of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "recon",
+   "report": "recon",
+   "sequence": 120,
+   "name": "Reconciliation Minutes",
+   "sheet": "Reconciliation Minutes ",
+   "number": "reconciliation_minutes",
+   "header_left": "DOC NO:{form_no}\nRelease No:{release_no}\nRelease date:{release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "",
+   "footer_center": "",
+   "footer_right": ""
+  },
+  {
+   "form": "bank",
+   "report": "bank",
+   "sequence": 130,
+   "name": "Bank Control",
+   "sheet": "Bank Control",
+   "number": "bank_control",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "Statement`s pages are [pages] pages",
+   "footer_center": "[page] of [pages]",
+   "footer_right": ""
+  },
+  {
+   "form": "journal",
+   "report": "journal",
+   "sequence": 140,
+   "name": "Journal Statment",
+   "sheet": "Journal Statment",
+   "number": "journal_statment",
+   "header_left": "Template NO:{form_no}\nRelease No:{release_no} Release date: {release_date}",
+   "header_center": "{org}\nAccounting Department",
+   "footer_left": "",
+   "footer_center": "",
+   "footer_right": ""
+  }
+ ],
+ "labels": [
+  {
+   "sheet": "PTR",
+   "cell": "A1",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Transaction Reference Number"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "PTR(Payment Transfer Request)"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F7",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Issue Date"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E8",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": " "
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A9",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Cost Center Code"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D9",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Cost Center Name"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F9",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Office"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A10",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Invoicing Currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D10",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Payment Currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F10",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Calculating Factor"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E11",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "EX. Rate Refference\n"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A12",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Home Currency "
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E12",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "EX.Rate Reference (Home Currency)"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E13",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Total in Home Currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E14",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Total in Payment Currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A15",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Transaction Description "
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A16",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B16",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Invoice Amount"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C16",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Allocation %"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D16",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "Expected Payment Amount"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E16",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "Budget Line"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F16",
+   "kind": "label",
+   "sequence": 220,
+   "default_text": "Amt in Home Currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G16",
+   "kind": "label",
+   "sequence": 230,
+   "default_text": "Project Name"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A1017",
+   "kind": "label",
+   "sequence": 240,
+   "default_text": "Total"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A1018",
+   "kind": "label",
+   "sequence": 250,
+   "default_text": "Payment Receipts` Information"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A1019",
+   "kind": "label",
+   "sequence": 260,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B1019",
+   "kind": "label",
+   "sequence": 270,
+   "default_text": "Amt"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C1019",
+   "kind": "label",
+   "sequence": 280,
+   "default_text": "Currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D1019",
+   "kind": "label",
+   "sequence": 290,
+   "default_text": "Receipts` Name"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E1019",
+   "kind": "label",
+   "sequence": 300,
+   "default_text": "Bank account No/ IBAN"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F1019",
+   "kind": "label",
+   "sequence": 310,
+   "default_text": "Bank"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G1019",
+   "kind": "label",
+   "sequence": 320,
+   "default_text": "Invoice Number"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2020",
+   "kind": "label",
+   "sequence": 330,
+   "default_text": "Prepared by Project`s Accounting Responsible "
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2020",
+   "kind": "label",
+   "sequence": 340,
+   "default_text": "Name, Title, date, and Signature"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2021",
+   "kind": "label",
+   "sequence": 350,
+   "default_text": "Authorized By Budget Holder for direct cost (1,2,3,4,6) (Name, Title, Date, and signature) \nFor Shared Cost : in Turkey CEO(4) Authorises all shared cost expenses,in field Administration Manager(5) Authorises all shared cost in filed"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2022",
+   "kind": "label",
+   "sequence": 360,
+   "default_text": "From 1 to 5.000 USD or equivalent"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2022",
+   "kind": "label",
+   "sequence": 370,
+   "default_text": "1)Project Manager"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2023",
+   "kind": "label",
+   "sequence": 380,
+   "default_text": "From 5.001 to 20.000 USD or equivalent"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2023",
+   "kind": "label",
+   "sequence": 390,
+   "default_text": "2)Program manager"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2024",
+   "kind": "label",
+   "sequence": 400,
+   "default_text": "From 20.001 to 100.000 USD or equivalent"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2024",
+   "kind": "label",
+   "sequence": 410,
+   "default_text": "3)Head of Programs"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2025",
+   "kind": "label",
+   "sequence": 420,
+   "default_text": "From 100.001 to 1.000.000 USD or equivalent,Shared Cost from 1 to 1.000.000 USD"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2025",
+   "kind": "label",
+   "sequence": 430,
+   "default_text": "4)CEO\n5)Adminstration Manager"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2026",
+   "kind": "label",
+   "sequence": 440,
+   "default_text": "Above 1.000.000 USD or equivalent"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2026",
+   "kind": "label",
+   "sequence": 450,
+   "default_text": "6)Chairman"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2027",
+   "kind": "label",
+   "sequence": 460,
+   "default_text": "Reviewed by Projects Reporting Responsabile  (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2028",
+   "kind": "label",
+   "sequence": 470,
+   "default_text": "Approved By Internal Reviewer  (Name, Title, Date, and signature)\n"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2029",
+   "kind": "label",
+   "sequence": 480,
+   "default_text": "Payment Details Information"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B2030",
+   "kind": "label",
+   "sequence": 490,
+   "default_text": "Payment T Ref"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D2030",
+   "kind": "label",
+   "sequence": 500,
+   "default_text": "Actual Exchange Rate"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2030",
+   "kind": "label",
+   "sequence": 510,
+   "default_text": "Paid Amount"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A2031",
+   "kind": "label",
+   "sequence": 520,
+   "default_text": "Paid by Treasuary Department (Name, Title, Date, and Signature)"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B3",
+   "kind": "data",
+   "sequence": 530,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G7",
+   "kind": "data",
+   "sequence": 540,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C9",
+   "kind": "data",
+   "sequence": 550,
+   "default_text": "[value] (lk('accounting_centers', $d['accounting_center_id'])?->code ?? '') . '-' . (lk('currencies', $d['payment_currency_id'])?->code ?? '')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E9",
+   "kind": "data",
+   "sequence": 560,
+   "default_text": "[value] ($d['cost_center_name'] ?? '') ?: '-'"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G9",
+   "kind": "data",
+   "sequence": 570,
+   "default_text": "[value] cost_center_location"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C10",
+   "kind": "data",
+   "sequence": 580,
+   "default_text": "[value] lk('currencies', $d['invoice_currency_id'])?->code"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E10",
+   "kind": "data",
+   "sequence": 590,
+   "default_text": "[value] lk('currencies', $d['payment_currency_id'])?->code"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G10",
+   "kind": "data",
+   "sequence": 600,
+   "default_text": "[value] ($d['home_factor'] ?? '') === 'mul' ? '×' : '÷'"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A11",
+   "kind": "data",
+   "sequence": 610,
+   "default_text": "[value] 'Currency Exchange Rate (1' . (lk('currencies', $d['invoice_currency_id'])?->code) . '=' . (lk('currencies', $d['payment_currency_id'])?->code) . ')'"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D11",
+   "kind": "data",
+   "sequence": 620,
+   "default_text": "[value] exchange_rate"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F11",
+   "kind": "data",
+   "sequence": 630,
+   "default_text": "[value] lk('list:exsource', $d['ex_source_id'])?->name"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D12",
+   "kind": "data",
+   "sequence": 640,
+   "default_text": "[value] home_currency"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F12",
+   "kind": "data",
+   "sequence": 650,
+   "default_text": "[value] lk('list:exsource', $d['home_ex_source_id'])?->name"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A13",
+   "kind": "data",
+   "sequence": 660,
+   "default_text": "[value] 'Home Currency Exchange Rate (1' . ($d['home_currency'] ?? '') . '=' . (lk('currencies', $d['payment_currency_id'])?->code) . ')'"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D13",
+   "kind": "data",
+   "sequence": 670,
+   "default_text": "[value] home_rate_print"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F13",
+   "kind": "data",
+   "sequence": 680,
+   "default_text": "[value] total_home"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A14",
+   "kind": "data",
+   "sequence": 690,
+   "default_text": "[value] 'Home Currency Exchange Rate (1' . (lk('currencies', $d['payment_currency_id'])?->code) . '=' . ($d['home_currency'] ?? '') . ')'"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D14",
+   "kind": "data",
+   "sequence": 700,
+   "default_text": "[value] ($d['home_rate_print'] ?? 0) ? round(1 / $d['home_rate_print'], 7) : 0"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F14",
+   "kind": "data",
+   "sequence": 710,
+   "default_text": "[value] total_expected"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D15",
+   "kind": "data",
+   "sequence": 720,
+   "default_text": "[value] description"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A17",
+   "kind": "data",
+   "sequence": 730,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B17",
+   "kind": "data",
+   "sequence": 740,
+   "default_text": "[value] line invoice_amount"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C17",
+   "kind": "data",
+   "sequence": 750,
+   "default_text": "[value] line allocation"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D17",
+   "kind": "data",
+   "sequence": 760,
+   "default_text": "[value] line expected_amount"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E17",
+   "kind": "data",
+   "sequence": 770,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->code"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F17",
+   "kind": "data",
+   "sequence": 780,
+   "default_text": "[value] line home_amount"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G17",
+   "kind": "data",
+   "sequence": 790,
+   "default_text": "[value] line project_name"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B1017",
+   "kind": "data",
+   "sequence": 800,
+   "default_text": "[value] total_invoice"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D1017",
+   "kind": "data",
+   "sequence": 810,
+   "default_text": "[value] total_expected"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F1017",
+   "kind": "data",
+   "sequence": 820,
+   "default_text": "[value] total_home"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G1017",
+   "kind": "data",
+   "sequence": 830,
+   "default_text": "[value] count($d['lines'])"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "A1020",
+   "kind": "data",
+   "sequence": 840,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "B1020",
+   "kind": "data",
+   "sequence": 850,
+   "default_text": "[value] $r['amount']"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C1020",
+   "kind": "data",
+   "sequence": 860,
+   "default_text": "[value] $r['currency']"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "D1020",
+   "kind": "data",
+   "sequence": 870,
+   "default_text": "[value] $r['name']"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E1020",
+   "kind": "data",
+   "sequence": 880,
+   "default_text": "[value] $r['iban']"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F1020",
+   "kind": "data",
+   "sequence": 890,
+   "default_text": "[value] $r['bank']"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G1020",
+   "kind": "data",
+   "sequence": 900,
+   "default_text": "[value] $r['invoice']"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2020",
+   "kind": "data",
+   "sequence": 910,
+   "default_text": "[value] $o->sigText('ptr_prep')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2020",
+   "kind": "data",
+   "sequence": 920,
+   "default_text": "[value] $o->sig('ptr_prep')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2022",
+   "kind": "data",
+   "sequence": 930,
+   "default_text": "[value] $o->sigText('ptr_bh1')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2022",
+   "kind": "data",
+   "sequence": 940,
+   "default_text": "[value] $o->sig('ptr_bh1')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2023",
+   "kind": "data",
+   "sequence": 950,
+   "default_text": "[value] $o->sigText('ptr_bh2')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2023",
+   "kind": "data",
+   "sequence": 960,
+   "default_text": "[value] $o->sig('ptr_bh2')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2024",
+   "kind": "data",
+   "sequence": 970,
+   "default_text": "[value] $o->sigText('ptr_bh3')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2024",
+   "kind": "data",
+   "sequence": 980,
+   "default_text": "[value] $o->sig('ptr_bh3')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2025",
+   "kind": "data",
+   "sequence": 990,
+   "default_text": "[value] $o->sigText('ptr_bh4')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2025",
+   "kind": "data",
+   "sequence": 1000,
+   "default_text": "[value] $o->sig('ptr_bh4')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2026",
+   "kind": "data",
+   "sequence": 1010,
+   "default_text": "[value] $o->sigText('ptr_bh5')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2026",
+   "kind": "data",
+   "sequence": 1020,
+   "default_text": "[value] $o->sig('ptr_bh5')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2027",
+   "kind": "data",
+   "sequence": 1030,
+   "default_text": "[value] $o->sigText('ptr_review')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2027",
+   "kind": "data",
+   "sequence": 1040,
+   "default_text": "[value] $o->sig('ptr_review')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2028",
+   "kind": "data",
+   "sequence": 1050,
+   "default_text": "[value] $o->sigText('ptr_internal')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2028",
+   "kind": "data",
+   "sequence": 1060,
+   "default_text": "[value] $o->sig('ptr_internal')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "C2030",
+   "kind": "data",
+   "sequence": 1070,
+   "default_text": "[value] $o->paid_ref"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2030",
+   "kind": "data",
+   "sequence": 1080,
+   "default_text": "[value] $o->paid_rate ?: ''"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "G2030",
+   "kind": "data",
+   "sequence": 1090,
+   "default_text": "[value] $o->paid_amount ?: ''"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "E2031",
+   "kind": "data",
+   "sequence": 1100,
+   "default_text": "[value] $o->sigText('ptr_treasury')"
+  },
+  {
+   "sheet": "PTR",
+   "cell": "F2031",
+   "kind": "data",
+   "sequence": 1110,
+   "default_text": "[value] $o->sig('ptr_treasury')"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "A1",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "İşlem Referansı"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Ödeme Belgesi"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D7",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Tarih"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D9",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Masraf Merkezi Adı"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "B12",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Fatura Para Birimi"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D12",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Ödeme Para Birimi"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "B13",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Döviz Kuru"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D13",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Doviz Kuru Kaynak"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "A15",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "İşlem Açıklaması"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "A16",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "B16",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Tahmin Edilen Tutarı"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "C16",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Bütçe Referansı"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D16",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Hesab"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "E16",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Açıklama"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "B3",
+   "kind": "data",
+   "sequence": 150,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "E7",
+   "kind": "data",
+   "sequence": 160,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "E9",
+   "kind": "data",
+   "sequence": 170,
+   "default_text": "[value] cost_center_name"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "C12",
+   "kind": "data",
+   "sequence": 180,
+   "default_text": "[value] lk('currencies', $d['invoice_currency_id'])?->code"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "E12",
+   "kind": "data",
+   "sequence": 190,
+   "default_text": "[value] lk('currencies', $d['payment_currency_id'])?->code"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "C13",
+   "kind": "data",
+   "sequence": 200,
+   "default_text": "[value] exchange_rate"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "E13",
+   "kind": "data",
+   "sequence": 210,
+   "default_text": "[value] lk('list:exsource', $d['ex_source_id'])?->name"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "C15",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] description"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "A17",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "B17",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] line expected_amount"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "C17",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->code"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D17",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->turkish_account"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "E17",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] \\App\\Forms\\PtrForm::uploaderDescription($l)"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "B1017",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] total_expected"
+  },
+  {
+   "sheet": "Turkish PTR",
+   "cell": "D1017",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] count($d['lines'])"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A1",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Transaction Reference Number"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A4",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Job Advance Reconciliation Report (JAR)"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "G4",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Advanse Reference#"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A5",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Issued Date"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "D5",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Original Advance Date"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "G5",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Currency"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A6",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Advance Exchange Rate"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "D6",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Ex.Factor"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "G6",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Advance Amount"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Description"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A8",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "B8",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "BL"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "C8",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Disecription"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "D8",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Paid Amount"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "E8",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Exchange Rate"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F8",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Home Currency Amount"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "G8",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Balance"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "H8",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Invoice Number"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "I8",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Invoice Date"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A109",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "Total"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A112",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "Prepared by (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A113",
+   "kind": "label",
+   "sequence": 220,
+   "default_text": "Authorized By Budget Holder (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A114",
+   "kind": "label",
+   "sequence": 230,
+   "default_text": "Approved By Project Reporting Responsible (Name, Title, Date, and signature)"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A116",
+   "kind": "label",
+   "sequence": 240,
+   "default_text": "Authorized By Internal Review Section (Name,Title,Date and Signature)"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A118",
+   "kind": "label",
+   "sequence": 250,
+   "default_text": "Closed By Accounting Section Responsible (Name,Title,Date and Signature)"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A2",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "H4",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] advance_ref"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "C5",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F5",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] advance_date"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "H5",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "C6",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] advance_rate"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F6",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] ($d['factor'] ?? '') === 'mul' ? '×' : '÷'"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "H6",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] advance_amount"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "C7",
+   "kind": "data",
+   "sequence": 340,
+   "default_text": "[value] clearance_description"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "A9",
+   "kind": "data",
+   "sequence": 350,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "B9",
+   "kind": "data",
+   "sequence": 360,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->code"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "C9",
+   "kind": "data",
+   "sequence": 370,
+   "default_text": "[value] ($l['line_description'] ?? '') ?: ($l['special_note'] ?? '')"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "D9",
+   "kind": "data",
+   "sequence": 380,
+   "default_text": "[value] line paid_amount"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "E9",
+   "kind": "data",
+   "sequence": 390,
+   "default_text": "[value] invoice_rate"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F9",
+   "kind": "data",
+   "sequence": 400,
+   "default_text": "[value] line home_amount"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "G9",
+   "kind": "data",
+   "sequence": 410,
+   "default_text": "[value] line balance"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "H9",
+   "kind": "data",
+   "sequence": 420,
+   "default_text": "[value] line invoice_no"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "I9",
+   "kind": "data",
+   "sequence": 430,
+   "default_text": "[value] line invoice_date"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "D109",
+   "kind": "data",
+   "sequence": 440,
+   "default_text": "[value] total_paid"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F109",
+   "kind": "data",
+   "sequence": 450,
+   "default_text": "[value] total_home"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "G109",
+   "kind": "data",
+   "sequence": 460,
+   "default_text": "[value] balance"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "I109",
+   "kind": "data",
+   "sequence": 470,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['invoice_date'])))"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F112",
+   "kind": "data",
+   "sequence": 480,
+   "default_text": "[value] $o->sigBlock('jar_prep')"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F113",
+   "kind": "data",
+   "sequence": 490,
+   "default_text": "[value] $o->sigBlock('jar_bh')"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F114",
+   "kind": "data",
+   "sequence": 500,
+   "default_text": "[value] $o->sigBlock('jar_report')"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F116",
+   "kind": "data",
+   "sequence": 510,
+   "default_text": "[value] $o->sigBlock('jar_internal')"
+  },
+  {
+   "sheet": "JAR",
+   "cell": "F118",
+   "kind": "data",
+   "sequence": 520,
+   "default_text": "[value] $o->sigBlock('jar_close')"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "JAR (Job Advance Reconciliation) Clearance"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "G2",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Advanse Reference#"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A3",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Issue Date"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "D3",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Original Advance Date"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "G3",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Currency"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A4",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Original Advance Ex.Rate"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "E4",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Ex.factor"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "G4",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Advance Amount"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A6",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Description"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A8",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B8",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "BL"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "C8",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Disecription"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "D8",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Original Amount"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "E8",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Exchange Rate"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F8",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Home Currency Amount"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "G8",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Invoice Number"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "H8",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Invoice Date"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "I8",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "GRN"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A109",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Total"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A110",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "By signing this document, I clarify and confirm the following:"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F110",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "بتوقيعي على الوثيقة أدناه، فإني أوضح وأقر بما يلي:"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B111",
+   "kind": "label",
+   "sequence": 220,
+   "default_text": "I took budget holder approval for these expenses. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F111",
+   "kind": "label",
+   "sequence": 230,
+   "default_text": "لقد حصلت على موافقة آمر الصرف قبل تقديم هذه المصاريف."
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B112",
+   "kind": "label",
+   "sequence": 240,
+   "default_text": "The budget line code is correct and reviewed. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F112",
+   "kind": "label",
+   "sequence": 250,
+   "default_text": "لقد أسندت كل فاتورة إلى كود الموازنة الصحيح"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B113",
+   "kind": "label",
+   "sequence": 260,
+   "default_text": "I`ve submettied all orginal documents to the respoansable accounting officer. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F113",
+   "kind": "label",
+   "sequence": 270,
+   "default_text": "قمت بتسليم كافة المستندات الأصلية للمحاسب المسؤول عن المشروع"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B114",
+   "kind": "label",
+   "sequence": 280,
+   "default_text": "All available GRNs have attached to the orginal invoices. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F114",
+   "kind": "label",
+   "sequence": 290,
+   "default_text": "كل مستندات تسليم البضائع المتوفرة قد تم ارفاقها مع فواتيرها الأصلية"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B115",
+   "kind": "label",
+   "sequence": 300,
+   "default_text": "All invoices date are related to the current accounting period. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F115",
+   "kind": "label",
+   "sequence": 310,
+   "default_text": "كل الفواتير المسلمة تعود تواريخها إلى نفس الفترة المحاسبية الحالية. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B116",
+   "kind": "label",
+   "sequence": 320,
+   "default_text": "I`ve submettied this document with reviewed excel table that summrized the submitted invoices. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F116",
+   "kind": "label",
+   "sequence": 330,
+   "default_text": "لقد قمت بتلخيص الفواتير المسلمة على ملف اكسل وسلمته الكترونيا للمحاسب"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B117",
+   "kind": "label",
+   "sequence": 340,
+   "default_text": "I reported the exchange rate correctley. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F117",
+   "kind": "label",
+   "sequence": 350,
+   "default_text": "لقد قمت بوضع سعر الصرف بشكل صحيح"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B118",
+   "kind": "label",
+   "sequence": 360,
+   "default_text": "I reffered this clearance to the correct orginal advance reference number. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F118",
+   "kind": "label",
+   "sequence": 370,
+   "default_text": "لقد قمت بكتابة مرجع السلفة التي أنفقت منها بشكل صحيح"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B119",
+   "kind": "label",
+   "sequence": 380,
+   "default_text": "The invoices numbers and dates are accurately added to the table. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F119",
+   "kind": "label",
+   "sequence": 390,
+   "default_text": "كافة أرقام الفواتير وتورايخها صحيحة"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B120",
+   "kind": "label",
+   "sequence": 400,
+   "default_text": "I did not have any more invoices that dated before the submetted date. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F120",
+   "kind": "label",
+   "sequence": 410,
+   "default_text": "ليس لدي أي فاتورة غير مسلمة قبل تاريخ التسليم هذا"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A121",
+   "kind": "label",
+   "sequence": 420,
+   "default_text": "Prepared by (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A123",
+   "kind": "label",
+   "sequence": 430,
+   "default_text": "By signing this document from accounting officer side, he/she clarifies and confirms the following: "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F123",
+   "kind": "label",
+   "sequence": 440,
+   "default_text": "بتوقيع المحاسب / ة المسؤول / ة عن المشروع، فإنه يقر بما يلي:"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B124",
+   "kind": "label",
+   "sequence": 450,
+   "default_text": "I recieved all orginal invoices and GRN according to the table above. "
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F124",
+   "kind": "label",
+   "sequence": 460,
+   "default_text": "لقد قمت باستلام كافة الوثائق الأصلية (فواتير - محاضر تسليم بضائع) وفق الجدول الموضح أعلاه"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A126",
+   "kind": "label",
+   "sequence": 470,
+   "default_text": "Received by (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "H2",
+   "kind": "data",
+   "sequence": 480,
+   "default_text": "[value] advance_ref"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "C3",
+   "kind": "data",
+   "sequence": 490,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F3",
+   "kind": "data",
+   "sequence": 500,
+   "default_text": "[value] advance_date"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "H3",
+   "kind": "data",
+   "sequence": 510,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "C4",
+   "kind": "data",
+   "sequence": 520,
+   "default_text": "[value] advance_rate"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F4",
+   "kind": "data",
+   "sequence": 530,
+   "default_text": "[value] ($d['factor'] ?? '') === 'mul' ? '×' : '÷'"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "H4",
+   "kind": "data",
+   "sequence": 540,
+   "default_text": "[value] advance_amount"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "C6",
+   "kind": "data",
+   "sequence": 550,
+   "default_text": "[value] clearance_description"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "A9",
+   "kind": "data",
+   "sequence": 560,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "B9",
+   "kind": "data",
+   "sequence": 570,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->code"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "C9",
+   "kind": "data",
+   "sequence": 580,
+   "default_text": "[value] line line_description"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "D9",
+   "kind": "data",
+   "sequence": 590,
+   "default_text": "[value] line paid_amount"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "E9",
+   "kind": "data",
+   "sequence": 600,
+   "default_text": "[value] invoice_rate"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F9",
+   "kind": "data",
+   "sequence": 610,
+   "default_text": "[value] line home_amount"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "G9",
+   "kind": "data",
+   "sequence": 620,
+   "default_text": "[value] line invoice_no"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "H9",
+   "kind": "data",
+   "sequence": 630,
+   "default_text": "[value] line invoice_date"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "I9",
+   "kind": "data",
+   "sequence": 640,
+   "default_text": "[value] line grn"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "D109",
+   "kind": "data",
+   "sequence": 650,
+   "default_text": "[value] total_paid"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F109",
+   "kind": "data",
+   "sequence": 660,
+   "default_text": "[value] total_home"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "H109",
+   "kind": "data",
+   "sequence": 670,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['invoice_date'])))"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F121",
+   "kind": "data",
+   "sequence": 680,
+   "default_text": "[value] $o->sigBlock('jar_prep')"
+  },
+  {
+   "sheet": "JAR Clearance",
+   "cell": "F126",
+   "kind": "data",
+   "sequence": 690,
+   "default_text": "[value] $o->sigBlock('jar_close')"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A1",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "İşlem Referansı"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A2",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "T"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A4",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Avanstan Harcanan İşlem"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A5",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Traih"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "D5",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Avans Kuru"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "E5",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Para birimi"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A6",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Asıl avans işlem ref"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "E6",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Avans Tutarı"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Açıklama"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A8",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "B8",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Bütçe ref kodu"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "C8",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Hesab"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "D8",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Fatura Tarihi"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "E8",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Tutar"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "F8",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Açıklama"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A109",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Total"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "B2",
+   "kind": "data",
+   "sequence": 170,
+   "default_text": "[value] str_starts_with((string) $o->number, 'T') ? substr($o->number, 1) : $o->number"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "C5",
+   "kind": "data",
+   "sequence": 180,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "F5",
+   "kind": "data",
+   "sequence": 190,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "C6",
+   "kind": "data",
+   "sequence": 200,
+   "default_text": "[value] advance_ref"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "D6",
+   "kind": "data",
+   "sequence": 210,
+   "default_text": "[value] advance_rate"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "F6",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] advance_amount"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "C7",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] clearance_description"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "A9",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "B9",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->code"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "C9",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] lk('budget_lines', $l['budget_line_id'])?->turkish_account"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "D9",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] line invoice_date"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "E9",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] line paid_amount"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "F9",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] (($x = (($l['line_description'] ?? '') ?: ($l['special_note'] ?? ''))) ? $x . '-' : '') . (!empty($l['invoice_no']) ? 'Inv-' . $l['invoice_no'] : '')"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "C109",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] count($d['lines'])"
+  },
+  {
+   "sheet": "JAR-Turkish",
+   "cell": "E109",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] total_paid"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "D2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Reference Cover"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "B4",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Date"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "B5",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Transaction Type:"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "B6",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Short Description"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "D13",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Ref Number"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "E4",
+   "kind": "data",
+   "sequence": 60,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "E5",
+   "kind": "data",
+   "sequence": 70,
+   "default_text": "[value] txn_type"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "E6",
+   "kind": "data",
+   "sequence": 80,
+   "default_text": "[value] short_description"
+  },
+  {
+   "sheet": "Reference Cover",
+   "cell": "D15",
+   "kind": "data",
+   "sequence": 90,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Transaction Reference Number\n(işlem Referans Numarası)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B8",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Trust Payment Statement\nEmanet ödeme senedi"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B10",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Issued Date (İşlem Tarihi)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E10",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "PC: "
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B12",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Trust Payment Type\n(Emanet Ödeme Türü)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "G12",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": " Amount (Tutar)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B13",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Applicant Violet `s EC"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "G13",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Currency (Para birimi)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B14",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": " Applicant (Başvuru sahibi)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "G14",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Exchange Rate (Döviz Kuru)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B15",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Bank IBAN"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "F15",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Bank Name"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B17",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "This payment has been given to applicant as a trust Payment and it must be refunded as  management order.\n(Bu ödeme, başvuru sahibine güvence ödemesi olarak verilmiştir ve yönetim emri ile  iade edilmelidir.)"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B20",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "This payment has been paid from the following account: \nBu ödeme aşağıdaki banka hesabtan gerçekleşmiştir:"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B21",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "BL 1:"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "D21",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "BL 2:"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "F21",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "BL 3: "
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B22",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Approvals\n Onaylama"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E22",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Name, Title, Date\nİsim, Unvan, Tarih"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H22",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "Signature\nİmza"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B23",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "Requester Signature\nBaşvuran İmzası"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B24",
+   "kind": "label",
+   "sequence": 220,
+   "default_text": "Authorized by budget Holder-Adminstrative Manager\nYetkilendiren "
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B25",
+   "kind": "label",
+   "sequence": 230,
+   "default_text": "Project`s Accounting Responsible -Finance Manager Approval\nFinans Müdür Onaylama"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B26",
+   "kind": "label",
+   "sequence": 240,
+   "default_text": "Internal Review Adding to Remmittence\nİç Denetım Bölüm Onaylama"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B27",
+   "kind": "label",
+   "sequence": 250,
+   "default_text": "Treasuary Section\nHazine Bölüm Onaylama\nExchange Rate (Döviz Kuru) = "
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "B4",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "D10",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "F10",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] lk('projects', $d['project_id'])?->name"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "D12",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] trust_payment_type"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "I12",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] amount"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "D13",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] applicant_code"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "I13",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "D14",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] applicant_name"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "I14",
+   "kind": "data",
+   "sequence": 340,
+   "default_text": "[value] exchange_rate"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "C15",
+   "kind": "data",
+   "sequence": 350,
+   "default_text": "[value] applicant_iban"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H15",
+   "kind": "data",
+   "sequence": 360,
+   "default_text": "[value] applicant_bank"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "F20",
+   "kind": "data",
+   "sequence": 370,
+   "default_text": "[value] payment_method"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "C21",
+   "kind": "data",
+   "sequence": 380,
+   "default_text": "[value] lk('budget_lines', $d['bl1_id'])?->code"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E21",
+   "kind": "data",
+   "sequence": 390,
+   "default_text": "[value] lk('budget_lines', $d['bl2_id'])?->code"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "G21",
+   "kind": "data",
+   "sequence": 400,
+   "default_text": "[value] lk('budget_lines', $d['bl3_id'])?->code"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E23",
+   "kind": "data",
+   "sequence": 410,
+   "default_text": "[value] $o->sigText('adv_req')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H23",
+   "kind": "data",
+   "sequence": 420,
+   "default_text": "[value] $o->sig('adv_req')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E24",
+   "kind": "data",
+   "sequence": 430,
+   "default_text": "[value] $o->sigText('adv_bh')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H24",
+   "kind": "data",
+   "sequence": 440,
+   "default_text": "[value] $o->sig('adv_bh')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E25",
+   "kind": "data",
+   "sequence": 450,
+   "default_text": "[value] $o->sigText('adv_fm')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H25",
+   "kind": "data",
+   "sequence": 460,
+   "default_text": "[value] $o->sig('adv_fm')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E26",
+   "kind": "data",
+   "sequence": 470,
+   "default_text": "[value] $o->sigText('adv_internal')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H26",
+   "kind": "data",
+   "sequence": 480,
+   "default_text": "[value] $o->sig('adv_internal')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "E27",
+   "kind": "data",
+   "sequence": 490,
+   "default_text": "[value] $o->sigText('adv_treasury')"
+  },
+  {
+   "sheet": "Advance Application",
+   "cell": "H27",
+   "kind": "data",
+   "sequence": 500,
+   "default_text": "[value] $o->sig('adv_treasury')"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "B3",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Trust Payment Refund Statement\nEmanet senedinden Geri Ödeme Tablosu"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A6",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Issued Date (İşlem Tarihi)"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Advance Holder Violet`s EC"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A8",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": " Advance Holder Name (Sened sahibi)"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A9",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Original Advance Refernce No (Asıl Ödeme Refransı)"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A10",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Currency (Para birimi)"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A11",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Original Advance Balance"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A12",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "This payment has been refunded as mentioned below: \n(Bu ödeme, sened sahibine emanet ödemesi olarak verilmiştir ve aşağıdaki geri ödemesine beyan edilmiştir)"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A15",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Amt"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "B15",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Trans#"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "C15",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Date"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "D15",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Note"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "E15",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Balance"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "C68",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Final Balance"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A70",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Discharge(İbraa Metni):"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A71",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "(EN) The applicant who has mentioned above and regarding refund table above, he is discharged from this trust payment and he had paid all of this payment dues when this paper was signing below.  \n(TR)Yukarıdaki iade tablosu ile ilgili olarak, başvuru sahibi bu emanet ödemesinden ibra edilmiş ve tüm bu ödemeyi bu kağıt aşağıda imzalanırken geri ödemiştir."
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "C6",
+   "kind": "data",
+   "sequence": 170,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "C7",
+   "kind": "data",
+   "sequence": 180,
+   "default_text": "[value] holder_code"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "D8",
+   "kind": "data",
+   "sequence": 190,
+   "default_text": "[value] holder_name"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "D9",
+   "kind": "data",
+   "sequence": 200,
+   "default_text": "[value] advance_ref"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "D10",
+   "kind": "data",
+   "sequence": 210,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "D11",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] original_balance"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A16",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] line amount"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "B16",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] line trans_no"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "C16",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] line date"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "D16",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] line note"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "E16",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] line balance"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "A68",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] total_refunded"
+  },
+  {
+   "sheet": "Refund Statement",
+   "cell": "E68",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] final_balance"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "A2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Remittance Statement"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F2",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Document Number"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F3",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Issued Date"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "B6",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Invoiced Currency"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F6",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Payment Currency"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "B7",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Total in Invoiced Currency"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F7",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Remittance Type"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "A9",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "B9",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Bill Ref"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "C9",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "PC"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "D9",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Amt"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "E9",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Recipient Code"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F9",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Recipient` Bank Name"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "G9",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Bank"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "H9",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "IBAN"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "I9",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Mustari Numrasi"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "J9",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Note"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "A110",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Total"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "B113",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Prepared by Internal Reviewer (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "H113",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "Proceed By Treasuey  (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "B114",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "Authorized By Head of Internal Review Section (Name, Title, Date and signature)"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "G2",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "G3",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "E6",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] lk('currencies', $d['invoice_currency_id'])?->code"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "G6",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] lk('currencies', $d['payment_currency_id'])?->code"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "E7",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] total_amount"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "H7",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] remittance_type"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "A10",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "B10",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] line bill_ref"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "C10",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] line project_code"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "D10",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] line amount"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "E10",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] line recipient_code"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F10",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] line recipient_bank_name"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "G10",
+   "kind": "data",
+   "sequence": 340,
+   "default_text": "[value] line bank"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "H10",
+   "kind": "data",
+   "sequence": 350,
+   "default_text": "[value] line iban"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "I10",
+   "kind": "data",
+   "sequence": 360,
+   "default_text": "[value] line mustari_numrasi"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "J10",
+   "kind": "data",
+   "sequence": 370,
+   "default_text": "[value] line note"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "D110",
+   "kind": "data",
+   "sequence": 380,
+   "default_text": "[value] total_amount"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F110",
+   "kind": "data",
+   "sequence": 390,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['recipient_bank_name'])))"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "H110",
+   "kind": "data",
+   "sequence": 400,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['iban'])))"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "I110",
+   "kind": "data",
+   "sequence": 410,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['mustari_numrasi'])))"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F113",
+   "kind": "data",
+   "sequence": 420,
+   "default_text": "[value] $o->sigBlock('rem_prep')"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "J113",
+   "kind": "data",
+   "sequence": 430,
+   "default_text": "[value] $o->sigBlock('rem_treasury')"
+  },
+  {
+   "sheet": "Remittance Statement",
+   "cell": "F114",
+   "kind": "data",
+   "sequence": 440,
+   "default_text": "[value] $o->sigBlock('rem_head')"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Fatura Referans No"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C2",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Fatura Tarihi"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A3",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Fatura Ödeme Referans No"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C3",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Ödeme Tarihi"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A4",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Satıcı Adı"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A6",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Fatura No."
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C6",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Asıl Fatura Para Cinsi"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "E6",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Asıl Tutarı"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Döviz Kuru (Fatura Tarihi)"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C7",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Fatura TL Tutarı"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "E7",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Ödenen Para Cinsi"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A8",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Ödenen Para"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C8",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Doviz Kuru (Ödeme Tarihi)"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "E8",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Ödenen Para TL"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A9",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Ödeme Kaynak"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C9",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Kur Fark"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "E9",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Kar/Zarar"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A10",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Hesap Kodu"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C10",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Hesap Adı"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A11",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "Fatura Açıklaması"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A14",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "Ürün"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B14",
+   "kind": "label",
+   "sequence": 220,
+   "default_text": "Mıktar"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C14",
+   "kind": "label",
+   "sequence": 230,
+   "default_text": "Mıktar Cinsi"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D14",
+   "kind": "label",
+   "sequence": 240,
+   "default_text": "Pirim Fiyatı"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "E14",
+   "kind": "label",
+   "sequence": 250,
+   "default_text": "Kalem Tutarı"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "F14",
+   "kind": "label",
+   "sequence": 260,
+   "default_text": "Not"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B2",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D2",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B3",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] payment_ref"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D3",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] payment_date"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B4",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] supplier_code"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C4",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] supplier_name"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B6",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] invoice_no"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D6",
+   "kind": "data",
+   "sequence": 340,
+   "default_text": "[value] invoice_currency"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "F6",
+   "kind": "data",
+   "sequence": 350,
+   "default_text": "[value] original_amount"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B7",
+   "kind": "data",
+   "sequence": 360,
+   "default_text": "[value] invoice_rate"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D7",
+   "kind": "data",
+   "sequence": 370,
+   "default_text": "[value] invoice_try"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "F7",
+   "kind": "data",
+   "sequence": 380,
+   "default_text": "[value] paid_currency"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B8",
+   "kind": "data",
+   "sequence": 390,
+   "default_text": "[value] paid_amount_f"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D8",
+   "kind": "data",
+   "sequence": 400,
+   "default_text": "[value] payment_rate"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "F8",
+   "kind": "data",
+   "sequence": 410,
+   "default_text": "[value] paid_try"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B9",
+   "kind": "data",
+   "sequence": 420,
+   "default_text": "[value] lk('list:payment_source', $d['payment_source_id'])?->name"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D9",
+   "kind": "data",
+   "sequence": 430,
+   "default_text": "[value] fx_difference"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "F9",
+   "kind": "data",
+   "sequence": 440,
+   "default_text": "[value] profit_loss"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B10",
+   "kind": "data",
+   "sequence": 450,
+   "default_text": "[value] account_trac"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D10",
+   "kind": "data",
+   "sequence": 460,
+   "default_text": "[value] account_tr_name"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A12",
+   "kind": "data",
+   "sequence": 470,
+   "default_text": "[value] description"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "A15",
+   "kind": "data",
+   "sequence": 480,
+   "default_text": "[value] line product"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "B15",
+   "kind": "data",
+   "sequence": 490,
+   "default_text": "[value] line qty"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "C15",
+   "kind": "data",
+   "sequence": 500,
+   "default_text": "[value] line unit"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "D15",
+   "kind": "data",
+   "sequence": 510,
+   "default_text": "[value] line unit_price"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "E15",
+   "kind": "data",
+   "sequence": 520,
+   "default_text": "[value] line amount"
+  },
+  {
+   "sheet": "Turkish Fatura Form",
+   "cell": "F15",
+   "kind": "data",
+   "sequence": 530,
+   "default_text": "[value] line note"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Supplier Name"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A3",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Invoice Number"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "C3",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Payment Currency"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "E3",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Total Amount"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A4",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Invoice Describtion"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A7",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Item"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "B7",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Quantity"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "C7",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Unit"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "D7",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Unit Price"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "E7",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Total Unit Cost"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "F7",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Note"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A40",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Total"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "B2",
+   "kind": "data",
+   "sequence": 130,
+   "default_text": "[value] supplier_code"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "C2",
+   "kind": "data",
+   "sequence": 140,
+   "default_text": "[value] supplier_name"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "B3",
+   "kind": "data",
+   "sequence": 150,
+   "default_text": "[value] invoice_no"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "D3",
+   "kind": "data",
+   "sequence": 160,
+   "default_text": "[value] currency"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "F3",
+   "kind": "data",
+   "sequence": 170,
+   "default_text": "[value] total_amount"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A5",
+   "kind": "data",
+   "sequence": 180,
+   "default_text": "[value] description"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "A8",
+   "kind": "data",
+   "sequence": 190,
+   "default_text": "[value] line item"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "B8",
+   "kind": "data",
+   "sequence": 200,
+   "default_text": "[value] line qty"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "C8",
+   "kind": "data",
+   "sequence": 210,
+   "default_text": "[value] line unit"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "D8",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] line unit_price"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "E8",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] line total"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "F8",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] line note"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "B40",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] lines_count"
+  },
+  {
+   "sheet": "English Invoice",
+   "cell": "E40",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] lines_total"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Issued Date"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B3",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Reconciliation Minutes"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B4",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "This reconciliation is related to recordes of year: "
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B5",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Reconciliation Type"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B6",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "PC Code"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E6",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Currency"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B7",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "CC Code"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E7",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Exchange rate"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B8",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "The transactions are related to this reconciliation as followes:"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B10",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "T Ref"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "C10",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Date"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D10",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Describtion"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E10",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Reason of Reconciliation"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "F10",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Required Adjustment"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B26",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "The following transactions are the reconciliation`s transaction: "
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B27",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "T Ref"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "C27",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Date"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D27",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Describtion"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E27",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Transaction Type"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B39",
+   "kind": "label",
+   "sequence": 200,
+   "default_text": "Prepared by:"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D39",
+   "kind": "label",
+   "sequence": 210,
+   "default_text": "Approved by:"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E39",
+   "kind": "label",
+   "sequence": 220,
+   "default_text": "Proccessed by:"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "F39",
+   "kind": "label",
+   "sequence": 230,
+   "default_text": "Finalized by:"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E3",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E4",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] year"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E5",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] rec_type"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "C6",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] project_code"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D6",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] project_name"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "F6",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "C7",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] cost_center_code"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D7",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] cost_center_name"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "F7",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] exchange_rate"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B11",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] line t_ref"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "C11",
+   "kind": "data",
+   "sequence": 340,
+   "default_text": "[value] line date"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D11",
+   "kind": "data",
+   "sequence": 350,
+   "default_text": "[value] line description"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E11",
+   "kind": "data",
+   "sequence": 360,
+   "default_text": "[value] line reason"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "F11",
+   "kind": "data",
+   "sequence": 370,
+   "default_text": "[value] line adjustment"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B28",
+   "kind": "data",
+   "sequence": 380,
+   "default_text": "[value] $r['t_ref'] ?? null"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "C28",
+   "kind": "data",
+   "sequence": 390,
+   "default_text": "[value] $r['date'] ?? null"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D28",
+   "kind": "data",
+   "sequence": 400,
+   "default_text": "[value] $r['description'] ?? null"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E28",
+   "kind": "data",
+   "sequence": 410,
+   "default_text": "[value] $r['txn_type'] ?? null"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "B41",
+   "kind": "data",
+   "sequence": 420,
+   "default_text": "[value] $o->sigBlock('rec_prep')"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D41",
+   "kind": "data",
+   "sequence": 430,
+   "default_text": "[value] $o->sigBlock('rec_appr')"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "E41",
+   "kind": "data",
+   "sequence": 440,
+   "default_text": "[value] $o->sigBlock('rec_proc')"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "F41",
+   "kind": "data",
+   "sequence": 450,
+   "default_text": "[value] $o->sigBlock('rec_final')"
+  },
+  {
+   "sheet": "Reconciliation Minutes ",
+   "cell": "D43",
+   "kind": "data",
+   "sequence": 460,
+   "default_text": "[value] approver_label"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A3",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Bank`s / Cash on hand`s  Daily Control Statement"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A5",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Issued Date"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "C5",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Statement Number"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A8",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "B8",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Income"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "C8",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Outcome"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "D8",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Balance"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "E8",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "Bank`s Ref"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "F8",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "System Ref"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "G8",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Description"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "H8",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Account Info"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A318",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Head of Treasuary Section"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "D318",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Head Of Accounting Section"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "G318",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Finance Manager"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A319",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Name,Title,Date"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "D319",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Name,Title,Date"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "G319",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Name,Title,Date"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A326",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Certified By"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A6",
+   "kind": "data",
+   "sequence": 190,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "C6",
+   "kind": "data",
+   "sequence": 200,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A9",
+   "kind": "data",
+   "sequence": 210,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "B9",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] ($l['income'] ?? 0) ?: ''"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "C9",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] ($l['outcome'] ?? 0) ?: ''"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "D9",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] line balance"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "E9",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] line bank_ref"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "F9",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] line system_ref"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "G9",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] line txn_type"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "H9",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] line account_info"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "H309",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['account_info'])))"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A320",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] $o->sigBlock('bc_treasury')"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "D320",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] $o->sigBlock('bc_acc')"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "G320",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] $o->sigBlock('bc_fm')"
+  },
+  {
+   "sheet": "Bank Control",
+   "cell": "A327",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] 'Head of Finance and Operations' . \"\\n\" . $o->sigBlock('bc_cert')"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A2",
+   "kind": "label",
+   "sequence": 10,
+   "default_text": "Transaction Reference Number\n(işlem Referans Numarası)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A9",
+   "kind": "label",
+   "sequence": 20,
+   "default_text": "Journal Statement \n(Yevmiye Beyanı)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "G9",
+   "kind": "label",
+   "sequence": 30,
+   "default_text": "Issued Date\n(İşlem tarihi)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A11",
+   "kind": "label",
+   "sequence": 40,
+   "default_text": "Currency(Para birimi)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D11",
+   "kind": "label",
+   "sequence": 50,
+   "default_text": "Exchange Rate (Döviz kuru)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B13",
+   "kind": "label",
+   "sequence": 60,
+   "default_text": "Transaction Type"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B14",
+   "kind": "label",
+   "sequence": 70,
+   "default_text": "Description (Açıklama)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A17",
+   "kind": "label",
+   "sequence": 80,
+   "default_text": "SN"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B17",
+   "kind": "label",
+   "sequence": 90,
+   "default_text": "Amount\n(Tutar)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "C17",
+   "kind": "label",
+   "sequence": 100,
+   "default_text": "Account Code"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D17",
+   "kind": "label",
+   "sequence": 110,
+   "default_text": "Account "
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "E17",
+   "kind": "label",
+   "sequence": 120,
+   "default_text": "Line Discreption"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "F17",
+   "kind": "label",
+   "sequence": 130,
+   "default_text": "Attached Type\n(Ek Türü)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "G17",
+   "kind": "label",
+   "sequence": 140,
+   "default_text": "Attached No\n(Ek No)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A108",
+   "kind": "label",
+   "sequence": 150,
+   "default_text": "Total\n(Toplam)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B111",
+   "kind": "label",
+   "sequence": 160,
+   "default_text": "Prepared By \n"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "F111",
+   "kind": "label",
+   "sequence": 170,
+   "default_text": "Proceed By Head of Accounting "
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B112",
+   "kind": "label",
+   "sequence": 180,
+   "default_text": "Name, Titile, Date"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "F112",
+   "kind": "label",
+   "sequence": 190,
+   "default_text": "Name, Titile, Date"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A4",
+   "kind": "data",
+   "sequence": 200,
+   "default_text": "[value] $o->number"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "H9",
+   "kind": "data",
+   "sequence": 210,
+   "default_text": "[value] $o->date"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "C11",
+   "kind": "data",
+   "sequence": 220,
+   "default_text": "[value] lk('currencies', $d['currency_id'])?->code"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "E11",
+   "kind": "data",
+   "sequence": 230,
+   "default_text": "[value] currency_pair"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "F11",
+   "kind": "data",
+   "sequence": 240,
+   "default_text": "[value] exchange_rate"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "G11",
+   "kind": "data",
+   "sequence": 250,
+   "default_text": "[value] ($d['exchange_rate'] ?? 0) ? 1 / $d['exchange_rate'] : 0"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D13",
+   "kind": "data",
+   "sequence": 260,
+   "default_text": "[value] \\App\\Forms\\Options::label(\\App\\Forms\\Options::JOURNAL_TYPES, $d['txn_type'] ?? null)"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D14",
+   "kind": "data",
+   "sequence": 270,
+   "default_text": "[value] description"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A18",
+   "kind": "data",
+   "sequence": 280,
+   "default_text": "[value] $loop->index + 1"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B18",
+   "kind": "data",
+   "sequence": 290,
+   "default_text": "[value] line amount"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "C18",
+   "kind": "data",
+   "sequence": 300,
+   "default_text": "[value] line account_code"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D18",
+   "kind": "data",
+   "sequence": 310,
+   "default_text": "[value] line account_name"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "E18",
+   "kind": "data",
+   "sequence": 320,
+   "default_text": "[value] line name"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "F18",
+   "kind": "data",
+   "sequence": 330,
+   "default_text": "[value] lk('list:attachment', $l['attached_type_id'] ?? null)?->name"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "G18",
+   "kind": "data",
+   "sequence": 340,
+   "default_text": "[value] line attached_no"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "B108",
+   "kind": "data",
+   "sequence": 350,
+   "default_text": "[value] total_amount"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "G108",
+   "kind": "data",
+   "sequence": 360,
+   "default_text": "[value] count(array_filter($d['lines'], fn ($x) => !empty($x['attached_no'])))"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D111",
+   "kind": "data",
+   "sequence": 370,
+   "default_text": "[value] $o->sig('jou_internal')?->individual_id ? 'Approved by Internal Review' : ''"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D112",
+   "kind": "data",
+   "sequence": 380,
+   "default_text": "[value] $o->sig('jou_internal')?->individual_id ? 'Name, Titile, Date' : ''"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "A113",
+   "kind": "data",
+   "sequence": 390,
+   "default_text": "[value] $o->sigText('jou_prep')"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "D113",
+   "kind": "data",
+   "sequence": 400,
+   "default_text": "[value] $o->sig('jou_internal')?->individual_id ? $o->sigText('jou_internal') : ''"
+  },
+  {
+   "sheet": "Journal Statment",
+   "cell": "F113",
+   "kind": "data",
+   "sequence": 410,
+   "default_text": "[value] $o->sigText('jou_head')"
+  }
+ ],
+ "numbers": [
+  {
+   "key": "ptr",
+   "number": "F003",
+   "form_name": "PTR",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "turkish_ptr",
+   "number": "F012",
+   "form_name": "Turkish PTR",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "jar",
+   "number": "F002",
+   "form_name": "JAR",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "jar_clearance",
+   "number": "F002",
+   "form_name": "JAR Clearance",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "jar_turkish",
+   "number": "F011",
+   "form_name": "JAR-Turkish",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "reference_cover",
+   "number": "F001",
+   "form_name": "Reference Cover",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "advance_application",
+   "number": "F009",
+   "form_name": "Advance Application",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "refund_statement",
+   "number": "F016",
+   "form_name": "Refund Statement",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "remittance_statement",
+   "number": "F004",
+   "form_name": "Remittance Statement",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "turkish_fatura_form",
+   "number": "F005",
+   "form_name": "Turkish Fatura Form",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "english_invoice",
+   "number": "F015",
+   "form_name": "English Invoice",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "reconciliation_minutes",
+   "number": "F010",
+   "form_name": "Reconciliation Minutes",
+   "release_no": "2",
+   "release_label": "04.05.2025"
+  },
+  {
+   "key": "bank_control",
+   "number": "F006",
+   "form_name": "Bank Control",
+   "release_no": "2",
+   "release_label": "01.01.2025"
+  },
+  {
+   "key": "journal_statment",
+   "number": "F008",
+   "form_name": "Journal Statment",
+   "release_no": "1",
+   "release_label": "01.01.2025"
+  }
+ ],
+ "slots": [
+  {
+   "form": "ptr",
+   "code": "ptr_prep",
+   "name": "Prepared by Project's Accounting Responsible",
+   "sequence": 10
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_bh1",
+   "name": "Budget Holder 1) Project Manager (1 - 5.000 USD)",
+   "sequence": 20
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_bh2",
+   "name": "Budget Holder 2) Program Manager (5.001 - 20.000 USD)",
+   "sequence": 30
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_bh3",
+   "name": "Budget Holder 3) Head of Programs (20.001 - 100.000 USD)",
+   "sequence": 40
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_bh4",
+   "name": "Budget Holder 4) CEO / 5) Administration Manager (100.001 - 1.000.000 USD, shared cost)",
+   "sequence": 50
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_bh5",
+   "name": "Budget Holder 6) Chairman (above 1.000.000 USD)",
+   "sequence": 60
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_review",
+   "name": "Reviewed by Projects Reporting Responsible",
+   "sequence": 70
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_internal",
+   "name": "Approved By Internal Reviewer",
+   "sequence": 80
+  },
+  {
+   "form": "ptr",
+   "code": "ptr_treasury",
+   "name": "Paid by Treasury Department",
+   "sequence": 90
+  },
+  {
+   "form": "jar",
+   "code": "jar_prep",
+   "name": "Prepared by (JAR + Clearance)",
+   "sequence": 10
+  },
+  {
+   "form": "jar",
+   "code": "jar_bh",
+   "name": "Authorized By Budget Holder",
+   "sequence": 20
+  },
+  {
+   "form": "jar",
+   "code": "jar_report",
+   "name": "Approved By Project Reporting Responsible",
+   "sequence": 30
+  },
+  {
+   "form": "jar",
+   "code": "jar_internal",
+   "name": "Authorized By Internal Review Section",
+   "sequence": 40
+  },
+  {
+   "form": "jar",
+   "code": "jar_close",
+   "name": "Closed By Accounting Section Responsible (Clearance: Received by)",
+   "sequence": 50
+  },
+  {
+   "form": "advance",
+   "code": "adv_req",
+   "name": "Requester Signature",
+   "sequence": 10
+  },
+  {
+   "form": "advance",
+   "code": "adv_bh",
+   "name": "Authorized by Budget Holder - Administrative Manager",
+   "sequence": 20
+  },
+  {
+   "form": "advance",
+   "code": "adv_fm",
+   "name": "Project's Accounting Responsible - Finance Manager Approval",
+   "sequence": 30
+  },
+  {
+   "form": "advance",
+   "code": "adv_internal",
+   "name": "Internal Review Adding to Remittance",
+   "sequence": 40
+  },
+  {
+   "form": "advance",
+   "code": "adv_treasury",
+   "name": "Treasury Section",
+   "sequence": 50
+  },
+  {
+   "form": "remittance",
+   "code": "rem_prep",
+   "name": "Prepared by Internal Reviewer",
+   "sequence": 10
+  },
+  {
+   "form": "remittance",
+   "code": "rem_head",
+   "name": "Authorized By Head of Internal Review Section",
+   "sequence": 20
+  },
+  {
+   "form": "remittance",
+   "code": "rem_treasury",
+   "name": "Proceed By Treasury",
+   "sequence": 30
+  },
+  {
+   "form": "journal",
+   "code": "jou_prep",
+   "name": "Prepared By",
+   "sequence": 10
+  },
+  {
+   "form": "journal",
+   "code": "jou_internal",
+   "name": "Approved by Internal Review",
+   "sequence": 20
+  },
+  {
+   "form": "journal",
+   "code": "jou_head",
+   "name": "Proceed By Head of Accounting",
+   "sequence": 30
+  },
+  {
+   "form": "fatura",
+   "code": "fat_prep",
+   "name": "Hazırlayan (Prepared by) - footer",
+   "sequence": 10
+  },
+  {
+   "form": "english_invoice",
+   "code": "ei_prep",
+   "name": "Prepared By - footer",
+   "sequence": 10
+  },
+  {
+   "form": "refund",
+   "code": "ref_holder",
+   "name": "Job Advance Holder - footer left",
+   "sequence": 10
+  },
+  {
+   "form": "refund",
+   "code": "ref_acc",
+   "name": "Accounting Section - footer center",
+   "sequence": 20
+  },
+  {
+   "form": "refund",
+   "code": "ref_fm",
+   "name": "Finance Manager - footer right",
+   "sequence": 30
+  },
+  {
+   "form": "recon",
+   "code": "rec_prep",
+   "name": "Prepared by",
+   "sequence": 10
+  },
+  {
+   "form": "recon",
+   "code": "rec_appr",
+   "name": "Approved by",
+   "sequence": 20
+  },
+  {
+   "form": "recon",
+   "code": "rec_proc",
+   "name": "Processed by",
+   "sequence": 30
+  },
+  {
+   "form": "recon",
+   "code": "rec_final",
+   "name": "Finalized by",
+   "sequence": 40
+  },
+  {
+   "form": "bank",
+   "code": "bc_treasury",
+   "name": "Head of Treasury Section",
+   "sequence": 10
+  },
+  {
+   "form": "bank",
+   "code": "bc_acc",
+   "name": "Head Of Accounting Section",
+   "sequence": 20
+  },
+  {
+   "form": "bank",
+   "code": "bc_fm",
+   "name": "Finance Manager",
+   "sequence": 30
+  },
+  {
+   "form": "bank",
+   "code": "bc_cert",
+   "name": "Certified By (Head of Finance and Operations)",
+   "sequence": 40
+  }
+ ],
+ "roles": [
+  {
+   "form": "ptr",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "ptr_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "ptr",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": "ptr_internal",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "ptr",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": "ptr_bh1",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "ptr",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": "ptr_bh4",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "ptr",
+   "sequence": 50,
+   "name": "Payment (Treasury)",
+   "slot": "ptr_treasury",
+   "is_preparer": false,
+   "is_payer": true,
+   "required": true
+  },
+  {
+   "form": "advance",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "adv_req",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "advance",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": "adv_internal",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "advance",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": "adv_fm",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "advance",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": "adv_bh",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "advance",
+   "sequence": 50,
+   "name": "Payment (Treasury)",
+   "slot": "adv_treasury",
+   "is_preparer": false,
+   "is_payer": true,
+   "required": true
+  },
+  {
+   "form": "remittance",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "rem_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "remittance",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": "rem_head",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "remittance",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "remittance",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "remittance",
+   "sequence": 50,
+   "name": "Payment (Treasury)",
+   "slot": "rem_treasury",
+   "is_preparer": false,
+   "is_payer": true,
+   "required": true
+  },
+  {
+   "form": "jar",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "jar_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "jar",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": "jar_internal",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "jar",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": "jar_report",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "jar",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": "jar_bh",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "journal",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "jou_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "journal",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": "jou_internal",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "journal",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "journal",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "fatura",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "fat_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "fatura",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "fatura",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "fatura",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "english_invoice",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "ei_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "english_invoice",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "english_invoice",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "english_invoice",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "refund",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "ref_holder",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "refund",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "refund",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "refund",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": "ref_fm",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "recon",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "rec_prep",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "recon",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": "rec_proc",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "recon",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "recon",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": "rec_appr",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "bank",
+   "sequence": 10,
+   "name": "Preparer",
+   "slot": "bc_treasury",
+   "is_preparer": true,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "bank",
+   "sequence": 20,
+   "name": "Internal Audit",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "bank",
+   "sequence": 30,
+   "name": "Project Manager",
+   "slot": null,
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  },
+  {
+   "form": "bank",
+   "sequence": 40,
+   "name": "Budget Holder (Authorizer)",
+   "slot": "bc_fm",
+   "is_preparer": false,
+   "is_payer": false,
+   "required": true
+  }
+ ]
+}

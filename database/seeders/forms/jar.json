@@ -1,0 +1,447 @@
+{
+    "form": {
+        "code": "jar",
+        "name": "JAR / JAR Clearance",
+        "short": "JAR",
+        "icon": "fa-file-invoice-dollar",
+        "color": "#0F766E",
+        "description": "Clearing an advance with invoices / vouchers per budget line.",
+        "group": "AP",
+        "sequence": 30
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Advance",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Date of Issue",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "advance_ref",
+                        "label": "Original Advance Reference",
+                        "type": "text",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "advance_date",
+                        "label": "Original Advance Date",
+                        "type": "date",
+                        "width": 3
+                    },
+                    {
+                        "key": "currency_id",
+                        "label": "Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "advance_amount",
+                        "label": "Advance Amount",
+                        "type": "money",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "advance_rate",
+                        "label": "Original Advance Ex.Rate",
+                        "type": "number",
+                        "decimals": 7,
+                        "required": true,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "factor",
+                        "label": "Exchange Factor",
+                        "type": "radio",
+                        "required": true,
+                        "width": 3,
+                        "default": "mul",
+                        "options": [
+                            {
+                                "value": "mul",
+                                "label": "×"
+                            },
+                            {
+                                "value": "div",
+                                "label": "÷"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "invoice_rate",
+                        "label": "Invoices Exchange Rate",
+                        "type": "number",
+                        "decimals": 7,
+                        "required": true,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "clearance_description",
+                        "label": "Clearance Description",
+                        "type": "formula",
+                        "width": 12,
+                        "formula": "IF(ISBLANK(advance_ref),\"\",\"Reconciliating the Advance No:\"&advance_ref)",
+                        "fmt": "text"
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Invoices",
+                "min": 1,
+                "columns": [
+                    {
+                        "key": "supplier_name",
+                        "label": "Supplier name",
+                        "type": "formula",
+                        "formula": "IF(ISBLANK(supplier_id),\"\",TRIM(LOOKUP(supplier_id,\"trade_name\")&\" \"&LOOKUP(supplier_id,\"bank_account_name\")))",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "budget_line_id",
+                        "label": "BL",
+                        "type": "lookup",
+                        "required": true,
+                        "width_px": 160,
+                        "source": "budget_lines"
+                    },
+                    {
+                        "key": "paid_amount",
+                        "label": "Paid Amount",
+                        "type": "money",
+                        "required": true,
+                        "width_px": 110,
+                        "sum": true
+                    },
+                    {
+                        "key": "special_note",
+                        "label": "Special Note",
+                        "type": "text",
+                        "width_px": 160
+                    },
+                    {
+                        "key": "grn",
+                        "label": "GRN",
+                        "type": "select",
+                        "width_px": 70,
+                        "default": "Yes",
+                        "options": [
+                            {
+                                "value": "Yes",
+                                "label": "Yes"
+                            },
+                            {
+                                "value": "No",
+                                "label": "No"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "invoice_no",
+                        "label": "Invoice / Voucher No",
+                        "type": "text",
+                        "width_px": 120
+                    },
+                    {
+                        "key": "invoice_date",
+                        "label": "Invoice Date",
+                        "type": "date",
+                        "width_px": 130
+                    },
+                    {
+                        "key": "supplier_id",
+                        "label": "Supplier",
+                        "type": "lookup",
+                        "width_px": 180,
+                        "source": "suppliers"
+                    },
+                    {
+                        "key": "home_amount",
+                        "label": "Home Currency Amount",
+                        "type": "formula",
+                        "width_px": 110,
+                        "formula": "IFERROR(IF(invoice_rate=0,0,IF(factor=\"mul\",paid_amount/IF(ROUND(1/invoice_rate,7)=0,1,ROUND(1/invoice_rate,7)),paid_amount/invoice_rate)),0)",
+                        "fmt": "money",
+                        "sum": true
+                    },
+                    {
+                        "key": "line_description",
+                        "label": "Line Description",
+                        "type": "formula",
+                        "width_px": 220,
+                        "formula": "IF(ISBLANK(budget_line_id),\"\",TEXTJOIN(\"-\",FALSE,special_note,LOOKUP(supplier_id,\"code\"),supplier_name,invoice_no))",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "cost_center_name",
+                        "label": "Cost center",
+                        "type": "formula",
+                        "formula": "IF(ISBLANK(budget_line_id),\"\",LOOKUP(budget_line_id,\"accounting_center_name\")&\"-\"&LOOKUP(currency_id,\"code\"))",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "pc_name",
+                        "label": "Project",
+                        "type": "formula",
+                        "formula": "LOOKUP(budget_line_id,\"project_name\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "balance",
+                        "label": "Balance",
+                        "type": "formula",
+                        "formula": "advance_amount-CUMSUM(paid_amount)",
+                        "fmt": "money",
+                        "hidden": true,
+                        "print": false,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "bl_code",
+                        "label": "Budget Line Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(budget_line_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": true,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "turkish_account",
+                        "label": "Turkish Account",
+                        "type": "formula",
+                        "formula": "LOOKUP(budget_line_id,\"turkish_account\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": true,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "tr_description",
+                        "label": "Description",
+                        "type": "formula",
+                        "formula": "IF(COALESCE(line_description,special_note)=\"\",\"\",COALESCE(line_description,special_note)&\"-\")&IF(ISBLANK(invoice_no),\"\",\"Inv-\"&invoice_no)",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": true,
+                        "width_px": 240
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_paid",
+                        "label": "Total Paid",
+                        "type": "formula",
+                        "formula": "SUM(lines.paid_amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_home",
+                        "label": "Total Home Currency",
+                        "type": "formula",
+                        "formula": "SUM(lines.home_amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "balance",
+                        "label": "Balance",
+                        "type": "formula",
+                        "formula": "advance_amount-total_paid",
+                        "fmt": "money",
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "total_paid",
+            "currency": "LOOKUP(currency_id,\"code\")",
+            "description": "IF(clearance_description=\"\",\"JAR / JAR Clearance\",clearance_description)",
+            "settlement_target": true,
+            "analytics": {
+                "table": "lines",
+                "amount": "paid_amount",
+                "budget_line": "budget_line_id"
+            },
+            "has_payment": false,
+            "rules": [],
+            "exports": [
+                {
+                    "key": "jar_uploader",
+                    "name": "JAR Uploader",
+                    "sheet": "JAR Uploader",
+                    "per": "lines",
+                    "table": "lines",
+                    "columns": [
+                        {
+                            "header": "Vendor",
+                            "formula": "cost_center_name",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Transaction Date",
+                            "formula": "_date",
+                            "fmt": "date"
+                        },
+                        {
+                            "header": "RefNumber",
+                            "formula": "_number",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Memo",
+                            "formula": "clearance_description",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Items Item",
+                            "formula": "LOOKUP(budget_line_id,\"qb_name\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Items Qty",
+                            "formula": "1",
+                            "fmt": "number"
+                        },
+                        {
+                            "header": "Items Description",
+                            "formula": "line_description",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Items Cost",
+                            "formula": "paid_amount",
+                            "fmt": "number"
+                        },
+                        {
+                            "header": "Items Customer",
+                            "formula": "pc_name",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "AP Account",
+                            "formula": "\"Accounts Payable-\"&LOOKUP(currency_id,\"code\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Currency",
+                            "formula": "LOOKUP(currency_id,\"code\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Exchange Rate",
+                            "formula": "IF(advance_rate=0,0,1/advance_rate)",
+                            "fmt": "number"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "prints": [
+        {
+            "sheet": "JAR",
+            "title": "JAR (Journal of Advance Reconciliation)",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": [
+                "lines.special_note",
+                "lines.grn",
+                "lines.invoice_no",
+                "lines.invoice_date",
+                "lines.supplier_id",
+                "lines.line_description",
+                "lines.bl_code",
+                "lines.turkish_account",
+                "lines.tr_description"
+            ]
+        },
+        {
+            "sheet": "JAR Clearance",
+            "title": "JAR Clearance",
+            "orientation": "landscape",
+            "in_final": true,
+            "hidden": [
+                "lines.bl_code",
+                "lines.turkish_account",
+                "lines.tr_description"
+            ]
+        },
+        {
+            "sheet": "JAR-Turkish",
+            "title": "Avanstan Harcanan İşlem",
+            "orientation": "portrait",
+            "in_final": false,
+            "hidden": [
+                "factor",
+                "invoice_rate",
+                "lines.budget_line_id",
+                "lines.special_note",
+                "lines.grn",
+                "lines.invoice_no",
+                "lines.supplier_id",
+                "lines.home_amount",
+                "lines.line_description",
+                "total_home",
+                "balance"
+            ],
+            "labels": {
+                "block:s1": "Avans",
+                "block:t1": "Faturalar",
+                "block:totals": "Toplam",
+                "block:sig": "Onaylar",
+                "_number": "İşlem Referansı",
+                "date": "Tarih",
+                "advance_ref": "Asıl avans işlem ref",
+                "advance_date": "Avans Tarihi",
+                "currency_id": "Para birimi",
+                "advance_amount": "Avans Tutarı",
+                "advance_rate": "Avans Kuru",
+                "clearance_description": "Açıklama",
+                "lines.bl_code": "Bütçe ref kodu",
+                "lines.turkish_account": "Hesab",
+                "lines.invoice_date": "Fatura Tarihi",
+                "lines.paid_amount": "Tutar",
+                "lines.tr_description": "Açıklama",
+                "total_paid": "Total"
+            }
+        }
+    ]
+}

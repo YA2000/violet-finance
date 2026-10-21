@@ -1,0 +1,549 @@
+{
+    "form": {
+        "code": "ptr",
+        "name": "PTR - Payment Transfer Request",
+        "short": "PTR",
+        "icon": "fa-money-bill-transfer",
+        "color": "#6B2FA0",
+        "description": "Payment transfer request: budget lines, recipients and approvals.",
+        "group": "AP",
+        "sequence": 10
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "PTR",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "PTR Issue Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 3
+                    },
+                    {
+                        "key": "accounting_center_id",
+                        "label": "Cost Center",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "accounting_centers"
+                    },
+                    {
+                        "key": "invoice_currency_id",
+                        "label": "Invoice Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "payment_currency_id",
+                        "label": "Payment Currency",
+                        "type": "lookup",
+                        "required": true,
+                        "width": 3,
+                        "source": "currencies"
+                    },
+                    {
+                        "key": "cost_center_name",
+                        "label": "Cost Center Name",
+                        "type": "formula",
+                        "width": 6,
+                        "formula": "IF(OR(ISBLANK(accounting_center_id),ISBLANK(payment_currency_id)),\"\",FIND(\"cost_centers\",\"code\",LOOKUP(accounting_center_id,\"code\")&\"-\"&LOOKUP(payment_currency_id,\"code\"),\"name\"))",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "recipient_type",
+                        "label": "Recipient Type",
+                        "type": "radio",
+                        "required": true,
+                        "width": 6,
+                        "help": "Multi Same: amounts of the same recipient are summed on the printout",
+                        "default": "same",
+                        "options": [
+                            {
+                                "value": "same",
+                                "label": "Multi Same"
+                            },
+                            {
+                                "value": "diff",
+                                "label": "Multi Diff"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "cost_center_location",
+                        "label": "Cost Center Location",
+                        "type": "formula",
+                        "formula": "IF(OR(ISBLANK(accounting_center_id),ISBLANK(payment_currency_id)),\"\",FIND(\"cost_centers\",\"code\",LOOKUP(accounting_center_id,\"code\")&\"-\"&LOOKUP(payment_currency_id,\"code\"),\"location\"))",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    },
+                    {
+                        "key": "cost_center_id",
+                        "label": "Cost Center Id",
+                        "type": "formula",
+                        "formula": "IF(OR(ISBLANK(accounting_center_id),ISBLANK(payment_currency_id)),\"\",FIND(\"cost_centers\",\"code\",LOOKUP(accounting_center_id,\"code\")&\"-\"&LOOKUP(payment_currency_id,\"code\"),\"id\"))",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": false,
+                        "width": 4
+                    }
+                ]
+            },
+            {
+                "id": "s2",
+                "type": "section",
+                "title": "Exchange",
+                "fields": [
+                    {
+                        "key": "exchange_rate",
+                        "label": "Exchange Rate to pay",
+                        "type": "number",
+                        "decimals": 7,
+                        "required": true,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "factor",
+                        "label": "Factor",
+                        "type": "radio",
+                        "required": true,
+                        "width": 3,
+                        "default": "mul",
+                        "options": [
+                            {
+                                "value": "mul",
+                                "label": "×"
+                            },
+                            {
+                                "value": "div",
+                                "label": "÷"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "ex_source_id",
+                        "label": "Exchange Rate Source",
+                        "type": "lookup",
+                        "width": 6,
+                        "source": "list:exsource"
+                    },
+                    {
+                        "key": "home_currency",
+                        "label": "Home Currency",
+                        "type": "text",
+                        "width": 3,
+                        "default": "USD"
+                    },
+                    {
+                        "key": "home_rate",
+                        "label": "Home Currency Exchange Rate",
+                        "type": "number",
+                        "decimals": 7,
+                        "required": true,
+                        "width": 3,
+                        "default": 1
+                    },
+                    {
+                        "key": "home_factor",
+                        "label": "Home Currency Ex Factor",
+                        "type": "radio",
+                        "required": true,
+                        "width": 3,
+                        "default": "div",
+                        "options": [
+                            {
+                                "value": "mul",
+                                "label": "×"
+                            },
+                            {
+                                "value": "div",
+                                "label": "÷"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "home_ex_source_id",
+                        "label": "Home Rate Source",
+                        "type": "lookup",
+                        "width": 3,
+                        "source": "list:exsource"
+                    }
+                ]
+            },
+            {
+                "id": "s3",
+                "type": "section",
+                "title": "Description",
+                "fields": [
+                    {
+                        "key": "description",
+                        "label": "PTR Description",
+                        "type": "text",
+                        "required": true,
+                        "width": 12
+                    }
+                ]
+            },
+            {
+                "id": "t1",
+                "type": "table",
+                "key": "lines",
+                "title": "Lines",
+                "min": 1,
+                "columns": [
+                    {
+                        "key": "invoice_amount",
+                        "label": "Invoice Amt",
+                        "type": "money",
+                        "required": true,
+                        "width_px": 110,
+                        "sum": true
+                    },
+                    {
+                        "key": "allocation",
+                        "label": "Allocation %",
+                        "type": "number",
+                        "decimals": 4,
+                        "width_px": 90,
+                        "help": "1 = 100%",
+                        "default": 1
+                    },
+                    {
+                        "key": "expected_amount",
+                        "label": "Expected Payment",
+                        "type": "formula",
+                        "width_px": 110,
+                        "formula": "IFERROR(invoice_amount*IF(ISBLANK(allocation),1,allocation)/IF(factor=\"mul\",ROUND(1/exchange_rate,7),ROUND(exchange_rate,7)),0)",
+                        "fmt": "money",
+                        "sum": true
+                    },
+                    {
+                        "key": "budget_line_id",
+                        "label": "Budget Line",
+                        "type": "lookup",
+                        "required": true,
+                        "width_px": 170,
+                        "source": "budget_lines"
+                    },
+                    {
+                        "key": "project_name",
+                        "label": "Project",
+                        "type": "formula",
+                        "width_px": 150,
+                        "formula": "LOOKUP(budget_line_id,\"project_name\")",
+                        "fmt": "text"
+                    },
+                    {
+                        "key": "home_amount",
+                        "label": "Amt in Home Currency",
+                        "type": "formula",
+                        "width_px": 110,
+                        "formula": "IFERROR(IF(home_factor=\"div\",invoice_amount*ROUND(1/home_rate,7),invoice_amount/IF(ROUND(1/home_rate,7)=0,1,ROUND(1/home_rate,7)))*IF(ISBLANK(allocation),1,allocation),0)",
+                        "fmt": "money",
+                        "sum": true
+                    },
+                    {
+                        "key": "special_note",
+                        "label": "Special Note",
+                        "type": "text",
+                        "width_px": 160
+                    },
+                    {
+                        "key": "recipient_id",
+                        "label": "Recipient",
+                        "type": "lookup",
+                        "width_px": 180,
+                        "source": "payees"
+                    },
+                    {
+                        "key": "invoice_no",
+                        "label": "Invoice",
+                        "type": "text",
+                        "width_px": 110
+                    },
+                    {
+                        "key": "po_number",
+                        "label": "PO Number",
+                        "type": "text",
+                        "width_px": 100
+                    },
+                    {
+                        "key": "bl_code",
+                        "label": "Budget Line Code",
+                        "type": "formula",
+                        "formula": "LOOKUP(budget_line_id,\"code\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": true,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "turkish_account",
+                        "label": "Turkish Account",
+                        "type": "formula",
+                        "formula": "LOOKUP(budget_line_id,\"turkish_account\")",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": true,
+                        "width_px": 120
+                    },
+                    {
+                        "key": "tr_description",
+                        "label": "Line Description",
+                        "type": "formula",
+                        "formula": "TEXTJOIN(\"-\",FALSE,special_note,LOOKUP(recipient_id,\"code\"),LOOKUP(recipient_id,\"name\"),LOOKUP(recipient_id,\"title\"),LOOKUP(recipient_id,\"bank\"),invoice_no,LOOKUP(recipient_id,\"location\"))",
+                        "fmt": "text",
+                        "hidden": true,
+                        "print": true,
+                        "width_px": 260
+                    }
+                ]
+            },
+            {
+                "id": "totals",
+                "type": "section",
+                "title": "Totals",
+                "style": "totals",
+                "fields": [
+                    {
+                        "key": "total_invoice",
+                        "label": "Total Invoice",
+                        "type": "formula",
+                        "formula": "SUM(lines.invoice_amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_expected",
+                        "label": "Total in Payment Currency",
+                        "type": "formula",
+                        "formula": "SUM(lines.expected_amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "total_home",
+                        "label": "Total in Home Currency",
+                        "type": "formula",
+                        "formula": "SUM(lines.home_amount)",
+                        "fmt": "money",
+                        "width": 3
+                    },
+                    {
+                        "key": "home_rate_print",
+                        "label": "Home Rate",
+                        "type": "formula",
+                        "formula": "IF(total_home=0,0,ROUND(total_expected/total_home,4))",
+                        "fmt": "rate",
+                        "width": 3
+                    }
+                ]
+            },
+            {
+                "id": "receipts",
+                "type": "summary",
+                "title": "Payment Receipts Information",
+                "source": "lines",
+                "where": "expected_amount<>0",
+                "group": "IF(AND(recipient_type=\"same\",NOT(ISBLANK(recipient_id))),recipient_id,\"l\"&ROWNUM())",
+                "columns": [
+                    {
+                        "label": "Amount",
+                        "formula": "expected_amount",
+                        "agg": "sum",
+                        "fmt": "money"
+                    },
+                    {
+                        "label": "Currency",
+                        "formula": "LOOKUP(payment_currency_id,\"code\")",
+                        "agg": "first"
+                    },
+                    {
+                        "label": "Receipt's Name",
+                        "formula": "TEXTJOIN(\"-\",TRUE,LOOKUP(recipient_id,\"code\"),LOOKUP(recipient_id,\"name\"))",
+                        "agg": "first"
+                    },
+                    {
+                        "label": "Bank account No / IBAN",
+                        "formula": "LOOKUP(recipient_id,\"iban\")",
+                        "agg": "first"
+                    },
+                    {
+                        "label": "Bank",
+                        "formula": "LOOKUP(recipient_id,\"bank\")",
+                        "agg": "first"
+                    },
+                    {
+                        "label": "Invoice Number",
+                        "formula": "invoice_no",
+                        "agg": "first"
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "amount": "total_expected",
+            "currency": "LOOKUP(payment_currency_id,\"code\")",
+            "description": "description",
+            "analytics": {
+                "table": "lines",
+                "amount": "expected_amount",
+                "budget_line": "budget_line_id"
+            },
+            "has_payment": true,
+            "rules": [
+                {
+                    "formula": "NOT(ISBLANK(cost_center_id))",
+                    "message": "No cost center '{=LOOKUP(accounting_center_id,\"code\")}-{=LOOKUP(payment_currency_id,\"code\")}' in the Units list."
+                }
+            ],
+            "exports": [
+                {
+                    "key": "transactions",
+                    "name": "Transactions",
+                    "sheet": "Transactions",
+                    "per": "lines",
+                    "table": "lines",
+                    "columns": [
+                        {
+                            "header": "Vendor",
+                            "formula": "cost_center_name",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Transaction Date",
+                            "formula": "_date",
+                            "fmt": "date"
+                        },
+                        {
+                            "header": "RefNumber",
+                            "formula": "_number",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Memo",
+                            "formula": "special_note",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Items Item",
+                            "formula": "LOOKUP(budget_line_id,\"qb_name\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Items Qty",
+                            "formula": "IF(ISBLANK(allocation),1,allocation)",
+                            "fmt": "number"
+                        },
+                        {
+                            "header": "Items Description",
+                            "formula": "TEXTJOIN(\"-\",FALSE,special_note,LOOKUP(recipient_id,\"code\"),LOOKUP(recipient_id,\"name\"),LOOKUP(recipient_id,\"title\"),LOOKUP(recipient_id,\"bank\"),invoice_no,LOOKUP(recipient_id,\"location\"))",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Items Cost",
+                            "formula": "invoice_amount*exchange_rate",
+                            "fmt": "number"
+                        },
+                        {
+                            "header": "Items Customer",
+                            "formula": "project_name",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "AP Account",
+                            "formula": "\"Accounts Payable-\"&LOOKUP(payment_currency_id,\"code\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Currency",
+                            "formula": "LOOKUP(payment_currency_id,\"code\")",
+                            "fmt": "text"
+                        },
+                        {
+                            "header": "Exchange Rate",
+                            "formula": "IF(LOOKUP(payment_currency_id,\"code\")=\"USD\",1,IF(invoice_currency_id=payment_currency_id,IF(home_rate=0,0,1/home_rate),IF(exchange_rate=0,0,1/exchange_rate)))",
+                            "fmt": "number"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "prints": [
+        {
+            "sheet": "PTR",
+            "title": "PTR (Payment Transfer Request)",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": [
+                "lines.bl_code",
+                "lines.turkish_account",
+                "lines.tr_description"
+            ]
+        },
+        {
+            "sheet": "Turkish PTR",
+            "title": "Ödeme Belgesi",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": [
+                "recipient_type",
+                "factor",
+                "home_currency",
+                "home_rate",
+                "home_factor",
+                "home_ex_source_id",
+                "cost_center_name",
+                "lines.invoice_amount",
+                "lines.allocation",
+                "lines.budget_line_id",
+                "lines.project_name",
+                "lines.home_amount",
+                "lines.special_note",
+                "lines.recipient_id",
+                "lines.invoice_no",
+                "lines.po_number",
+                "total_invoice",
+                "total_home",
+                "home_rate_print",
+                "block:receipts"
+            ],
+            "labels": {
+                "block:s1": "Ödeme Belgesi",
+                "block:s2": "Döviz",
+                "block:s3": "Açıklama",
+                "block:t1": "Kalemler",
+                "block:totals": "Toplam",
+                "block:sig": "Onaylar",
+                "date": "Tarih",
+                "accounting_center_id": "Masraf Merkezi",
+                "invoice_currency_id": "Fatura Para Birimi",
+                "payment_currency_id": "Ödeme Para Birimi",
+                "exchange_rate": "Döviz Kuru",
+                "ex_source_id": "Döviz Kuru Kaynak",
+                "description": "İşlem Açıklaması",
+                "lines.expected_amount": "Tahmin Edilen Tutarı",
+                "lines.bl_code": "Bütçe Referansı",
+                "lines.turkish_account": "Hesab",
+                "lines.tr_description": "Açıklama",
+                "total_expected": "Toplam",
+                "_number": "İşlem Referansı"
+            }
+        }
+    ]
+}

@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# Violet Finance - deployment tool. Installed as /usr/local/bin/violet, run as root.
+#
+#   violet update test     pull the latest code from GitHub and install it on the test site
+#   violet promote         install on the live site exactly what is running on the test site
+#   violet update live     pull the latest code and install it straight on the live site (skip test)
+#   violet rollback live   put back the code + database from before the last update (also: test)
+#   violet sync-test       copy the live database and uploaded files into the test site
+#   violet status          show what version each site runs and the last backups (default)
+#
+# Settings live in /etc/violet-deploy.conf (written by deploy/server-setup.sh).
+set -euo pipefail
+
+# run from a private copy: "git checkout" below may replace this very file
+if [ -z "${VIOLET_COPY:-}" ]; then
+  t=$(mktemp /tmp/violet.XXXXXX); cp "$0" "$t"
+  VIOLET_COPY=1 exec bash "$t" "$@"
+fi
+USAGE=$(sed -n '3,10p' "$0"); SELF_SUM=$(sha1sum < "$0"); rm -f "$0"   # bash keeps the open copy; the file itself can go
+
+CONF=/etc/violet-deploy.conf
+[ -f "$CONF" ] || { echo "Missing $CONF - run deploy/server-setup.sh first."; exit 1; }
+# shellcheck source=/dev/null
+. "$CONF"
+: "${SRC:=/opt/violet-src}" "${BRANCH:=main}" "${PHP:=php8.3}" "${BACKUPS:=/root/violet-backups}" "${KEEP:=10}"
+STATE=/var/lib/violet-deploy
+mkdir -p "$STATE" "$BACKUPS"; chmod 700 "$BACKUPS"
+
+[ "$(id -u)" = 0 ] || { echo "Run as root (sudo violet ...)."; exit 1; }
+
+say()  { printf '\n\033[1;35m== %s\033[0m\n' "$*"; }
+die()  { printf '\033[1;31m%s\033[0m\n' "$*"; exit 1; }
+
+target() {   # sets SITE, SUSER for live|test
+  case "${1:-}" in
+    live) SITE=$LIVE_SITE; SUSER=$LIVE_USER ;;
+    test) [ -n "${TEST_SITE:-}" ] || die "No test site configured in $CONF."; SITE=$TEST_SITE; SUSER=$TEST_USER ;;
+    *) die "Say which site: live or test." ;;
+  esac
+  [ -f "$SITE/.env" ] || die "No .env in $SITE"
+}
+envval() { grep -E "^$1=" "$SITE/.env" | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//'; }
+artisan() { (cd "$SITE" && sudo -u "$SUSER" "$PHP" artisan "$@"); }
+composer_bin() { command -v composer || echo /usr/local/bin/composer; }
+
+backup() {   # $1 = live|test ; prints the backup folder
+  local bk="$BACKUPS/$1-$(date +%F_%H%M%S)"
+  mkdir -p "$bk"
+  MYSQL_PWD="$(envval DB_PASSWORD)" mysqldump --no-tablespaces --single-transaction \
+    -u"$(envval DB_USERNAME)" "$(envval DB_DATABASE)" > "$bk/db.sql"
+  cp "$SITE/.env" "$bk/.env"
+  tar czf "$bk/code.tgz" --exclude=./storage --exclude=./vendor -C "$SITE" .
+  tar czf "$bk/storage-app.tgz" -C "$SITE" storage/app
+  cat "$STATE/$1.commit" > "$bk/commit" 2>/dev/null || echo unknown > "$bk/commit"
+  ls -1dt "$BACKUPS/$1-"* | tail -n +$((KEEP + 1)) | xargs -r rm -rf
+  echo "$bk"
+}
+
+fetch() {    # update the source checkout; $1 = commit to check out (optional)
+  git -C "$SRC" fetch --quiet --tags origin "$BRANCH"
+  git -C "$SRC" checkout --quiet --force "${1:-origin/$BRANCH}"
+  # the new code brings a newer version of this tool: start again with it
+  if [ -z "${VIOLET_REEXEC:-}" ] && [ "$(sha1sum < "$SRC/deploy/violet")" != "$SELF_SUM" ]; then
+    echo "(the deployment tool itself was updated - restarting with the new version)" >&2
+    exec env -u VIOLET_COPY VIOLET_REEXEC=1 bash "$SRC/deploy/violet" "${ARGS[@]}"
+  fi
+}
+
+install_code() {   # $1 = live|test ; code already checked out in $SRC
+  local name=$1 commit; commit=$(git -C "$SRC" rev-parse HEAD)
+  say "Backup ($name)"
+  local bk; bk=$(backup "$name"); echo "$bk"
+
+  say "Maintenance mode"
+  artisan down --retry=15 >/dev/null 2>&1 || true
+  trap 'artisan up >/dev/null 2>&1 || true' EXIT
+
+  say "New code $(git -C "$SRC" log -1 --format='%h %s')"
+  rsync -a --delete --exclude='/.git/' --exclude='/.env' --exclude='/storage/' --exclude='/vendor/' \
+        --exclude='bootstrap/cache/*.php' "$SRC/" "$SITE/"
+  mkdir -p "$SITE"/storage/app/{private,tmp,public} "$SITE"/storage/framework/{cache/data,sessions,views} "$SITE"/storage/logs
+  chown -R "$SUSER:$SUSER" "$SITE"
+  chmod -R ug+rwX "$SITE/storage" "$SITE/bootstrap/cache"
+
+  say "Libraries (composer)"
+  (cd "$SITE" && sudo -u "$SUSER" COMPOSER_HOME="/home/$SUSER/.composer" "$PHP" "$(composer_bin)" install \
+      --no-dev --optimize-autoloader --no-interaction --no-progress 2>&1 | grep -v -i 'memcached\|redis\|imagick' | tail -3)
+
+  say "Database changes"
+  if ! artisan migrate --force; then
+    echo "Migration failed - putting back the backup."; restore "$name" "$bk"; die "Update stopped. The site is back as it was."
+  fi
+
+  say "Caches"
+  artisan optimize:clear >/dev/null
+  artisan config:cache >/dev/null; artisan route:cache >/dev/null; artisan view:cache >/dev/null
+  echo "$commit" > "$STATE/$name.commit"
+  date '+%F %T' > "$STATE/$name.date"
+  artisan up >/dev/null 2>&1 || true; trap - EXIT
+  say "Done: $name now runs $(git -C "$SRC" log -1 --format='%h - %s (%cd)' --date=short)"
+}
+
+restore() {  # $1 = live|test, $2 = backup folder
+  local name=$1 bk=$2
+  [ -d "$bk" ] || die "Backup not found: $bk"
+  artisan down >/dev/null 2>&1 || true
+  local db u p; db=$(envval DB_DATABASE); u=$(envval DB_USERNAME); p=$(envval DB_PASSWORD)
+  ( echo 'SET FOREIGN_KEY_CHECKS=0;'
+    MYSQL_PWD="$p" mysql -u"$u" "$db" -N -e "SELECT CONCAT('DROP TABLE IF EXISTS \`',table_name,'\`;') FROM information_schema.tables WHERE table_schema=DATABASE()" ) \
+    | MYSQL_PWD="$p" mysql -u"$u" "$db"
+  MYSQL_PWD="$p" mysql -u"$u" "$db" < "$bk/db.sql"
+  find "$SITE" -mindepth 1 -maxdepth 1 ! -name storage ! -name vendor ! -name .env -exec rm -rf {} +
+  tar xzf "$bk/code.tgz" -C "$SITE"
+  chown -R "$SUSER:$SUSER" "$SITE"
+  local c; c=$(cat "$bk/commit" 2>/dev/null || echo unknown)
+  # libraries matching the restored composer.lock
+  (cd "$SITE" && sudo -u "$SUSER" COMPOSER_HOME="/home/$SUSER/.composer" "$PHP" "$(composer_bin)" install \
+      --no-dev --optimize-autoloader --no-interaction --no-progress >/dev/null 2>&1) || true
+  echo "$c" > "$STATE/$name.commit"
+  artisan optimize:clear >/dev/null
+  artisan config:cache >/dev/null; artisan route:cache >/dev/null; artisan view:cache >/dev/null
+  artisan up >/dev/null 2>&1 || true
+}
+
+ARGS=("$@")
+cmd=${1:-status}; shift || true
+case "$cmd" in
+  update)
+    target "${1:-}"; fetch; install_code "$1" ;;
+  promote)
+    [ -s "$STATE/test.commit" ] || die "Nothing on the test site yet. Run: violet update test"
+    c=$(cat "$STATE/test.commit")
+    target live; fetch "$c"; install_code live ;;
+  rollback)
+    target "${1:-}"
+    bk=$(ls -1dt "$BACKUPS/$1-"* 2>/dev/null | head -1) || true
+    [ -n "$bk" ] || die "No backup for $1."
+    echo "This puts back $1 as it was on $(basename "$bk" | cut -d- -f2-) (code + database)."
+    echo "Anything entered on $1 after that time is lost."
+    read -r -p "Type YES to continue: " ok; [ "$ok" = YES ] || die "Cancelled."
+    restore "$1" "$bk"; mv "$bk" "$bk.used"
+    say "Done: $1 is back to $(cat "$STATE/$1.commit" | cut -c1-7)" ;;
+  sync-test)
+    target live; LDB=$(envval DB_DATABASE); LU=$(envval DB_USERNAME); LP=$(envval DB_PASSWORD); LSITE=$SITE
+    target test
+    say "Copying live data into test"
+    MYSQL_PWD="$LP" mysqldump --no-tablespaces --single-transaction -u"$LU" "$LDB" > /tmp/violet-live.sql
+    p=$(envval DB_PASSWORD); u=$(envval DB_USERNAME); db=$(envval DB_DATABASE)
+    ( echo 'SET FOREIGN_KEY_CHECKS=0;'
+      MYSQL_PWD="$p" mysql -u"$u" "$db" -N -e "SELECT CONCAT('DROP TABLE IF EXISTS \`',table_name,'\`;') FROM information_schema.tables WHERE table_schema=DATABASE()" ) \
+      | MYSQL_PWD="$p" mysql -u"$u" "$db"
+    MYSQL_PWD="$p" mysql -u"$u" "$db" < /tmp/violet-live.sql; rm -f /tmp/violet-live.sql
+    rsync -a --delete "$LSITE/storage/app/" "$SITE/storage/app/"; chown -R "$SUSER:$SUSER" "$SITE/storage"
+    artisan migrate --force; artisan optimize:clear >/dev/null; artisan config:cache >/dev/null
+    say "Done: test has a fresh copy of the live data" ;;
+  status)
+    git -C "$SRC" fetch --quiet origin "$BRANCH" 2>/dev/null || true
+    printf 'Latest on GitHub : %s\n' "$(git -C "$SRC" log -1 --format='%h - %s (%cd)' --date=short "origin/$BRANCH" 2>/dev/null || echo '?')"
+    for n in test live; do
+      [ -s "$STATE/$n.commit" ] || { printf '%-17s: (not deployed by this tool yet)\n' "$n"; continue; }
+      c=$(cat "$STATE/$n.commit")
+      printf '%-17s: %s - %s  [installed %s]\n' "$n" "${c:0:7}" "$(git -C "$SRC" log -1 --format='%s' "$c" 2>/dev/null || echo '?')" "$(cat "$STATE/$n.date" 2>/dev/null)"
+    done
+    echo "Backups:"; ls -1dt "$BACKUPS"/* 2>/dev/null | head -6 | sed 's/^/  /' ;;
+  *) echo "$USAGE" ;;
+esac

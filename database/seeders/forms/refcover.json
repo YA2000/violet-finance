@@ -1,0 +1,99 @@
+{
+    "form": {
+        "code": "refcover",
+        "name": "Reference Cover",
+        "short": "Reference Cover",
+        "icon": "fa-folder-open",
+        "color": "#0284C7",
+        "description": "Cover page of a transaction file.",
+        "group": "AP",
+        "sequence": 20
+    },
+    "schema": {
+        "version": 1,
+        "blocks": [
+            {
+                "id": "s1",
+                "type": "section",
+                "title": "Cover",
+                "fields": [
+                    {
+                        "key": "date",
+                        "label": "Date",
+                        "type": "date",
+                        "required": true,
+                        "width": 4
+                    },
+                    {
+                        "key": "txn_type",
+                        "label": "Transaction Type",
+                        "type": "select",
+                        "required": true,
+                        "width": 8,
+                        "options": [
+                            {
+                                "value": "Received Payment (RF)",
+                                "label": "Received Payment (RF)"
+                            },
+                            {
+                                "value": "Documentation File (File)",
+                                "label": "Documentation File (File)"
+                            },
+                            {
+                                "value": "Payment in Advance (AA)",
+                                "label": "Payment in Advance (AA)"
+                            },
+                            {
+                                "value": "Transfer Voucher (TV)",
+                                "label": "Transfer Voucher (TV)"
+                            },
+                            {
+                                "value": "Exchange Statement (CES)",
+                                "label": "Exchange Statement (CES)"
+                            },
+                            {
+                                "value": "Journal Entry (Accounitng Operation)",
+                                "label": "Journal Entry (Accounitng Operation)"
+                            },
+                            {
+                                "value": "Payment Request (Bill-Expenses)",
+                                "label": "Payment Request (Bill-Expenses)"
+                            },
+                            {
+                                "value": "Bill Payment",
+                                "label": "Bill Payment"
+                            }
+                        ]
+                    },
+                    {
+                        "key": "short_description",
+                        "label": "Short Description",
+                        "type": "textarea",
+                        "required": true,
+                        "width": 12
+                    }
+                ]
+            },
+            {
+                "id": "sig",
+                "type": "signatures",
+                "title": "Approvals"
+            }
+        ],
+        "settings": {
+            "description": "short_description",
+            "has_payment": false,
+            "rules": [],
+            "exports": []
+        }
+    },
+    "prints": [
+        {
+            "sheet": "Reference Cover",
+            "title": "Reference Cover",
+            "orientation": "portrait",
+            "in_final": true,
+            "hidden": []
+        }
+    ]
+}
