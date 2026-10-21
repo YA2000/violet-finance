@@ -31,7 +31,7 @@
                 <div class="lk" x-data="lk('individuals', '', { standalone: true, value: r.default_individual_id, text: r.default_text })" @click.outside="close()" @lk-picked="r.default_individual_id = $event.detail.value; r.default_text = $event.detail.text">
                   <input type="hidden" :name="`roles[${i}][default_individual_id]`" :value="sval ?? ''">
                   <button type="button" class="lk-btn" @click="toggle()" :disabled="r.key === preparer"><span class="val" x-show="text && r.key !== preparer" x-text="text"></span><span class="ph" x-show="!text || r.key === preparer" x-text="r.key === preparer ? 'Whoever prepares it' : 'Chosen on each form'"></span></button>
-                  <div class="lk-pop" x-show="open" x-cloak>
+                  <div class="lk-pop" :style="pos" x-show="open" x-cloak>
                     <input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Code or name…">
                     <div class="lk-list">
                       <template x-for="(it, n) in items" :key="it.id"><div class="lk-item" :class="n === hi && 'on'" @click="pick(it)" @mouseenter="hi = n"><b x-text="it.text"></b><small x-text="it.sub"></small></div></template>

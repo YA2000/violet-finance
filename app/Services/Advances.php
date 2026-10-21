@@ -79,7 +79,8 @@ class Advances
             'advance_date' => $adv?->granted_at?->toDateString(),
             'currency_id' => Currency::where('code', $cur)->value('id'),
             'advance_amount' => $adv?->amount ?? $set->total(),
-            'advance_rate' => 1, 'factor' => 'mul', 'invoice_rate' => 1,
+            'advance_rate' => (float) ($adv?->document?->data['exchange_rate'] ?? 1) ?: 1,
+            'invoice_rate' => (float) ($adv?->document?->data['exchange_rate'] ?? 1) ?: 1,
             'lines' => $lines,
         ];
         return DB::transaction(function () use ($form, $data, $u, $set) {

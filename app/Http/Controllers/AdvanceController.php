@@ -117,27 +117,34 @@ class AdvanceController extends Controller
     {
         $h = $this->myHolder($r);
         abort_unless($h, 403);
-        $v = $r->validate(['expenses' => 'required|array|min:1', 'expenses.*' => 'integer', 'note' => 'nullable|string|max:1000']);
+        $v = $r->validate(['expenses' => 'required|array|min:1', 'expenses.*' => 'integer', 'note' => 'nullable|string|max:1000',
+            'advance_id' => 'required|integer', 'declare' => 'accepted'],
+            ['advance_id.required' => 'A JAR Clearance is always on an open advance: choose the advance.',
+             'declare.accepted' => 'Confirm the declaration before sending.']);
+        $adv = Advance::where('holder_id', $h->id)->where('status', 'open')->find($v['advance_id']);
+        if (!$adv) {
+            return back()->withErrors(['advance_id' => 'Choose one of your open advances.'])->withInput();
+        }
         $exp = AdvanceExpense::where('holder_id', $h->id)->whereIn('id', $v['expenses'])->whereIn('status', ['draft', 'returned'])->get();
         if (!$exp->count()) {
             return back()->withErrors(['expenses' => 'Choose expenses that are not sent yet.']);
         }
-        if ($exp->pluck('advance_id')->unique()->count() > 1) {
-            return back()->withErrors(['expenses' => 'Send the expenses of one advance at a time (expenses without advance separately).']);
+        if ($exp->contains(fn ($e) => $e->advance_id && $e->advance_id !== $adv->id)) {
+            return back()->withErrors(['expenses' => 'Some ticked expenses belong to another advance: send each advance on its own.'])->withInput();
         }
         if ($exp->contains(fn ($e) => !$e->budget_line_id)) {
             return back()->withErrors(['expenses' => 'Every expense needs its budget line before it is sent.']);
         }
-        $set = DB::transaction(function () use ($r, $h, $exp, $v) {
+        $set = DB::transaction(function () use ($r, $h, $exp, $v, $adv) {
             $set = AdvanceSettlement::create(['number' => Advance::nextNumber('SET', AdvanceSettlement::class, (int) date('Y')), 'holder_id' => $h->id,
-                'advance_id' => $exp->first()->advance_id, 'status' => 'submitted', 'note' => $v['note'] ?? null,
-                'submitted_by' => $r->user()->id, 'submitted_at' => now()]);
-            AdvanceExpense::whereIn('id', $exp->pluck('id'))->update(['status' => 'submitted', 'settlement_id' => $set->id]);
+                'advance_id' => $adv->id, 'status' => 'submitted', 'note' => $v['note'] ?? null,
+                'submitted_by' => $r->user()->id, 'submitted_at' => now(), 'declared_at' => now()]);
+            AdvanceExpense::whereIn('id', $exp->pluck('id'))->update(['status' => 'submitted', 'settlement_id' => $set->id, 'advance_id' => $adv->id]);
             return $set;
         });
         Alert::send('advances.manage', 'Settlement ' . $set->number . ' from ' . $h->name, number_format($exp->sum('amount'), 2) . ' · ' . $exp->count() . ' invoice(s)',
             route('settlements.show', $set), 'fa-file-invoice-dollar', $r->user()->id);
-        return back()->with('ok', 'Settlement ' . $set->number . ' sent to finance.');
+        return back()->with('ok', 'JAR Clearance ' . $set->number . ' sent to finance.');
     }
 
     /** Holder attaches the payment proof of a linked transaction (also copied to the transaction's file). */

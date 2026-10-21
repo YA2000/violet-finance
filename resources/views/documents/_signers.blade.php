@@ -18,7 +18,7 @@
               <div class="lk" x-data="lk('individuals', '', { standalone: true, value: @js($s->individual_id), text: @js($s->individual?->label ?? '') })" @click.outside="close()">
                 <input type="hidden" name="signer[{{ $s->id }}]" :value="sval">
                 <button type="button" class="lk-btn" @click="toggle()"><span class="val" x-show="text" x-text="text"></span><span class="ph" x-show="!text">Choose employee…</span></button>
-                <div class="lk-pop" x-show="open" x-cloak>
+                <div class="lk-pop" :style="pos" x-show="open" x-cloak>
                   <input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Code or name…">
                   <div class="lk-list">
                     <template x-for="(it, n) in items" :key="it.id"><div class="lk-item" :class="n === hi && 'on'" @click="pick(it)" @mouseenter="hi = n"><b x-text="it.text"></b><small x-text="it.sub"></small></div></template>

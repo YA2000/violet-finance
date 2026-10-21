@@ -94,6 +94,12 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::put('/advance-holders/{holder}', [AdvanceController::class, 'updateHolder'])->name('holders.update');
 
     // received payments
+    // remittance statements (internal viewer) and their payment (treasury)
+    Route::get('/remittances', [\App\Http\Controllers\RemittanceController::class, 'index'])->name('remittances.index')->middleware('can:remittance.prepare');
+    Route::post('/remittances', [\App\Http\Controllers\RemittanceController::class, 'store'])->name('remittances.store')->middleware('can:remittance.prepare');
+    Route::get('/payments', [\App\Http\Controllers\RemittanceController::class, 'payments'])->name('payments.index')->middleware('can:payments.pay');
+    Route::post('/payments', [\App\Http\Controllers\RemittanceController::class, 'pay'])->name('payments.store')->middleware('can:payments.pay');
+
     Route::get('/receipts', [ReceiptController::class, 'index'])->name('receipts.index');
     Route::post('/receipts', [ReceiptController::class, 'store'])->name('receipts.store')->middleware('can:receipts.inform');
     Route::get('/receipts/{receipt}', [ReceiptController::class, 'show'])->name('receipts.show');

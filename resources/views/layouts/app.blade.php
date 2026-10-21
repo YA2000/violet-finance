@@ -32,15 +32,22 @@
       <a class="nav {{ request()->routeIs('reservations.*') ? 'active' : '' }}" href="{{ route('reservations.index') }}"><i class="fa-solid fa-hashtag"></i>Transaction numbers</a>
       @foreach(\App\Forms\FormRegistry::grouped() as $gname => $gforms)
         @php($visible = array_filter($gforms, fn ($f) => $u->hasPerm('form.' . $f->code . '.create') || $u->hasPerm('form.' . $f->code . '.view') || $u->hasPerm('form.' . $f->code . '.edit')))
-        @php($extraTr = $gname === 'Treasury' && ($u->hasPerm('receipts.inform') || $u->hasPerm('receipts.view') || $u->hasPerm('receipts.assign') || $u->hasPerm('receipts.record')))
+        @php($extraTr = $gname === 'Treasury' && ($u->hasPerm('receipts.inform') || $u->hasPerm('receipts.view') || $u->hasPerm('receipts.assign') || $u->hasPerm('receipts.record') || $u->hasPerm('payments.pay')))
         @if(count($visible) || $extraTr)
           <div class="side-group">{{ $gname }}</div>
           @foreach($visible as $f)
             <a class="nav {{ (request()->route('code') === $f->code || (isset($doc) && $doc->form_code === $f->code)) ? 'active' : '' }}" href="{{ route('documents.index', $f->code) }}"><i class="fa-solid {{ $f->icon }}"></i>{{ $f->short }}</a>
           @endforeach
           @if($extraTr)
+            @can('payments.pay')
+              @php($payCount = \App\Models\RemittanceItem::where('status', 'waiting')->whereHas('remittance', fn ($q) => $q->where('state', 'to_pay'))->count())
+              <a class="nav {{ request()->routeIs('payments.*') ? 'active' : '' }}" href="{{ route('payments.index') }}"><i class="fa-solid fa-money-bill-transfer"></i>Payments
+                @if($payCount)<span class="count">{{ $payCount }}</span>@endif</a>
+            @endcan
+            @if($u->hasPerm('receipts.inform') || $u->hasPerm('receipts.view') || $u->hasPerm('receipts.assign') || $u->hasPerm('receipts.record'))
             <a class="nav {{ request()->routeIs('receipts.*') ? 'active' : '' }}" href="{{ route('receipts.index') }}"><i class="fa-solid fa-hand-holding-dollar"></i>Received payments
               @if($recCount)<span class="count">{{ $recCount }}</span>@endif</a>
+            @endif
           @endif
         @endif
       @endforeach
@@ -59,8 +66,13 @@
             @if($setCount)<span class="count">{{ $setCount }}</span>@endif</a>
         @endif
       @endif
-      @if($u->hasPerm('review.access') || $u->hasPerm('reports.view'))
+      @if($u->hasPerm('review.access') || $u->hasPerm('reports.view') || $u->hasPerm('remittance.prepare'))
         <div class="side-group">Control</div>
+        @can('remittance.prepare')
+          @php($remCount = \App\Services\Remittances::enabled() ? \App\Services\Remittances::ready($u)->count() : 0)
+          <a class="nav {{ request()->routeIs('remittances.*') || (isset($doc) && $doc->form_code === 'remittance') ? 'active' : '' }}" href="{{ route('remittances.index') }}"><i class="fa-solid fa-list-check"></i>Prepare remittance
+            @if($remCount)<span class="count">{{ $remCount }}</span>@endif</a>
+        @endcan
         @can('review.access')
           <a class="nav {{ request()->routeIs('review.*') ? 'active' : '' }}" href="{{ route('review.index') }}"><i class="fa-solid fa-magnifying-glass-chart"></i>Internal review</a>
         @endcan

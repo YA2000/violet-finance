@@ -23,7 +23,7 @@ class FormView
                         'columns' => array_values(array_filter(array_map([DynamicForm::class, 'conv'], $b['columns'] ?? []), fn ($c) => empty($c['hidden'])))];
                     break;
                 case 'text':
-                    $out[] = ['type' => 'text', 'text' => $b['text'] ?? '', 'style' => $b['style'] ?? 'note', 'entry' => ($b['entry'] ?? true) !== false];
+                    $out[] = ['type' => 'text', 'title' => $b['title'] ?? '', 'text' => $b['text'] ?? '', 'style' => $b['style'] ?? 'note', 'entry' => ($b['entry'] ?? true) !== false];
                     break;
             }
         }

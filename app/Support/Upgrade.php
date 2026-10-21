@@ -30,6 +30,7 @@ class Upgrade
         static::users();
         static::printLabels();
         FormType::flush();
+        V3::run();
     }
 
     public static function formFiles(): array

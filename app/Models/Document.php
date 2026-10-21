@@ -27,6 +27,10 @@ class Document extends Model
     public function user() { return $this->belongsTo(User::class); }
     public function signatures() { return $this->hasMany(DocumentSignature::class)->orderBy('sequence')->orderBy('id'); }
     public function attachments() { return $this->hasMany(Attachment::class)->orderBy('id'); }
+    /** as a paid transaction: its places on Remittance Statements */
+    public function remittanceItems() { return $this->hasMany(RemittanceItem::class, 'document_id'); }
+    /** as a Remittance Statement: the transactions it pays */
+    public function remittanceLines() { return $this->hasMany(RemittanceItem::class, 'remittance_id'); }
     public function events() { return $this->hasMany(DocumentEvent::class)->latest('id'); }
     public function reservation() { return $this->belongsTo(Reservation::class); }
     public function paidReservation() { return $this->belongsTo(Reservation::class, 'paid_reservation_id'); }

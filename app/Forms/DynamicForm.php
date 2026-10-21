@@ -114,7 +114,8 @@ class DynamicForm extends BaseForm
         $type = $f['type'] ?? 'text';
         $out = ['key' => $f['key'], 'label' => $f['label'] ?? $f['key'], 'required' => !empty($f['required']),
             'col' => (int) ($f['width'] ?? 4), 'w' => (int) ($f['width_px'] ?? 130), 'help' => $f['help'] ?? null,
-            'hidden' => !empty($f['hidden']), 'print' => ($f['print'] ?? true) !== false, 'sum' => !empty($f['sum'])];
+            'hidden' => !empty($f['hidden']), 'print' => ($f['print'] ?? true) !== false, 'sum' => !empty($f['sum']),
+            'hint' => $f['hint'] ?? null, 'lock' => !empty($f['lock_when'])];
         switch ($type) {
             case 'formula':
                 $out['type'] = 'computed';
@@ -238,14 +239,28 @@ class DynamicForm extends BaseForm
         }
     }
 
+    /** header inputs fixed by their lock_when condition in the last compute() */
+    public array $locked = [];
+
     public function compute(array $d, array $meta = []): array
     {
         $this->errors = [];
         $meta += ['_today' => date('Y-m-d'), '_date' => $d['date'] ?? null, '_form' => $this->title];
         $ctx = new FormContext($this, $d, $meta);
         $header = array_filter($this->fieldMap, fn ($f) => ($f['type'] ?? '') === 'formula' && !empty($f['formula']));
-        $passHeader = function () use ($header, $ctx, &$d) {
+        // inputs that are fixed under a condition (e.g. the USD rate is always 1)
+        $locks = array_filter($this->fieldMap, fn ($f) => !empty($f['lock_when']) && ($f['type'] ?? '') !== 'formula');
+        $this->locked = [];
+        $passHeader = function () use ($header, $locks, $ctx, &$d) {
             $ctx->at(null, null);
+            foreach ($locks as $k => $f) {
+                if (\App\Support\Formula\Evaluator::truthy($this->evalSafe($f['lock_when'], $ctx, $k))) {
+                    $d[$k] = $this->evalSafe((string) ($f['lock_value'] ?? '1'), $ctx, $k);
+                    $this->locked[$k] = true;
+                } else {
+                    unset($this->locked[$k]);
+                }
+            }
             foreach ($header as $k => $f) {
                 $d[$k] = $this->evalSafe($f['formula'], $ctx, $k);
             }

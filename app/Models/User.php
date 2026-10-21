@@ -38,6 +38,10 @@ class User extends Authenticatable
             foreach ($this->roles as $r) {
                 $this->permCache = array_merge($this->permCache, $r->permissions ?? []);
             }
+            // forms every user may fill (builder: "Every user can fill this form")
+            foreach (\App\Support\Perms::openForms() as $code) {
+                $this->permCache[] = 'form.' . $code . '.create';
+            }
             $this->permCache = array_values(array_unique($this->permCache));
         }
         return $this->permCache;

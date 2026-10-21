@@ -99,6 +99,22 @@ class Workflow
         static::log($doc, 'Number ' . $res->number . ' assigned.', 'number', $u);
     }
 
+    /** Reserve and attach a number for a form that every user may fill (they may have no access to numbers). */
+    public static function autoNumber(Document $doc, User $u): void
+    {
+        $form = $doc->form();
+        $typeName = $form->settings()['number_type'] ?? null;
+        $type = ($typeName ? \App\Models\TxnType::where('name', $typeName)->first() : null) ?? \App\Models\TxnType::orderBy('id')->first();
+        if (!$type) {
+            return;
+        }
+        $res = Reservation::reserve(['date' => $doc->data['date'] ?? date('Y-m-d'), 'txn_type_id' => $type->id,
+            'description' => mb_substr($form->describe($doc->data ?? []) ?: $form->title . ' - ' . $u->name, 0, 250)], $u);
+        $doc->update(['number' => $res->number, 'reservation_id' => $res->id]);
+        $res->markUsed($doc, $form->short);
+        static::log($doc, 'Number ' . $res->number . ' reserved automatically.', 'number', $u);
+    }
+
     public static function submit(Document $doc, User $u): void
     {
         if ($doc->state !== 'draft') {
@@ -108,6 +124,9 @@ class Workflow
             static::fail('Only the preparer can submit this form.');
         }
         $err = [];
+        if (!$doc->number && !empty($doc->form()->settings()['open_to_all'])) {
+            static::autoNumber($doc, $u);    // forms open to every user get their number by themselves
+        }
         if (!$doc->number) {
             $err[] = 'Reserve a transaction number first.';
         }
@@ -116,6 +135,8 @@ class Workflow
         $prep = $doc->signatures->firstWhere('is_preparer', true);
         if ($prep && !$prep->individual_id) {
             $err[] = 'Your login is not linked to an employee code - ask the administrator to link you (Users), so your signature can be added.';
+        } elseif ($prep && !($prep->signerUser() ?? $u)->signature) {
+            $err[] = 'Add your signature first (My signature): it is placed on the form automatically when you submit.';
         }
         $missing = $doc->signatures->filter(fn ($s) => $s->required && !$s->individual_id)->pluck('role')->all();
         if ($missing) {
@@ -136,13 +157,25 @@ class Workflow
                 \App\Models\Alert::send($n->user_id, $doc->number . ' was corrected and sent again', $n->body,
                     route('documents.show', [$doc, 'tab' => 'review']) . '#lower', 'fa-paper-plane', $u->id);
             }
+            // the preparer's signature goes on by itself, wherever the preparer step sits in the chain
+            $doc->refresh()->load('signatures.individual');
+            foreach ($doc->activeSignatures()->filter(fn ($s) => $s->is_preparer && $s->state !== 'signed') as $p) {
+                static::doSign($p, $p->signerUser() ?? $u);
+                static::log($doc, 'Signed automatically by ' . ($p->individual->name ?? $u->name) . ' as ' . $p->role . ' (preparer).', 'sign', $u);
+            }
+            // the person who submits also signs right away when they hold the next step
             $first = $doc->refresh()->nextSignature();
-            if ($first && !$first->is_payer && ($first->is_preparer || $first->signerUser()?->id === $u->id)) {
-                static::doSign($first, $first->signerUser() ?? $u);
+            if ($first && !$first->is_payer && $first->signerUser()?->id === $u->id && $u->signature) {
+                static::doSign($first, $u);
                 static::log($doc, 'Signed by ' . ($first->individual->name ?? $u->name) . ' as ' . $first->role . '.', 'sign', $u);
             }
             static::advance($doc->refresh());
         });
+    }
+
+    public static function signAs(DocumentSignature $s, User $signer): void
+    {
+        static::doSign($s, $signer);
     }
 
     protected static function doSign(DocumentSignature $s, User $signer): void
@@ -167,11 +200,15 @@ class Workflow
         }
         $user = $next->signerUser();
         $vals = ['current_signer_id' => $user?->id];
-        if ($next->is_payer && $doc->state !== 'to_pay') {
+        $toPay = $next->is_payer && $doc->state !== 'to_pay';
+        if ($toPay) {
             $vals['state'] = 'to_pay';
             static::log($doc, 'Fully signed - complete to accruals, waiting for payment by ' . ($next->individual->name ?? '') . '.', 'to_pay');
         }
         $doc->update($vals);
+        if ($toPay) {
+            Remittances::onReadyToPay($doc);
+        }
         if ($user) {
             static::notify($user, $doc, $next->is_payer ? 'is waiting for your payment' : 'is waiting for your signature');
         }
@@ -183,6 +220,9 @@ class Workflow
         $next = $doc->nextSignature();
         if (!in_array($doc->state, ['signing', 'to_pay'], true) || !$next || $doc->current_signer_id !== $u->id) {
             static::fail('It is not your turn to sign this document.');
+        }
+        if ($next->is_payer && Remittances::enabled() && in_array($doc->form_code, Remittances::payableForms(), true)) {
+            static::fail('This transaction is paid from a Remittance Statement: the treasury pays it on the Payments page.');
         }
         if ($next->is_payer && (!$doc->paid_reservation_id || !$doc->paid_amount)) {
             static::fail('Fill the payment details first: reserve the payment number and enter the paid amount.');

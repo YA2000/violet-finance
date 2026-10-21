@@ -80,7 +80,7 @@ class Layout
         }
         return match ($fmt) {
             'money' => static::num($v, 2),
-            'rate' => static::num($v, (int) ($dec ?? 4)),
+            'rate' => static::num($v, (int) ($dec ?? 7)),
             'number' => is_numeric($v) ? rtrim(rtrim(number_format((float) $v, (int) ($dec ?? 7)), '0'), '.') : (string) $v,
             'percent' => is_numeric($v) ? number_format((float) $v * 100, 2) . '%' : (string) $v,
             'date' => static::date($v),

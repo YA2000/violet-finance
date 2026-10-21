@@ -127,19 +127,19 @@
       <div class="field" style="grid-column: span 12"><label>Login (sees “My advances”)</label>
         <div class="lk" x-data="lk('users', '', { standalone: true, name: 'user_id', value: h.user_id, text: h.user_text || '' })" @click.outside="close()">
           <input type="hidden" name="user_id" :value="sval ?? ''"><button type="button" class="lk-btn" @click="toggle()"><span class="val" x-show="text" x-text="text"></span><span class="ph" x-show="!text">Choose a user…</span></button>
-          <div class="lk-pop" x-show="open" x-cloak><input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Name or email…">
+          <div class="lk-pop" :style="pos" x-show="open" x-cloak><input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Name or email…">
             <div class="lk-list"><template x-for="(it, n) in items" :key="it.id"><div class="lk-item" :class="n === hi && 'on'" @click="pick(it)"><b x-text="it.text"></b></div></template></div></div>
         </div><span class="hint">The Logistics role is added to this user.</span></div>
       <div class="field" style="grid-column: span 12"><label>Advances account (chart of accounts)</label>
         <div class="lk" x-data="lk('accounts', '', { standalone: true, value: h.account_id, text: h.acc_text || '' })" @click.outside="close()">
           <input type="hidden" name="account_id" :value="sval ?? ''"><button type="button" class="lk-btn" @click="toggle()"><span class="val" x-show="text" x-text="text"></span><span class="ph" x-show="!text">e.g. 1721 Petty Cash Advance…</span></button>
-          <div class="lk-pop" x-show="open" x-cloak><input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Code or name…">
+          <div class="lk-pop" :style="pos" x-show="open" x-cloak><input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Code or name…">
             <div class="lk-list"><template x-for="(it, n) in items" :key="it.id"><div class="lk-item" :class="n === hi && 'on'" @click="pick(it)"><b x-text="it.text"></b></div></template></div></div>
         </div></div>
       <div class="field" style="grid-column: span 12"><label>Employee record</label>
         <div class="lk" x-data="lk('individuals', '', { standalone: true, value: h.individual_id, text: h.ind_text || '' })" @click.outside="close()">
           <input type="hidden" name="individual_id" :value="sval ?? ''"><button type="button" class="lk-btn" @click="toggle()"><span class="val" x-show="text" x-text="text"></span><span class="ph" x-show="!text">Optional</span></button>
-          <div class="lk-pop" x-show="open" x-cloak><input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Code or name…">
+          <div class="lk-pop" :style="pos" x-show="open" x-cloak><input x-ref="q" x-model="q" @input="search()" @keydown="key($event)" placeholder="Code or name…">
             <div class="lk-list"><template x-for="(it, n) in items" :key="it.id"><div class="lk-item" :class="n === hi && 'on'" @click="pick(it)"><b x-text="it.text"></b></div></template></div></div>
         </div></div>
       <div class="field" style="grid-column: span 12"><label>Notes</label><input class="input" name="notes" x-model="h.notes"></div>

@@ -26,7 +26,7 @@ function fmtVal(v, kind) {
   if (v === false) return kind === 'text' ? 'No' : '';
   switch (kind) {
     case 'money': return fmtNum(v, 2);
-    case 'rate': return fmtNum(v, 4);
+    case 'rate': return fmtNum(v, 7);
     case 'number': return isNaN(v) ? String(v) : Number(v).toLocaleString('en-US', { maximumFractionDigits: 7 });
     case 'percent': return isNaN(v) ? String(v) : fmtNum(v * 100, 2) + '%';
     case 'date': { const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleDateString('en-GB'); }
@@ -59,11 +59,27 @@ document.addEventListener('alpine:init', () => {
     },
     sval: opts.value ?? null, stext: opts.text ?? '',
     toggle() { if (this.isRo && this.isRo()) return; this.open ? this.close() : this.show(); },
+    pos: '',
     show() {
       this.open = true; this.q = ''; this.fetch();
+      this.place();
+      this._re = () => this.place();
+      window.addEventListener('scroll', this._re, true); window.addEventListener('resize', this._re);
       this.$nextTick(() => this.$refs.q && this.$refs.q.focus());
     },
-    close() { this.open = false; },
+    // float above everything (tables scroll sideways and would clip it): fixed, from the button's place
+    place() {
+      const btn = this.$root.querySelector('.lk-btn'); if (!btn) return;
+      const b = btn.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+      const w = Math.min(Math.max(b.width, 340), vw - 16), left = Math.max(8, Math.min(b.left, vw - w - 8));
+      const below = vh - b.bottom, up = below < 330 && b.top > below;
+      this.pos = `position:fixed;left:${left}px;width:${w}px;min-width:0;` +
+        (up ? `top:auto;bottom:${vh - b.top + 4}px;` : `top:${b.bottom + 4}px;bottom:auto;`);
+    },
+    close() {
+      this.open = false;
+      if (this._re) { window.removeEventListener('scroll', this._re, true); window.removeEventListener('resize', this._re); this._re = null; }
+    },
     search() { clearTimeout(this.timer); this.timer = setTimeout(() => this.fetch(), 180); },
     async fetch() {
       this.loading = true;
@@ -94,7 +110,7 @@ document.addEventListener('alpine:init', () => {
 
   /* document entry form --------------------------------------------------- */
   Alpine.data('docForm', (cfg) => ({
-    data: cfg.data, labels: cfg.labels || {}, ro: cfg.readonly, busy: false, dirty: false, timer: null,
+    data: cfg.data, labels: cfg.labels || {}, ro: cfg.readonly, busy: false, dirty: false, timer: null, locks: {},
     computed: cfg.computed, tab: cfg.tab || 'lines',
     isRo() { return this.ro; },
     init() {
@@ -103,6 +119,7 @@ document.addEventListener('alpine:init', () => {
         if (!this.ro && this.data[t].length === 0) this.addLine(t, false);
       }
       window.addEventListener('beforeunload', (e) => { if (this.dirty && !this.busy) { e.preventDefault(); e.returnValue = ''; } });
+      if (!this.ro) this.compute();   // fixed values (e.g. USD rate = 1) and their locks from the start
     },
     addLine(t, focus = true) {
       const row = JSON.parse(JSON.stringify(cfg.tables[t]));
@@ -145,6 +162,9 @@ document.addEventListener('alpine:init', () => {
           });
         }
         for (const k of this.computed.totals) this.data[k] = d[k];
+        const locks = {};
+        for (const k of (r.locked || [])) { locks[k] = true; this.data[k] = d[k]; }
+        this.locks = locks;
       } catch (e) { /* keep typing */ }
     },
     money(v, d = 2) { return fmtNum(v, d); },

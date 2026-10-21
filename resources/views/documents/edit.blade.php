@@ -4,7 +4,10 @@
   $canEdit = !$ro;
   $canSign = !$new && $doc->canSign($u);
   $next = $new ? null : $doc->nextSignature();
-  $payStep = !$new && $doc->isPayStep($u);
+  $viaRem = !$new && \App\Services\Remittances::enabled() && in_array($doc->form_code, \App\Services\Remittances::payableForms(), true);
+  $remSt = $viaRem ? \App\Services\Remittances::statusOf($doc) : null;
+  $remItems = !$new && $doc->form_code === \App\Services\Remittances::FORM ? $doc->remittanceLines()->with('document')->get() : collect();
+  $payStep = !$new && !$viaRem && !$remItems->count() && $doc->isPayStep($u);
   $action = $new ? route('documents.store', $form->code) : route('documents.update', $doc);
   $stateKey = $new ? 'draft' : $doc->state;
 @endphp
@@ -34,7 +37,9 @@
         <span class="stamp st-{{ $stateKey }}">{{ \App\Models\Document::STATES[$stateKey] }}</span>
         @if(!$new && $doc->uploaded)<span class="tag"><i class="fa-solid fa-cloud-arrow-up"></i> Uploaded {{ $doc->uploaded_at?->format('d M') }}</span>@endif
       </div>
-      @if($canEdit && !$doc->number)
+      @if($canEdit && !$doc->number && !empty($form->settings()['open_to_all']) && !$u->hasPerm('numbers.reserve'))
+        <p class="hint" style="margin-top:10px"><i class="fa-solid fa-hashtag"></i> The transaction number is given automatically when you submit.</p>
+      @elseif($canEdit && !$doc->number)
         <div class="btn-row" style="margin-top:12px" x-data="{ res: @js((string) old('reservation_id', '')), opts: @js($freeNumbers->map(fn ($x) => ['id' => (string) $x->id, 'text' => $x->number . ' — ' . \Illuminate\Support\Str::limit($x->description, 50)])->values()) }"
              @reserved.window="opts.push({ id: String($event.detail.id), text: $event.detail.text }); $nextTick(() => res = String($event.detail.id))">
           <select name="reservation_id" class="input" style="width:auto; min-width:320px" x-model="res" aria-label="Transaction number">
@@ -110,7 +115,8 @@
         $isNow = !$new && $next && $s->id === $next->id && in_array($doc->state, ['signing', 'to_pay']);
         $cls = !$s->individual_id ? ($stateKey === 'draft' ? 'pick' : 'skip') : ($s->state === 'signed' ? 'done' : ($isNow ? 'now' : ''));
         $icon = match($cls) { 'done' => 'fa-check', 'now' => 'fa-pen-nib', 'pick' => 'fa-user-plus', 'skip' => 'fa-minus', default => $s->is_payer ? 'fa-money-bill' : 'fa-clock' };
-        $sub = match($cls) { 'done' => $s->date?->format('d M Y') ?? 'signed', 'now' => $s->is_payer ? 'waiting for payment' : 'waiting', 'pick' => $s->required ? 'choose the signer' : 'optional', 'skip' => 'not needed', default => 'pending' };
+        $sub = match($cls) { 'done' => $s->date?->format('d M Y') ?? 'signed', 'now' => $s->is_payer ? 'waiting for payment' : 'waiting', 'pick' => $s->is_preparer ? 'link your login to an employee' : ($s->required ? 'choose the signer' : 'optional'), 'skip' => 'not needed', default => 'pending' };
+        if ($s->is_preparer && $s->state !== 'signed' && $cls !== 'pick') { $sub = 'signs automatically on submit'; $icon = 'fa-wand-magic-sparkles'; }
       @endphp
       <div class="step {{ $cls }}"><div class="dot"><i class="fa-solid {{ $icon }}"></i></div><b>{{ $s->role }}</b><span>{{ $s->individual?->name ?? '—' }}</span><small>{{ $sub }}</small></div>
     @endforeach
@@ -159,12 +165,38 @@
             <button class="btn btn-sign" name="then" value="sign"><i class="fa-solid fa-signature"></i> Save &amp; sign</button>
           </div>
         </form>
+      @elseif($remItems->count())
+        <div class="tbl-wrap"><table class="tbl">
+          <thead><tr><th>Transaction</th><th>Description</th><th class="num">Planned</th><th class="num">Paid</th><th>Payment</th><th>Status</th></tr></thead>
+          <tbody>@foreach($remItems as $it)
+            <tr><td><a class="ref" href="{{ route('documents.show', $it->document) }}">{{ $it->document->number }}</a></td>
+              <td>{{ \Illuminate\Support\Str::limit($it->document->description, 60) }}</td>
+              <td class="num">{{ money($it->amount) }} {{ $it->currency }}</td>
+              <td class="num">{{ $it->paid_amount !== null ? money($it->paid_amount) : '—' }}@if($it->adjusted) <span class="tag">adjusted</span>@endif</td>
+              <td>{{ $it->paid_ref }} {{ $it->paid_date?->format('d M Y') }}</td>
+              <td><span class="pill st-{{ $it->status === 'paid' ? 'done' : 'to_pay' }}">{{ $it->status === 'paid' ? 'Paid' : 'To pay' }}</span></td></tr>
+          @endforeach</tbody>
+        </table></div>
+        @can('payments.pay')@if($doc->state === 'to_pay')<a class="btn btn-primary" style="margin-top:12px" href="{{ route('payments.index') }}"><i class="fa-solid fa-money-bill-transfer"></i> Pay on the Payments page</a>@endif @endcan
+      @elseif($viaRem && !$doc->paid_ref)
+        @if($remSt)
+          @php($it = $remSt['item'])
+          <div class="alert alert-info"><i class="fa-solid fa-list-check"></i><div>Listed for payment on Remittance Statement
+            <a class="ref" href="{{ route('documents.show', $remSt['remittance']) }}">{{ $remSt['remittance']->number }}</a>
+            ({{ \App\Models\Document::STATES[$remSt['remittance']->state] ?? $remSt['remittance']->state }}). The treasury pays it from the Payments page.</div></div>
+        @elseif($doc->state === 'to_pay')
+          <div class="empty"><i class="fa-solid fa-list-check"></i><b>Ready to pay</b>Every signer has signed. The internal viewer adds it to a Remittance Statement, then the treasury pays it.</div>
+        @else
+          <div class="empty"><i class="fa-solid fa-money-bill-wave"></i><b>Not paid yet</b>When every signature is done it goes on a Remittance Statement and the treasury pays it.</div>
+        @endif
       @elseif($doc->paid_ref)
         <div class="grid grid-3">
           <div><small>Payment number</small><div class="ref">{{ $doc->paid_ref }}</div></div>
           <div><small>Paid amount</small><div class="slab" style="font-size:20px">{{ money($doc->paid_amount) }}</div></div>
           <div><small>Actual exchange rate / date</small><div>{{ $doc->paid_rate ?: '—' }} · {{ $doc->paid_date?->format('d/m/Y') }}</div></div>
         </div>
+        @if(!empty($doc->data['payment_note']))<div class="alert alert-warn" style="margin-top:12px"><i class="fa-solid fa-scale-unbalanced"></i><div>{{ $doc->data['payment_note'] }}</div></div>@endif
+        @if($remSt)<p class="hint" style="margin-top:8px">Paid through Remittance Statement <a class="ref" href="{{ route('documents.show', $remSt['remittance']) }}">{{ $remSt['remittance']->number }}</a>.</p>@endif
       @else
         <div class="empty"><i class="fa-solid fa-money-bill-wave"></i><b>Not paid yet</b>The treasury fills the payment when every signature is done.</div>
       @endif

@@ -55,6 +55,11 @@
       </div>
     </div>
   @elseif($b['type'] === 'text' && ($b['entry'] ?? true))
-    <div class="note-block block-in {{ ($b['style'] ?? '') === 'heading' ? 'heading' : '' }}" style="--d: {{ $bi * 40 }}ms">{!! nl2br(e($b['text'] ?? '')) !!}</div>
+    @if(($b['style'] ?? '') === 'bilingual')
+      <div class="note-block bil block-in" style="--d: {{ $bi * 40 }}ms">@foreach(preg_split('/\r?\n/u', trim($b['text'] ?? '')) as $li => $line)@php([$en, $ar] = array_pad(array_map('trim', explode('||', $line, 2)), 2, ''))
+        <div class="bil-row {{ $li === 0 ? 'first' : '' }}"><span>{{ $en }}</span><span dir="rtl" lang="ar">{{ $ar }}</span></div>@endforeach</div>
+    @else
+    <div class="note-block block-in {{ ($b['style'] ?? '') === 'heading' ? 'heading' : '' }}" style="--d: {{ $bi * 40 }}ms">@if(!empty($b['title']))<b class="nb-title">{{ $b['title'] }}</b>@endif{!! nl2br(e($b['text'] ?? '')) !!}</div>
+    @endif
   @endif
 @endforeach

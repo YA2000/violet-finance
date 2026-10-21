@@ -15,7 +15,8 @@ class Assets
     {
         $faces = [['Zilla Slab', 'ZillaSlab-Light.ttf', 300], ['Zilla Slab', 'ZillaSlab-Regular.ttf', 400],
                   ['Zilla Slab', 'ZillaSlab-SemiBold.ttf', 500], ['Zilla Slab', 'ZillaSlab-Bold.ttf', 700],
-                  ['Carlito', 'Carlito-Regular.ttf', 400], ['Carlito', 'Carlito-Bold.ttf', 700]];
+                  ['Carlito', 'Carlito-Regular.ttf', 400], ['Carlito', 'Carlito-Bold.ttf', 700],
+                  ['Noto Sans Arabic', 'NotoSansArabic-Regular.ttf', 400], ['Noto Sans Arabic', 'NotoSansArabic-Bold.ttf', 700]];
         $css = '';
         foreach ($faces as [$fam, $file, $w]) {
             $css .= sprintf("@font-face{font-family:'%s';font-weight:%d;font-style:normal;src:url('file://%s') format('truetype');}\n",

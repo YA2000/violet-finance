@@ -40,7 +40,9 @@ target() {   # sets SITE, SUSER for live|test
   [ -f "$SITE/.env" ] || die "No .env in $SITE"
 }
 envval() { grep -E "^$1=" "$SITE/.env" | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//'; }
-artisan() { (cd "$SITE" && sudo -u "$SUSER" "$PHP" artisan "$@"); }
+# php8.3 CLI on CloudPanel prints harmless startup warnings (memcached/redis/imagick): keep them off the screen
+quiet() { grep -v -E '^PHP (Warning|Startup)|Unable to load dynamic library|is already loaded' >&2 || true; }
+artisan() { (cd "$SITE" && sudo -u "$SUSER" "$PHP" artisan "$@") 2> >(quiet); }
 composer_bin() { command -v composer || echo /usr/local/bin/composer; }
 
 backup() {   # $1 = live|test ; prints the backup folder
@@ -84,7 +86,7 @@ install_code() {   # $1 = live|test ; code already checked out in $SRC
 
   say "Libraries (composer)"
   (cd "$SITE" && sudo -u "$SUSER" COMPOSER_HOME="/home/$SUSER/.composer" "$PHP" "$(composer_bin)" install \
-      --no-dev --optimize-autoloader --no-interaction --no-progress 2>&1 | grep -v -i 'memcached\|redis\|imagick' | tail -3)
+      --no-dev --optimize-autoloader --no-interaction --no-progress 2>&1 | grep -v -i -E 'memcached|redis|imagick|funding|composer fund' | tail -3)
 
   say "Database changes"
   if ! artisan migrate --force; then

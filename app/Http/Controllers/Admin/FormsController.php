@@ -192,7 +192,13 @@ class FormsController extends Controller
             'description' => 'nullable|string|max:500', 'icon' => 'nullable|string|max:40', 'color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'sequence' => 'nullable|integer']);
         $v['active'] = $r->boolean('active');
-        $ft->update($v);
+        $ft->fill($v);
+        if (is_array($ft->schema)) {
+            $schema = $ft->schema;
+            $schema['settings']['open_to_all'] = $r->boolean('open_to_all');
+            $ft->schema = $schema;
+        }
+        $ft->save();
         return redirect()->route('admin.forms.show', [$ft->code, 'tab' => 'settings'])->with('ok', 'Form details saved.');
     }
 

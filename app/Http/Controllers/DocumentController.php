@@ -74,6 +74,17 @@ class DocumentController extends Controller
             $data = $form->normalize(json_decode($old, true) ?: [], true);
         }
         $data['_labels'] = $data['_labels'] ?? [];
+        // a new advance request of a registered holder: the advance goes to their own account
+        $hk = $form->settings()['advance']['holder'] ?? null;
+        if ($new && $hk && empty($data[$hk]) && ($h = \App\Models\AdvanceHolder::where('user_id', $u->id)->where('active', true)->first())) {
+            $data[$hk] = $h->id;
+            $data['_labels'][$hk] = \App\Services\Lookup::label('advance_holders', $h->id);
+        }
+        // forms open to every user: the applicant is the person filling it
+        if ($new && !empty($form->settings()['open_to_all']) && $form->field('applicant_id') && empty($data['applicant_id']) && $u->individual_id) {
+            $data['applicant_id'] = $u->individual_id;
+            $data['_labels']['applicant_id'] = \App\Services\Lookup::label('individuals', $u->individual_id);
+        }
         $ft = FormType::byCode($doc->form_code);
         $ro = !$new && !$doc->canEdit($u);
         return view('documents.edit', [
@@ -189,7 +200,7 @@ class DocumentController extends Controller
     {
         $form = FormRegistry::get($code);
         $data = $form->normalize((array) $r->input('data', []), true);
-        return response()->json(['data' => $data, 'errors' => $form->errors]);
+        return response()->json(['data' => $data, 'errors' => $form->errors, 'locked' => array_keys($form->locked)]);
     }
 
     /** Reserve a new number (dialog) or use one of mine. */

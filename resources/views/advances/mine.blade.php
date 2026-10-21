@@ -59,7 +59,7 @@
 <form method="post" action="{{ route('settlements.store') }}" class="panel" style="margin-top:22px">
   @csrf
   <div class="panel-head"><h2>Expenses not sent yet</h2><span class="tag">{{ $pending->count() }}</span>
-    <span class="right hint">Tick the expenses of one advance and send them; finance turns them into a JAR clearance.</span></div>
+    <span class="right hint">Tick the expenses, choose the advance they clear and send your JAR Clearance; finance makes the JAR from it.</span></div>
   <div class="panel-body">
     @if($pending->count())
     <div class="tbl-wrap"><table class="tbl">
@@ -81,9 +81,22 @@
       @endforeach
       </tbody>
     </table></div>
-    <div class="btn-row" style="margin-top:12px">
-      <input class="input" name="note" placeholder="Note to finance (optional)" style="flex:1;min-width:220px">
-      <button class="btn btn-primary" :disabled="!sel.length"><i class="fa-solid fa-paper-plane"></i> Send <span x-text="sel.length || ''"></span> to finance</button>
+    <div class="clear-box" x-show="sel.length" x-cloak>
+      <div class="fgrid">
+        <div class="field" style="grid-column: span 5"><label for="set_adv">JAR Clearance on advance <span class="req">*</span></label>
+          <select id="set_adv" class="input" name="advance_id" required>
+            @if($open->count() !== 1)<option value="">Choose the open advance…</option>@endif
+            @foreach($open as $a)<option value="{{ $a->id }}" @selected(old('advance_id') == $a->id)>{{ $a->number }} · {{ money($a->amount) }} {{ $a->currency }} · in hand {{ money($a->figures()['cash']) }}</option>@endforeach
+          </select>
+          <small class="hint">Expenses without an advance are cleared on this one. The total may be higher than the advance.</small></div>
+        <div class="field" style="grid-column: span 7"><label for="set_note">Note to finance</label><input id="set_note" class="input" name="note" placeholder="Optional"></div>
+      </div>
+      <div class="note-block bil" style="margin:14px 0 10px">@foreach(preg_split('/\r?\n/u', \App\Support\V3::DECLARATION) as $li => $line)@php([$en, $ar] = array_pad(array_map('trim', explode('||', $line, 2)), 2, ''))
+        <div class="bil-row {{ $li === 0 ? 'first' : '' }}"><span>{{ $en }}</span><span dir="rtl" lang="ar">{{ $ar }}</span></div>@endforeach</div>
+      <label class="check"><input type="checkbox" name="declare" value="1" required style="accent-color:var(--violet);width:16px;height:16px"> I have read the declaration above and I confirm it. / قرأت الإقرار أعلاه وأوافق عليه.</label>
+      <div class="btn-row" style="margin-top:12px;justify-content:flex-end">
+        <button class="btn btn-primary" :disabled="!sel.length"><i class="fa-solid fa-paper-plane"></i> Send JAR Clearance (<span x-text="sel.length"></span>)</button>
+      </div>
     </div>
     @else
       <div class="empty"><i class="fa-solid fa-receipt"></i><b>Nothing to send</b>Record each invoice as you pay it.</div>

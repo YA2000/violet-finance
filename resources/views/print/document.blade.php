@@ -9,7 +9,7 @@
 <style>
 {!! $fontCss !!}
 html, body { margin: 0; padding: 0; }
-body { font-family: 'Carlito', sans-serif; color: #111; font-size: 9.5pt; line-height: 1.22; -webkit-print-color-adjust: exact; }
+body { font-family: 'Carlito', 'Noto Sans Arabic', sans-serif; color: #111; font-size: 9.5pt; line-height: 1.22; -webkit-print-color-adjust: exact; }
 table { border-collapse: collapse; width: 100%; }
 td, th { vertical-align: middle; }
 .band td { border: 0; padding: 0; vertical-align: top; }
@@ -43,6 +43,10 @@ td, th { vertical-align: middle; }
 .totals .val { font-weight: bold; text-align: right; min-width: 32mm; font-size: 10pt; }
 .note { border: 1px solid #111; padding: 2mm 2.5mm; white-space: pre-line; }
 .note.heading { border: 0; padding: 1mm 0; font-weight: bold; font-size: 11pt; }
+table.bil { width: 100%; border-collapse: collapse; border: 1px solid #111; }
+table.bil td { padding: 1mm 2.5mm; vertical-align: top; width: 50%; }
+table.bil td.ar { direction: rtl; text-align: right; font-family: 'Noto Sans Arabic', sans-serif; }
+table.bil tr.first td { font-weight: bold; }
 .sig td { border: 1px solid #111; padding: 1.3mm 2mm; height: 14mm; }
 .sig th { background: #D9D9D9; border: 1px solid #111; font-size: 8pt; padding: 1.2mm; }
 .sig .role { font-weight: bold; font-size: 9pt; }
@@ -111,7 +115,12 @@ td, th { vertical-align: middle; }
   @elseif($b['type'] === 'text')
     <div class="blk">
       @if($b['title'] && $b['style'] !== 'heading')<div class="blk-title">{{ $b['title'] }}</div>@endif
-      <div class="note {{ $b['style'] }}">{{ $b['text'] }}</div>
+      @if($b['style'] === 'bilingual')
+        <table class="bil">@foreach(preg_split('/\r?\n/u', trim($b['text'])) as $li => $line)@php([$en, $ar] = array_pad(array_map('trim', explode('||', $line, 2)), 2, ''))
+          <tr class="{{ $li === 0 ? 'first' : '' }}"><td>{{ $en }}</td><td class="ar" dir="rtl">{{ $ar }}</td></tr>@endforeach</table>
+      @else
+        <div class="note {{ $b['style'] }}">{{ $b['text'] }}</div>
+      @endif
     </div>
   @elseif($b['type'] === 'signatures')
     <div class="blk" style="page-break-inside: avoid">

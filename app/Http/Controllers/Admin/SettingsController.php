@@ -34,6 +34,7 @@ class SettingsController extends Controller
         foreach (['org_name', 'org_name_tr', 'max_attachment_mb', 'idle_minutes', 'due_soon_days', 'uploader_email_to', 'uploader_email_cc'] as $k) {
             Setting::put($k, $v[$k] ?? null);
         }
+        Setting::put('pay_through_remittance', $r->boolean('pay_through_remittance') ? '1' : '0');
         if ($r->hasFile('logo_file')) {
             $f = $r->file('logo_file');
             Setting::put('org_logo', 'data:' . $f->getMimeType() . ';base64,' . base64_encode(file_get_contents($f->getRealPath())));

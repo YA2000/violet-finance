@@ -383,6 +383,7 @@
       </div></div>
     <div class="field" style="grid-column:span 12"><label for="g_desc">Description</label><textarea id="g_desc" class="input" name="description" rows="2">{{ old('description', $ft->description) }}</textarea></div>
     <div style="grid-column:span 12"><label class="check"><span class="switch"><input type="checkbox" name="active" value="1" @checked($ft->active)><span></span></span> The form is in use (shown in the menu, new documents can be prepared)</label></div>
+    <div style="grid-column:span 12"><label class="check"><span class="switch"><input type="checkbox" name="open_to_all" value="1" @checked(!empty($ft->schema['settings']['open_to_all']))><span></span></span> Every user can fill this form, whatever their role (for example the Advance Application)</label></div>
     <div style="grid-column:span 12;display:flex;justify-content:flex-end"><button class="btn btn-primary"><i class="fa-solid fa-check"></i> Save</button></div>
   </div>
 </form>

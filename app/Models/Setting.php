@@ -21,6 +21,7 @@ class Setting extends Model
         'max_attachment_mb' => '10',
         'idle_minutes' => '30',
         'due_soon_days' => '7',
+        'pay_through_remittance' => '1',
         'uploader_email_to' => 'System.Admin@violetsyria.org',
         'uploader_email_cc' => 'ibrahim.shawish@violetsyria.org',
     ];

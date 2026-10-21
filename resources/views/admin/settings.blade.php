@@ -35,7 +35,9 @@
           <span class="hint">Closing the browser does not keep anyone signed in past this time.</span></div>
         <div class="field" style="grid-column:span 5"><label for="s_due">Advance "due soon" warning</label>
           <div class="input-unit"><input id="s_due" type="number" min="1" max="60" class="input num" name="due_soon_days" value="{{ old('due_soon_days', \App\Models\Setting::get('due_soon_days')) }}"><span>days</span></div></div>
-        <div class="field" style="grid-column:span 7"></div>
+        <div class="field" style="grid-column:span 7"><label>Payments</label>
+          <label class="check" style="height:38px"><span class="switch"><input type="checkbox" name="pay_through_remittance" value="1" @checked(\App\Models\Setting::get('pay_through_remittance') !== '0')><span></span></span> Pay only through Remittance Statements</label>
+          <span class="hint">Off: the treasury pays each transaction from its own page, as before.</span></div>
         <div class="field" style="grid-column:span 12"><label for="s_to">Send uploader files to</label><input id="s_to" type="email" class="input" name="uploader_email_to" value="{{ old('uploader_email_to', \App\Models\Setting::get('uploader_email_to')) }}"></div>
         <div class="field" style="grid-column:span 12"><label for="s_cc">Copy to</label><input id="s_cc" class="input" name="uploader_email_cc" value="{{ old('uploader_email_cc', \App\Models\Setting::get('uploader_email_cc')) }}" placeholder="Separate addresses with commas"></div>
       </div>
