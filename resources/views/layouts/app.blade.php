@@ -70,7 +70,6 @@
       @if($u->hasPerm('costs.view') || $u->hasPerm('costs.manage') || $u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
         <a class="nav {{ request()->routeIs('lab.*') ? 'active' : '' }}" href="{{ route('lab.index') }}"><i class="fa-solid fa-flask"></i>Allocation (test)</a>
       @endif
-      <a class="nav {{ request()->routeIs('loe.mine') ? 'active' : '' }}" href="{{ route('loe.mine') }}"><i class="fa-solid fa-chart-pie"></i>My LOE</a>
       @if($u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
         <a class="nav {{ request()->routeIs('payroll.index', 'payroll.show') ? 'active' : '' }}" href="{{ route('payroll.index') }}"><i class="fa-solid fa-money-check-dollar"></i>Payroll</a>
         <a class="nav {{ request()->routeIs('payroll.loe', 'payroll.loe.*') ? 'active' : '' }}" href="{{ route('payroll.loe') }}"><i class="fa-solid fa-sliders"></i>LOE of the month</a>

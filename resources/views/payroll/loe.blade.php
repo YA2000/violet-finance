@@ -2,7 +2,7 @@
 @section('crumbs')<span>HR &amp; Payroll</span><i class="fa-solid fa-chevron-right"></i><b>LOE of the month</b>@endsection
 @section('content')
 <div class="page-head">
-  <div class="grow"><h1>LOE · {{ $period->format('F Y') }}</h1><p>Every employee with a contract this month needs an LOE of exactly 100 %. Employees enter their own (My LOE); HR can enter, copy or import it for anyone.</p></div>
+  <div class="grow"><h1>LOE · {{ $period->format('F Y') }}</h1><p>Every employee with a contract this month needs an LOE of exactly 100 %. HR enters, copies or imports it for everyone.</p></div>
   <form method="get" class="btn-row"><input class="input" type="month" name="period" value="{{ $period->format('Y-m') }}" onchange="this.form.submit()" style="width:auto"></form>
 </div>
 

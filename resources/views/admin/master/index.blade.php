@@ -30,7 +30,7 @@
         <thead><tr>@foreach($c['list'] as $col => $label)<th class="{{ in_array($col, ['total_amount']) ? 'num' : '' }}">{{ $label }}</th>@endforeach</tr></thead>
         <tbody>
         @foreach($items as $it)
-          <tr class="clickable" onclick="location.href='{{ route('admin.master.edit', [$c['key'], $it->id]) }}'">
+          <tr class="clickable" onclick="location.href='{{ !empty($c['show']) ? route($c['show'], $it->id) : route('admin.master.edit', [$c['key'], $it->id]) }}'">
             @foreach($c['list'] as $col => $label)
               @php($v = data_get($it, $col))
               <td class="{{ $col === 'total_amount' ? 'num' : '' }}">

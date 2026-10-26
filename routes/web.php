@@ -16,6 +16,7 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\SharedCostController;
 use App\Http\Controllers\CostRecoveryController;
 use App\Http\Controllers\AllocationLabController as Lab;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
@@ -114,7 +115,7 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::post('/receipts/{receipt}/files', [ReceiptController::class, 'files'])->name('receipts.files');
 
     // payroll: every employee enters the LOE of the month
-    Route::get('/my-loe', [PayrollController::class, 'myLoe'])->name('loe.mine');
+    Route::get('/my-loe', fn () => redirect()->route('dashboard'))->name('loe.mine');   // off for now: everybody is counted as present
     Route::post('/my-loe', [PayrollController::class, 'myLoeSave'])->name('loe.mine.save');
     // payroll: HR and finance
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
@@ -148,6 +149,10 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::post('/payroll/{run}/reopen', [PayrollController::class, 'reopen'])->name('payroll.reopen')->middleware('can:payroll.approve');
 
     // allocation lab (test area)
+    Route::get('/projects/{id}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::put('/projects/{id}/lines', [ProjectController::class, 'saveLines'])->name('projects.lines.save');
+    Route::get('/projects/{id}/export', [ProjectController::class, 'export'])->name('projects.export');
+    Route::post('/projects/{id}/import', [ProjectController::class, 'import'])->name('projects.import');
     Route::get('/allocation-lab', [Lab::class, 'index'])->name('lab.index');
     Route::get('/allocation-lab/candidates', [Lab::class, 'candidates'])->name('lab.candidates');
     Route::get('/allocation-lab/export', [Lab::class, 'export'])->name('lab.export');

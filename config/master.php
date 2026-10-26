@@ -12,7 +12,8 @@ return [
     'projects' => [
         'model' => Models\Project::class, 'title' => 'Projects', 'one' => 'project', 'icon' => 'fa-diagram-project',
         'group' => 'Budget', 'search' => ['code', 'name', 'qb_name'], 'order' => ['code', 'desc'],
-        'list' => ['code' => 'Code', 'name' => 'Project name', 'qb_name' => 'QuickBooks name', 'currency.code' => 'Currency', 'partner.name' => 'Partner', 'end_date' => 'End date', 'active' => 'Active'],
+        'show' => 'projects.show',
+        'list' => ['code' => 'Code', 'name' => 'Project name', 'qb_name' => 'QuickBooks name', 'currency.code' => 'Currency', 'partner.name' => 'Partner', 'end_date' => 'End date', 'status' => 'Status', 'active' => 'Active'],
         'fields' => [
             ['code', 'Project code', 'int', 'required' => true, 'unique' => true, 'col' => 3, 'help' => 'Suggested: the next free number. A code that already exists is refused.'],
             ['name', 'Project name', 'text', 'required' => true, 'col' => 9],
@@ -20,7 +21,11 @@ return [
             ['currency_id', 'Currency', 'lookup', 'source' => 'currencies', 'rel' => 'currency', 'col' => 3],
             ['end_date', 'End date', 'date', 'col' => 3],
             ['partner_id', 'Partner', 'select', 'options' => 'partners', 'col' => 6],
-            ['active', 'Active', 'switch', 'col' => 6],
+            ['status', 'Status', 'select', 'options' => ['Ongoing' => 'Ongoing', 'Ended' => 'Ended', 'Suspended' => 'Suspended', 'Cancelled' => 'Cancelled'], 'col' => 3, 'help' => 'Ended, Suspended or Cancelled switches the project off and archives its budget lines.'],
+            ['budget_total', 'Budget (project currency)', 'number', 'col' => 3],
+            ['balance', 'Donor balance left', 'number', 'col' => 3],
+            ['balance_date', 'Balance on', 'date', 'col' => 3],
+            ['active', 'Active', 'switch', 'col' => 12, 'help' => 'Switching it off archives the budget lines of the project; switching it on brings them back.'],
         ],
     ],
     'budget_lines' => [
