@@ -69,6 +69,10 @@ class MasterController extends Controller
 
     public function index(Request $r, string $entity)
     {
+        // projects and budget lines have their own pages (running projects only); the archive stays here with ?show=archived|all
+        if (in_array($entity, ['projects', 'budget_lines'], true) && !$r->filled('show')) {
+            return redirect()->route($entity === 'projects' ? 'projects.index' : 'lines.index');
+        }
         $c = $this->cfg($entity);
         $model = $c['model'];
         $q = $model::query();

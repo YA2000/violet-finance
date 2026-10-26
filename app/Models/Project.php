@@ -7,11 +7,38 @@ use Illuminate\Database\Eloquent\Model;
 class Project extends Model
 {
     protected $guarded = ['id'];
-    protected $casts = ['end_date' => 'date', 'active' => 'boolean', 'balance_date' => 'date', 'budget_total' => 'decimal:2', 'balance' => 'decimal:2'];
+    protected $casts = ['end_date' => 'date', 'active' => 'boolean', 'balance_date' => 'date', 'start_date' => 'date', 'icr_rate' => 'float', 'spent_total' => 'decimal:2', 'icr_amount' => 'decimal:2', 'received' => 'decimal:2', 'donor_balance' => 'decimal:2', 'budget_total' => 'decimal:2', 'balance' => 'decimal:2'];
 
     public const STATUSES = ['Ongoing' => 'Ongoing', 'Ended' => 'Ended', 'Suspended' => 'Suspended', 'Cancelled' => 'Cancelled'];
 
     public function budgetLines() { return $this->hasMany(BudgetLine::class, 'project_code', 'code'); }
+
+    public const OFFICES = ['Turkey' => 'Turkey', 'Syria' => 'Syria'];
+    public const INTERNAL = [1, 2];   // Violet (core) and the allocation project: always active, not donor projects
+
+    public function scopeRunning($q)
+    {
+        return $q->where('active', true)->where('status', 'Ongoing');
+    }
+
+    public function isInternal(): bool
+    {
+        return in_array((int) $this->code, static::INTERNAL, true);
+    }
+
+    /** Months left including the current one; 0 when the end date has passed. */
+    public function monthsLeft(): ?float
+    {
+        if (!$this->end_date) {
+            return null;
+        }
+        return $this->end_date->lt(today()) ? 0.0 : round(today()->floatDiffInMonths($this->end_date), 1);
+    }
+
+    public function endsSoon(int $months = 2): bool
+    {
+        return $this->end_date && !$this->end_date->lt(today()) && $this->end_date->lte(today()->addMonths($months));
+    }
 
     public function isRunning(): bool
     {

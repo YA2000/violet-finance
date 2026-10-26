@@ -66,6 +66,11 @@
             @if($setCount)<span class="count">{{ $setCount }}</span>@endif</a>
         @endif
       @endif
+      @if(\App\Http\Controllers\ProjectController::canSee($u))
+        <div class="side-group">Budget</div>
+        <a class="nav {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}"><i class="fa-solid fa-diagram-project"></i>Projects</a>
+        <a class="nav {{ request()->routeIs('lines.*') ? 'active' : '' }}" href="{{ route('lines.index') }}"><i class="fa-solid fa-layer-group"></i>Budget lines</a>
+      @endif
       <div class="side-group">Payroll &amp; allocation</div>
       @if($u->hasPerm('costs.view') || $u->hasPerm('costs.manage') || $u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
         <a class="nav {{ request()->routeIs('lab.*') ? 'active' : '' }}" href="{{ route('lab.index') }}"><i class="fa-solid fa-flask"></i>Allocation (test)</a>

@@ -3,37 +3,39 @@
 @section('content')
 @php
   $st = $p->status ?: 'Ongoing';
-  $ended = $p->end_date && $p->end_date->lt(today());
-  $active = $counts[1] ?? null; $arch = $counts[0] ?? null;
-  $sumTotal = $lines->sum(fn ($l) => (float) $l->total_amount);
-  $sumRem = $lines->sum(fn ($l) => $l->remaining_cur ?? (float) $l->total_amount);
+  $months = $p->monthsLeft();
   $unknown = $lines->whereNull('spent_cur')->count();
+  $pct = fn ($v) => $p->budget_total > 0 && $v !== null ? ' · ' . number_format($v / $p->budget_total * 100, 0) . ' %' : '';
 @endphp
 <div class="page-head">
   <div class="grow">
     <h1>{{ $p->code }} · {{ $p->name }}
-      <span class="pill {{ $st === 'Ongoing' && $p->active ? 'st-done' : 'st-cancel' }}">{{ $st }}{{ $p->active ? '' : ' · archived' }}</span></h1>
-    <p>{{ $p->qb_name }} · {{ $cur }}{{ $p->partner ? ' · ' . $p->partner->name : '' }}
-      · ends {{ $p->end_date?->format('d M Y') ?? '(no date)' }}@if($p->isRunning() && !$ended) · <b>{{ $months }} {{ \Illuminate\Support\Str::plural('month', $months) }} left</b>@endif
-      @if($p->isRunning() && $ended)<span class="danger-text"> · the end date has passed: set the status to Ended, or correct the date</span>@endif</p>
+      <span class="pill {{ $p->isRunning() ? 'st-done' : 'st-cancel' }}">{{ $st }}</span>@if($p->isRunning() && $p->endsSoon(2))<span class="pill st-cancel">ends soon</span>@endif</h1>
+    <p>{{ $cur }}{{ $p->office ? ' · ' . $p->office : '' }}{{ $p->manager ? ' · ' . $p->manager : '' }}{{ $p->partner ? ' · ' . $p->partner->name : '' }}
+      · {{ $p->start_date?->format('d M Y') ?? '?' }} → {{ $p->end_date?->format('d M Y') ?? '(no end date)' }}@if($months !== null && $p->isRunning()) · <b>{{ number_format($months, 1) }} months left</b>@endif
+      @if($p->isRunning() && $months === 0.0)<span class="danger-text"> · the end date has passed: set the status to Ended, or correct the date</span>@endif</p>
   </div>
   <div class="btn-row">
+    <a class="btn" href="{{ route('projects.index') }}"><i class="fa-solid fa-arrow-left"></i> Projects</a>
     <a class="btn" href="{{ route('projects.export', $p->id) }}"><i class="fa-solid fa-file-excel"></i> Lines file</a>
     @if($canEditProject)<a class="btn btn-primary" href="{{ route('admin.master.edit', ['projects', $p->id]) }}"><i class="fa-solid fa-pen"></i> Edit project</a>@endif
   </div>
 </div>
 
-<div class="ledger" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px">
-  <div class="lg"><b>{{ $p->budget_total !== null ? money($p->budget_total) : '—' }}</b><span>Project budget {{ $cur }}</span></div>
-  <div class="lg strong"><b>{{ $p->balance !== null ? money($p->balance) : '—' }}</b><span>Donor balance left {{ $p->balance_date ? '· ' . $p->balance_date->format('d M Y') : '' }}
-    @if($p->budget_total > 0 && $p->balance !== null) · {{ number_format($p->balance / $p->budget_total * 100, 0) }} %@endif</span></div>
-  <div class="lg"><b>{{ money($sumTotal) }}</b><span>{{ $archived ? 'Archived' : 'Active' }} lines total ({{ $lines->count() }})</span></div>
-  <div class="lg {{ $unknown ? 'bad' : '' }}"><b>{{ money($sumRem) }}</b><span>Lines remaining{{ $unknown ? ' · ' . $unknown . ' without spent' : '' }}</span></div>
+@unless($p->isInternal())
+<div class="ledger" style="grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:18px">
+  <div class="lg"><b>{{ $p->budget_total !== null ? money($p->budget_total) : '—' }}</b><span>Budget {{ $cur }}{{ $p->icr_rate ? ' · ICR ' . round($p->icr_rate * 100, 2) . ' %' : '' }}</span></div>
+  <div class="lg"><b>{{ $p->spent_total !== null ? money($p->spent_total) : '—' }}</b><span>Spent{{ $p->icr_amount > 0 ? ' + ICR ' . money($p->icr_amount) : '' }}{{ $pct($p->spent_total !== null ? $p->spent_total + $p->icr_amount : null) }}</span></div>
+  <div class="lg strong"><b class="{{ $p->balance < 0 ? 'danger-text' : '' }}">{{ $p->balance !== null ? money($p->balance) : '—' }}</b><span>Remaining{{ $pct($p->balance) }}</span></div>
+  <div class="lg"><b>{{ $p->received !== null ? money($p->received) : '—' }}</b><span>Received from the donor</span></div>
+  <div class="lg"><b class="{{ $p->donor_balance > 0 ? 'danger-text' : '' }}">{{ $p->donor_balance !== null ? money(abs($p->donor_balance)) : '—' }}</b><span>{{ $p->donor_balance > 0 ? 'Due from the donor' : 'Donor money held' }}{{ $p->balance_date ? ' · ' . $p->balance_date->format('d M') : '' }}</span></div>
 </div>
+@endunless
+<p class="hint" style="margin:-6px 0 14px">Lines: {{ $lines->count() }} {{ $archived ? 'archived' : 'active' }} · total {{ money($lines->sum(fn ($l) => (float) $l->total_amount)) }} {{ $cur }} · remaining {{ money($lines->sum(fn ($l) => $l->remaining_cur ?? (float) $l->total_amount)) }}@if($unknown) · <span class="danger-text">{{ $unknown }} without remaining</span>@endif</p>
 
 <div class="tabs">
-  <a class="{{ $archived ? '' : 'on' }}" href="{{ route('projects.show', $p->id) }}">Budget lines <span class="n">{{ $active->n ?? 0 }}</span></a>
-  <a class="{{ $archived ? 'on' : '' }}" href="{{ route('projects.show', [$p->id, 'show' => 'archived']) }}">Archived lines <span class="n">{{ $arch->n ?? 0 }}</span></a>
+  <a class="{{ $archived ? '' : 'on' }}" href="{{ route('projects.show', $p->id) }}">Budget lines <span class="n">{{ $counts[1] ?? 0 }}</span></a>
+  <a class="{{ $archived ? 'on' : '' }}" href="{{ route('projects.show', [$p->id, 'show' => 'archived']) }}">Archived lines <span class="n">{{ $counts[0] ?? 0 }}</span></a>
   @if($funding->count())<a href="#staff">Staff paid by the project <span class="n">{{ $funding->count() }}</span></a>@endif
 </div>
 

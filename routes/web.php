@@ -17,6 +17,7 @@ use App\Http\Controllers\SharedCostController;
 use App\Http\Controllers\CostRecoveryController;
 use App\Http\Controllers\AllocationLabController as Lab;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\BudgetLineController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
@@ -149,7 +150,15 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::post('/payroll/{run}/reopen', [PayrollController::class, 'reopen'])->name('payroll.reopen')->middleware('can:payroll.approve');
 
     // allocation lab (test area)
-    Route::get('/projects/{id}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    Route::put('/projects', [ProjectController::class, 'bulk'])->name('projects.bulk');
+    Route::get('/projects/export', [ProjectController::class, 'exportList'])->name('projects.list.export');
+    Route::post('/projects/import', [ProjectController::class, 'importList'])->name('projects.list.import');
+    Route::get('/budget-lines', [BudgetLineController::class, 'index'])->name('lines.index');
+    Route::put('/budget-lines', [BudgetLineController::class, 'save'])->name('lines.save');
+    Route::get('/budget-lines/export', [BudgetLineController::class, 'export'])->name('lines.export');
+    Route::post('/budget-lines/import', [BudgetLineController::class, 'import'])->name('lines.import');
+    Route::get('/projects/{id}', [ProjectController::class, 'show'])->whereNumber('id')->name('projects.show');
     Route::put('/projects/{id}/lines', [ProjectController::class, 'saveLines'])->name('projects.lines.save');
     Route::get('/projects/{id}/export', [ProjectController::class, 'export'])->name('projects.export');
     Route::post('/projects/{id}/import', [ProjectController::class, 'import'])->name('projects.import');
