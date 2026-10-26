@@ -15,6 +15,7 @@ use App\Http\Controllers\LookupController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\SharedCostController;
 use App\Http\Controllers\CostRecoveryController;
+use App\Http\Controllers\AllocationLabController as Lab;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
@@ -145,6 +146,20 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     });
     Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve')->middleware('can:payroll.approve');
     Route::post('/payroll/{run}/reopen', [PayrollController::class, 'reopen'])->name('payroll.reopen')->middleware('can:payroll.approve');
+
+    // allocation lab (test area)
+    Route::get('/allocation-lab', [Lab::class, 'index'])->name('lab.index');
+    Route::get('/allocation-lab/candidates', [Lab::class, 'candidates'])->name('lab.candidates');
+    Route::get('/allocation-lab/export', [Lab::class, 'export'])->name('lab.export');
+    Route::post('/allocation-lab/lines', [Lab::class, 'addLines'])->name('lab.lines.add');
+    Route::put('/allocation-lab/lines/{id}', [Lab::class, 'updateLine'])->name('lab.lines.update');
+    Route::delete('/allocation-lab/lines/{id}', [Lab::class, 'deleteLine'])->name('lab.lines.delete');
+    Route::post('/allocation-lab/staff', [Lab::class, 'addStaff'])->name('lab.staff.add');
+    Route::put('/allocation-lab/staff/{id}', [Lab::class, 'updateStaff'])->name('lab.staff.update');
+    Route::delete('/allocation-lab/staff/{id}', [Lab::class, 'deleteStaff'])->name('lab.staff.delete');
+    Route::post('/allocation-lab/expenses', [Lab::class, 'addExpense'])->name('lab.expenses.add');
+    Route::post('/allocation-lab/expenses/import', [Lab::class, 'importExpenses'])->name('lab.expenses.import');
+    Route::delete('/allocation-lab/expenses/{id}', [Lab::class, 'deleteExpense'])->name('lab.expenses.delete');
 
     // cost recovery plan: pool, key, funding map, funding lines
     Route::get('/cost-recovery', [CostRecoveryController::class, 'index'])->name('recovery.index');
