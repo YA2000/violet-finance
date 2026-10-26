@@ -24,6 +24,13 @@ class Setting extends Model
         'pay_through_remittance' => '1',
         'uploader_email_to' => 'System.Admin@violetsyria.org',
         'uploader_email_cc' => 'ibrahim.shawish@violetsyria.org',
+        // payroll
+        'payroll_core_project' => '1',
+        'payroll_days_basis' => '30',
+        'payroll_daily_full_month' => '26',
+        'payroll_shift_full_month' => '22',
+        'payroll_hourly_full_month' => '176',
+        'payroll_lock_loe' => '1',
     ];
 
     public static function get(string $key, $default = null)

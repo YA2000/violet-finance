@@ -66,6 +66,13 @@
             @if($setCount)<span class="count">{{ $setCount }}</span>@endif</a>
         @endif
       @endif
+      <div class="side-group">HR &amp; Payroll</div>
+      <a class="nav {{ request()->routeIs('loe.mine') ? 'active' : '' }}" href="{{ route('loe.mine') }}"><i class="fa-solid fa-chart-pie"></i>My LOE</a>
+      @if($u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
+        <a class="nav {{ request()->routeIs('payroll.index', 'payroll.show') ? 'active' : '' }}" href="{{ route('payroll.index') }}"><i class="fa-solid fa-money-check-dollar"></i>Payroll</a>
+        <a class="nav {{ request()->routeIs('payroll.loe', 'payroll.loe.*') ? 'active' : '' }}" href="{{ route('payroll.loe') }}"><i class="fa-solid fa-sliders"></i>LOE of the month</a>
+        <a class="nav {{ request()->routeIs('payroll.contracts*') ? 'active' : '' }}" href="{{ route('payroll.contracts') }}"><i class="fa-solid fa-file-signature"></i>Contracts</a>
+      @endif
       @if($u->hasPerm('review.access') || $u->hasPerm('reports.view') || $u->hasPerm('remittance.prepare'))
         <div class="side-group">Control</div>
         @can('remittance.prepare')

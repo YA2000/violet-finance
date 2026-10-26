@@ -92,7 +92,7 @@ document.addEventListener('alpine:init', () => {
     pick(it) {
       if (opts.standalone) {
         this.sval = it ? it.id : null; this.stext = it ? it.text : '';
-        this.$dispatch('lk-picked', { name: opts.name, value: this.sval, text: this.stext });
+        this.$dispatch('lk-picked', { name: opts.name, value: this.sval, text: this.stext, sub: it ? (it.sub || '') : '' });
       } else {
         setPath(this.data, path, it ? it.id : null);
         this.labels[path] = it ? it.text : '';

@@ -12,6 +12,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LookupController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
@@ -108,6 +109,40 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::post('/receipts/{receipt}/record', [ReceiptController::class, 'record'])->name('receipts.record')->middleware('can:receipts.record');
     Route::post('/receipts/{receipt}/back', [ReceiptController::class, 'back'])->name('receipts.back');
     Route::post('/receipts/{receipt}/files', [ReceiptController::class, 'files'])->name('receipts.files');
+
+    // payroll: every employee enters the LOE of the month
+    Route::get('/my-loe', [PayrollController::class, 'myLoe'])->name('loe.mine');
+    Route::post('/my-loe', [PayrollController::class, 'myLoeSave'])->name('loe.mine.save');
+    // payroll: HR and finance
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::post('/payroll', [PayrollController::class, 'store'])->name('payroll.store')->middleware('can:payroll.manage');
+    Route::get('/payroll/contracts', [PayrollController::class, 'contracts'])->name('payroll.contracts');
+    Route::get('/payroll/contracts/template', [PayrollController::class, 'contractsTemplate'])->name('payroll.contracts.template');
+    Route::middleware('can:payroll.manage')->group(function () {
+        Route::post('/payroll/contracts', [PayrollController::class, 'storeContract'])->name('payroll.contracts.store');
+        Route::post('/payroll/contracts/import', [PayrollController::class, 'importContracts'])->name('payroll.contracts.import');
+        Route::put('/payroll/contracts/{contract}', [PayrollController::class, 'updateContract'])->name('payroll.contracts.update');
+        Route::post('/payroll/contracts/{contract}/change', [PayrollController::class, 'changeContract'])->name('payroll.contracts.change');
+        Route::delete('/payroll/contracts/{contract}', [PayrollController::class, 'destroyContract'])->name('payroll.contracts.destroy');
+        Route::post('/payroll/loe/copy', [PayrollController::class, 'loeCopy'])->name('payroll.loe.copy');
+        Route::post('/payroll/loe/import', [PayrollController::class, 'loeImport'])->name('payroll.loe.import');
+        Route::get('/payroll/loe/{individual}', [PayrollController::class, 'loeEdit'])->name('payroll.loe.edit');
+        Route::post('/payroll/loe/{individual}', [PayrollController::class, 'loeSave'])->name('payroll.loe.save');
+    });
+    Route::get('/payroll/loe', [PayrollController::class, 'loe'])->name('payroll.loe');
+    Route::get('/payroll/loe-template', [PayrollController::class, 'loeTemplate'])->name('payroll.loe.template');
+    Route::get('/payroll/{run}', [PayrollController::class, 'show'])->name('payroll.show');
+    Route::get('/payroll/{run}/export/{kind}', [PayrollController::class, 'export'])->name('payroll.export');
+    Route::middleware('can:payroll.manage')->group(function () {
+        Route::put('/payroll/{run}', [PayrollController::class, 'update'])->name('payroll.update');
+        Route::delete('/payroll/{run}', [PayrollController::class, 'destroy'])->name('payroll.destroy');
+        Route::post('/payroll/{run}/refresh', [PayrollController::class, 'refresh'])->name('payroll.refresh');
+        Route::put('/payroll/{run}/lines/{line}', [PayrollController::class, 'line'])->name('payroll.line');
+        Route::post('/payroll/{run}/attendance', [PayrollController::class, 'attendance'])->name('payroll.attendance');
+        Route::post('/payroll/{run}/allocate', [PayrollController::class, 'allocate'])->name('payroll.allocate');
+    });
+    Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve')->middleware('can:payroll.approve');
+    Route::post('/payroll/{run}/reopen', [PayrollController::class, 'reopen'])->name('payroll.reopen')->middleware('can:payroll.approve');
 
     // reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('can:reports.view');

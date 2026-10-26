@@ -45,6 +45,11 @@ class Perms
                 'receipts.record' => 'Record a payment in the system (AR)',
                 'receipts.view' => 'See all received payments',
             ],
+            'Payroll' => [
+                'payroll.manage' => 'Contracts, LOE of every employee, monthly payroll runs and allocation (HR)',
+                'payroll.approve' => 'Approve or reopen a payroll run (finance)',
+                'payroll.view' => 'See payroll runs, allocations and payroll sheets',
+            ],
             'Reports' => ['reports.view' => 'Reports'],
             'Master data' => $master,
             'Administration' => [
@@ -90,7 +95,7 @@ class Perms
                 array_merge($ap, ['numbers.reserve', 'advances.manage', 'advances.view', 'reports.view'])],
             'AR Accountant' => ['Records received payments; expense reports of every project to match QuickBooks.', ['receipts.record', 'receipts.view', 'numbers.reserve', 'reports.view']],
             'Budgeting Officer' => ['Agreements (projects), partners, budget lines, accounts, accounting and cost centers, individuals and suppliers.',
-                ['master.projects.manage', 'master.partners.manage', 'master.budget_lines.manage', 'master.accounts.manage', 'master.cost_centers.manage',
+                ['payroll.view', 'master.projects.manage', 'master.partners.manage', 'master.budget_lines.manage', 'master.accounts.manage', 'master.cost_centers.manage',
                  'master.accounting_centers.manage', 'master.individuals.manage', 'master.suppliers.manage', 'reports.view']],
             'Internal Viewer' => ['Audits every transaction, comments and returns them for correction; prepares Remittance Statements.',
                 ['review.access', 'form.*.view', 'form.remittance.create', 'remittance.prepare', 'receipts.view', 'advances.view', 'reports.view']],
@@ -99,7 +104,7 @@ class Perms
             'Reporting Officer' => ['Chooses the project of received payments; sees every transaction and advance without editing; project expense reports.',
                 ['form.*.view', 'receipts.assign', 'receipts.view', 'advances.view', 'reports.view']],
             'Logistics' => ['Advance holder: expenses and JAR Clearances; suppliers with the Budgeting Officer.', ['advances.hold', 'master.suppliers.manage']],
-            'HR' => ['Human resources: individuals with the Budgeting Officer (payroll and contracts come later).', ['master.individuals.manage']],
+            'HR' => ['Human resources: individuals, contracts, LOE of every employee and the monthly payroll.', ['master.individuals.manage', 'payroll.manage', 'payroll.view']],
             'Programs' => ['Programs department (activity requests come later).', []],
             'Employee' => ['Fills and signs forms (the access of the first version).', ['form.*.create', 'numbers.reserve']],
         ];
