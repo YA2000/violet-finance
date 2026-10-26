@@ -1,7 +1,7 @@
 @extends('layouts.app', ['title' => 'Contracts'])
 @section('crumbs')<span>HR &amp; Payroll</span><i class="fa-solid fa-chevron-right"></i><b>Contracts</b>@endsection
 @section('content')
-@php($blank = ['id' => null, 'individual_id' => null, 'ind_text' => '', 'number' => '', 'position' => '', 'office' => 'Syria', 'employment' => 'full_time', 'pay_basis' => 'monthly', 'rate' => '', 'currency' => 'USD', 'fte' => 1, 'start_date' => now()->startOfMonth()->format('Y-m-d'), 'end_date' => '', 'default_budget_line_id' => null, 'bl_text' => '', 'notes' => '', 'active' => true])
+@php($blank = ['id' => null, 'individual_id' => null, 'ind_text' => '', 'number' => '', 'position' => '', 'office' => 'Syria', 'employment' => 'full_time', 'cost_type' => 'direct', 'pay_basis' => 'monthly', 'rate' => '', 'currency' => 'USD', 'fte' => 1, 'start_date' => now()->startOfMonth()->format('Y-m-d'), 'end_date' => '', 'default_budget_line_id' => null, 'bl_text' => '', 'notes' => '', 'active' => true])
 <div x-data="{ c: null, ch: null, blank: @js($blank) }">
 <div class="page-head">
   <div class="grow"><h1>Contracts</h1><p>Every person paid by the payroll needs a contract: office, kind of employment, how the pay is counted, rate and dates. A change of position or salary is recorded as a new contract from the change date.</p></div>
@@ -43,14 +43,14 @@
         <td><b>{{ $k->individual?->name }}</b><div class="hint">{{ $k->individual?->code }}@if($k->number) · {{ $k->number }}@endif</div></td>
         <td>{{ $k->position }}@if($k->change_reason)<div class="hint"><i class="fa-solid fa-code-branch"></i> {{ $k->change_reason }}</div>@endif</td>
         <td>{{ $k->office }}</td>
-        <td>{{ \App\Models\Contract::EMPLOYMENT[$k->employment] ?? $k->employment }}</td>
+        <td>{{ \App\Models\Contract::EMPLOYMENT[$k->employment] ?? $k->employment }}<div>@if($k->cost_type === 'shared')<span class="tag">shared</span>@else<span class="hint">direct</span>@endif</div></td>
         <td class="num">{{ money($k->rate) }} <small>{{ $k->currency }}</small><div class="hint">{{ \App\Models\Contract::BASIS[$k->pay_basis] ?? '' }}</div></td>
         <td class="num">{{ (float) $k->fte }}</td>
         <td>{{ $k->start_date->format('d M Y') }}</td>
         <td>@if($k->end_date)<span class="{{ $k->end_date->between(today(), today()->addDays(30)) ? 'warn-text' : '' }}">{{ $k->end_date->format('d M Y') }}</span>@else<span class="hint">open</span>@endif</td>
         <td>{{ $k->defaultBudgetLine?->code }}</td>
         @if($canManage)<td style="white-space:nowrap">
-          <button type="button" class="btn btn-ghost btn-icon btn-sm" title="Edit" @click="c = @js($k->only(['id', 'individual_id', 'number', 'position', 'office', 'employment', 'pay_basis', 'currency', 'notes', 'active', 'default_budget_line_id']) + ['rate' => (float) $k->rate, 'fte' => (float) $k->fte, 'start_date' => $k->start_date->format('Y-m-d'), 'end_date' => $k->end_date?->format('Y-m-d') ?? '', 'ind_text' => $k->individual?->label, 'bl_text' => $k->defaultBudgetLine?->code ?? '', 'url' => route('payroll.contracts.update', $k)])"><i class="fa-solid fa-pen"></i></button>
+          <button type="button" class="btn btn-ghost btn-icon btn-sm" title="Edit" @click="c = @js($k->only(['id', 'individual_id', 'number', 'position', 'office', 'employment', 'cost_type', 'pay_basis', 'currency', 'notes', 'active', 'default_budget_line_id']) + ['rate' => (float) $k->rate, 'fte' => (float) $k->fte, 'start_date' => $k->start_date->format('Y-m-d'), 'end_date' => $k->end_date?->format('Y-m-d') ?? '', 'ind_text' => $k->individual?->label, 'bl_text' => $k->defaultBudgetLine?->code ?? '', 'url' => route('payroll.contracts.update', $k)])"><i class="fa-solid fa-pen"></i></button>
           <button type="button" class="btn btn-ghost btn-icon btn-sm" title="Change of position or salary" @click="ch = { url: @js(route('payroll.contracts.change', $k)), name: @js($k->individual?->name), position: @js($k->position), rate: {{ (float) $k->rate }}, fte: {{ (float) $k->fte }}, cur: @js($k->currency) }"><i class="fa-solid fa-code-branch"></i></button>
         </td>@endif
       </tr>
@@ -87,6 +87,9 @@
       <div class="field" style="grid-column:span 2"><label>FTE</label><input class="input num" name="fte" x-model="c.fte" required><span class="hint">1 = full time</span></div>
       <div class="field" style="grid-column:span 2"><label>Start <span class="req">*</span></label><input class="input" type="date" name="start_date" x-model="c.start_date" required></div>
       <div class="field" style="grid-column:span 2"><label>End</label><input class="input" type="date" name="end_date" x-model="c.end_date"></div>
+      <div class="field" style="grid-column:span 12"><label>Cost type</label><div class="radios">
+        @foreach(\App\Models\Contract::COST_TYPES as $k2 => $v2)<label><input type="radio" name="cost_type" value="{{ $k2 }}" x-model="c.cost_type"> {{ $v2 }}</label>@endforeach</div>
+        <span class="hint">Direct = programme staff, charged by their LOE (HR file). Shared = support staff (finance, HR, logistics, admin, cleaning…), charged by the cost recovery plan: fair share of each project (direct FTE key), up to what the project budgeted for them.</span></div>
       <div class="field" style="grid-column:span 6"><label>Default budget line <small>(when the employee works on one line only)</small></label>
         <div class="lk" x-data="lk('budget_lines', '', { standalone: true, name: 'default_budget_line_id', value: c.default_budget_line_id, text: c.bl_text })" @click.outside="close()" @keydown.escape="close()">
           <input type="hidden" name="default_budget_line_id" :value="sval ?? ''">

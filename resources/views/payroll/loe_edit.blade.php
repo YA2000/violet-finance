@@ -12,6 +12,11 @@
 @if(!$individual)
   <div class="alert alert-warn"><i class="fa-solid fa-triangle-exclamation"></i><div>Your login is not linked to an employee code yet. Ask the administrator to link it (Users → Employee), then come back here.</div></div>
 @else
+@if(!empty($shared))
+  <div class="alert alert-info"><i class="fa-solid fa-scale-balanced"></i><div><b>{{ $individual->name }} is shared support staff.</b> The LOE is not entered by hand: at the payroll allocation the cost recovery plan shares the salary between the running projects by their direct FTE (fair share), up to the funding lines each project budgeted for this person; the rest is the core fund. See <a href="{{ route('recovery.index', ['period' => $period->format('Y-m')]) }}">Cost recovery plan</a>.</div></div>
+  @if(count($rows))<div class="panel"><div class="panel-head"><h2>Plan of {{ $period->format('M Y') }}</h2></div><div class="tbl-wrap"><table class="tbl"><tbody>
+    @foreach($rows as $r)<tr><td><span class="ref">{{ $r['text'] }}</span> <span class="hint">{{ $r['sub'] }}</span></td><td class="num">{{ $r['percent'] }} %</td></tr>@endforeach</tbody></table></div></div>@endif
+@else
 @php($start = old('rows') ? array_map(fn ($r) => ['id' => $r['budget_line_id'] ?? null, 'text' => $r['text'] ?? '', 'sub' => '', 'percent' => $r['percent'] ?? ''], old('rows')) : $rows)
 <div class="grid" style="grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start"
      x-data="{ rows: @js(array_values($start)).map((r, i) => ({ ...r, uid: i + 1 })), uid: 100, locked: @js($locked),
@@ -71,5 +76,6 @@
     </div>
   </div>
 </div>
+@endif
 @endif
 @endsection

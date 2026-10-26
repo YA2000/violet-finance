@@ -73,6 +73,9 @@
         <a class="nav {{ request()->routeIs('payroll.loe', 'payroll.loe.*') ? 'active' : '' }}" href="{{ route('payroll.loe') }}"><i class="fa-solid fa-sliders"></i>LOE of the month</a>
         <a class="nav {{ request()->routeIs('payroll.contracts*') ? 'active' : '' }}" href="{{ route('payroll.contracts') }}"><i class="fa-solid fa-file-signature"></i>Contracts</a>
       @endif
+      @if($u->hasPerm('costs.view') || $u->hasPerm('costs.manage') || $u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
+        <a class="nav {{ request()->routeIs('recovery.*') ? 'active' : '' }}" href="{{ route('recovery.index') }}"><i class="fa-solid fa-scale-balanced"></i>Cost recovery plan</a>
+      @endif
       @if($u->hasPerm('costs.view') || $u->hasPerm('costs.manage'))
         <a class="nav {{ request()->routeIs('costs.*') ? 'active' : '' }}" href="{{ route('costs.index') }}"><i class="fa-solid fa-building-circle-arrow-right"></i>Shared costs</a>
       @endif

@@ -71,9 +71,11 @@
             @if($l->isTurkey())<div class="hint">net {{ money($l->net) }} · SGK {{ money($l->tr_insurance) }} · tax {{ money($l->tr_tax) }} · ind. −{{ money($l->tr_indirim) }}</div>@endif</td>
           <td class="num">{{ money($l->total_usd) }}</td>
           <td>
-            @if(!$rows)<span class="pill st-cancel">no LOE</span>
+            @if(!$rows && $l->contract?->cost_type === 'shared')<span class="tag">shared · planned at allocation</span>
+            @elseif(!$rows)<span class="pill st-cancel">no LOE</span>
             @else
-              @foreach($rows as $x)<span class="tag" title="{{ $x['bl']?->code }} {{ $x['bl']?->description }}">{{ $x['bl']?->project_code }} · {{ rtrim(rtrim(number_format($x['percent'], 2), '0'), '.') }}%</span> @endforeach
+              @foreach($rows as $x)<span class="tag" title="{{ $x['bl']?->code }} {{ $x['bl']?->description }}" @if(($x['source'] ?? '') === 'plan' && (string) $x['bl']?->project_code === \App\Services\Payroll::coreCode()) style="background:var(--pending-50);color:var(--pending)" @endif>{{ $x['bl']?->project_code }} · {{ rtrim(rtrim(number_format($x['percent'], 2), '0'), '.') }}%</span> @endforeach
+              @if(($rows[0]['source'] ?? '') === 'plan')<div class="hint"><i class="fa-solid fa-scale-balanced"></i> cost recovery plan</div>@endif
               @if(abs($sum - 100) > 0.01)<span class="pill st-cancel">{{ round($sum, 2) }}%</span>@endif
               @if(($rows[0]['source'] ?? '') === 'contract')<div class="hint">from the contract</div>@endif
             @endif

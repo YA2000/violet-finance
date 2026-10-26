@@ -57,7 +57,7 @@ class SharedCostController extends Controller
         return view('costs.show', [
             'run' => $run, 'lines' => $run->lines()->with('allocations')->get(), 'problems' => SharedCosts::check($run), 'totals' => SharedCosts::totals($run),
             'byProject' => SharedCosts::byProject($run), 'gaps' => SharedCosts::gaps($run), 'matrix' => SharedCosts::matrix($run),
-            'cats' => CostCategory::orderBy('sequence')->get()->keyBy('code'), 'payroll' => $pr, 'keys' => $pr && $pr->allocated_at ? SharedCosts::keys($pr) : [],
+            'cats' => CostCategory::orderBy('sequence')->get()->keyBy('code'), 'payroll' => $pr, 'keys' => SharedCosts::keysFor($run),
             'tab' => $r->input('tab', 'lines'), 'canManage' => $r->user()->hasPerm('costs.manage'),
             'projects' => Project::where('active', true)->orderBy('code')->get(['code', 'name', 'qb_name']),
         ]);

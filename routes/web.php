@@ -14,6 +14,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\SharedCostController;
+use App\Http\Controllers\CostRecoveryController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
@@ -144,6 +145,16 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     });
     Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve')->middleware('can:payroll.approve');
     Route::post('/payroll/{run}/reopen', [PayrollController::class, 'reopen'])->name('payroll.reopen')->middleware('can:payroll.approve');
+
+    // cost recovery plan: pool, key, funding map, funding lines
+    Route::get('/cost-recovery', [CostRecoveryController::class, 'index'])->name('recovery.index');
+    Route::get('/cost-recovery/funding', [CostRecoveryController::class, 'funding'])->name('recovery.funding');
+    Route::post('/cost-recovery/funding', [CostRecoveryController::class, 'storeFunding'])->name('recovery.funding.store');
+    Route::post('/cost-recovery/suggestions', [CostRecoveryController::class, 'acceptSuggestions'])->name('recovery.suggestions');
+    Route::post('/cost-recovery/funding/{line}/toggle', [CostRecoveryController::class, 'toggleFunding'])->name('recovery.funding.toggle');
+    Route::delete('/cost-recovery/funding/{line}', [CostRecoveryController::class, 'destroyFunding'])->name('recovery.funding.destroy');
+    Route::post('/cost-recovery/import', [CostRecoveryController::class, 'import'])->name('recovery.import');
+    Route::get('/cost-recovery/template/{kind}', [CostRecoveryController::class, 'template'])->name('recovery.template')->where('kind', 'funding|opening');
 
     // shared costs (QuickBooks report of the month, allocated by the FTE of the payroll)
     Route::get('/shared-costs', [SharedCostController::class, 'index'])->name('costs.index');

@@ -14,6 +14,7 @@ class Contract extends Model
 
     public const OFFICES = ['Syria' => 'Syria', 'Turkey' => 'Turkey'];
     public const EMPLOYMENT = ['full_time' => 'Full time', 'part_time' => 'Part time', 'daily' => 'Daily worker', 'shift' => 'Shifts (hospital)'];
+    public const COST_TYPES = ['direct' => 'Direct (works on projects: LOE from HR)', 'shared' => 'Shared support staff (LOE from the cost recovery plan)'];
     public const BASIS = ['monthly' => 'Monthly salary', 'daily' => 'Per day', 'shift' => 'Per shift', 'hourly' => 'Per hour'];
 
     public function individual() { return $this->belongsTo(Individual::class); }

@@ -37,6 +37,8 @@ return [
             ['expense_account_id', 'Expense account', 'lookup', 'source' => 'accounts', 'rel' => 'expenseAccount', 'col' => 6],
             ['income_account_id', 'Income account', 'lookup', 'source' => 'accounts', 'rel' => 'incomeAccount', 'col' => 6],
             ['total_amount', 'Total amount', 'number', 'col' => 4],
+            ['spent_before', 'Spent before the system (USD)', 'number', 'col' => 4, 'help' => 'From QuickBooks (budget vs actual) up to the date beside it. Used for the remaining capacity of the line.'],
+            ['spent_before_date', 'Spent up to', 'date', 'col' => 4],
             ['budget_category', 'Budget category', 'text', 'long' => true, 'col' => 4],
             ['remaining', 'Remaining', 'text', 'col' => 4],
             ['active', 'Active', 'switch', 'col' => 12],
@@ -136,11 +138,12 @@ return [
     'currencies' => [
         'model' => Models\Currency::class, 'title' => 'Currencies', 'one' => 'currency', 'icon' => 'fa-money-bill-1',
         'group' => 'Lists', 'search' => ['code', 'name'], 'order' => ['sequence', 'asc'],
-        'list' => ['code' => 'Code', 'name' => 'Name', 'sequence' => 'Order', 'active' => 'Active'],
+        'list' => ['code' => 'Code', 'name' => 'Name', 'usd_rate' => 'USD for 1', 'sequence' => 'Order', 'active' => 'Active'],
         'fields' => [
             ['code', 'Code', 'text', 'required' => true, 'unique' => true, 'col' => 3],
             ['name', 'Name', 'text', 'col' => 6],
             ['sequence', 'Order', 'int', 'col' => 3],
+            ['usd_rate', 'US dollars for 1 unit', 'number', 'col' => 6, 'help' => 'QuickBooks rate, used to compare project budgets in this currency (capacity and key of the cost recovery plan).'],
             ['active', 'Active', 'switch', 'col' => 12],
         ],
     ],

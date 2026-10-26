@@ -9,6 +9,7 @@ use App\Models\ExpenseLine;
 use App\Models\ExpenseRun;
 use App\Models\PayrollRun;
 use App\Models\Project;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -185,8 +186,10 @@ class SharedCosts
         }
         if ($needKey) {
             $pr = static::payrollRun($run);
-            if (!$pr || !$pr->allocated_at) {
-                $add('error', 'payroll', null, 'The payroll of ' . $run->label() . ' must be allocated first: its FTE by office is the key of the shared costs.');
+            if ((string) Setting::get('cost_key') === 'direct_fte' && (!$pr || !$pr->allocated_at)) {
+                $add('error', 'payroll', null, 'The payroll of ' . $run->label() . ' must be allocated first: its direct FTE by office is the key of the shared costs.');
+            } elseif (empty(static::keysFor($run)['all'])) {
+                $add('error', 'no_key', null, 'No key for ' . $run->label() . ': no direct staff in an allocated payroll and no direct budget on the running projects.');
             }
         }
         return $out;
@@ -198,19 +201,33 @@ class SharedCosts
     }
 
     // ---------------------------------------------------------------- allocation
-    /** @return array<string, array<string, float>> office => project => share; 'all' = every office */
+    /** @return array<string, array<string, float>> office => project => share; 'all' = every office. Key = FTE of the DIRECT staff. */
     public static function keys(PayrollRun $pr): array
     {
-        $out = [];
-        $all = [];
-        foreach (Payroll::fte($pr) as $office => $rows) {
-            foreach ($rows as $r) {
-                $out[$office][$r['code']] = $r['share'];
-                $all[$r['code']] = ($all[$r['code']] ?? 0) + $r['fte'];
+        $fte = CostRecovery::weights($pr->period, $pr);
+        $out = ['all' => CostRecovery::key($fte)];
+        foreach (['Syria', 'Turkey'] as $office) {
+            if (!empty($fte[$office])) {
+                $out[$office] = CostRecovery::key($fte, $office);
             }
         }
-        $tot = array_sum($all);
-        $out['all'] = $tot ? array_map(fn ($v) => $v / $tot, $all) : [];
+        return $out;
+    }
+
+    /** Keys of the month: from the payroll when it is allocated (direct FTE), else by direct budget. */
+    public static function keysFor(ExpenseRun $run): array
+    {
+        $pr = static::payrollRun($run);
+        if ($pr && $pr->allocated_at) {
+            return static::keys($pr);
+        }
+        $w = CostRecovery::weights($run->period, null);
+        $out = ['all' => CostRecovery::key($w)];
+        foreach (['Syria', 'Turkey'] as $o) {
+            if (!empty($w[$o])) {
+                $out[$o] = CostRecovery::key($w, $o);
+            }
+        }
         return $out;
     }
 
@@ -225,9 +242,12 @@ class SharedCosts
         $map = CostCategoryLine::get()->groupBy('cost_category_id')->map(fn ($g) => $g->pluck('budget_line_id', 'project_code'));
         $core = Payroll::coreCode();
         $pr = static::payrollRun($run);
-        $keys = $pr && $pr->allocated_at ? static::keys($pr) : [];
+        $keys = static::keysFor($run);
         $n = 0;
-        DB::transaction(function () use ($run, $cats, $map, $core, $keys, &$n) {
+        $blIds = CostCategoryLine::pluck('budget_line_id')->unique()->all();
+        $left = array_map(fn ($c) => $c['monthly'], CostRecovery::capacity(\App\Models\BudgetLine::whereIn('id', $blIds)->get(), $run->period));
+        $running = CostRecovery::running($run->period);
+        DB::transaction(function () use ($run, $cats, $map, $core, $keys, &$n, &$left, $running) {
             ExpenseAllocation::where('expense_run_id', $run->id)->delete();
             foreach ($run->lines()->where('excluded', false)->get() as $l) {
                 $cat = $cats[$l->category_code];
@@ -236,7 +256,7 @@ class SharedCosts
                     $shares = [$l->direct_project => 1.0];
                     $kind = 'direct';
                 } else {
-                    $shares = $keys[$cat->basis === 'fte_all' ? 'all' : ($cat->office ?? 'all')] ?? [];
+                    $shares = ($cat->basis === 'fte_all' || !$cat->office) ? ($keys['all'] ?? []) : (($keys[$cat->office] ?? []) ?: ($keys['all'] ?? []));
                     $kind = 'key';
                     if (!$shares) {   // nobody paid in that office this month: the core fund carries it
                         $shares = [$core => 1.0];
@@ -246,12 +266,32 @@ class SharedCosts
                 $parts = Payroll::split($l->amount_usd, array_map(fn ($s) => $s * 100, array_values($shares)));
                 foreach ($codes as $i => $code) {
                     $code = (string) $code;
-                    $bl = $bls[$code] ?? null;
-                    $gap = !$bl && $code !== $core;
-                    ExpenseAllocation::create(['expense_run_id' => $run->id, 'expense_line_id' => $l->id,
-                        'project_code' => $gap ? $core : $code, 'budget_line_id' => $gap ? ($bls[$core] ?? null) : $bl,
-                        'share' => round($shares[$codes[$i]], 7), 'amount_usd' => $parts[$i], 'kind' => $gap ? 'gap' : $kind, 'gap_from' => $gap ? $code : null]);
-                    $n++;
+                    $amount = $parts[$i];
+                    $bl = isset($running[$code]) || $code === $core ? ($bls[$code] ?? null) : null;
+                    $base = ['expense_run_id' => $run->id, 'expense_line_id' => $l->id, 'share' => round($shares[$codes[$i]], 7)];
+                    if ($code === $core) {
+                        ExpenseAllocation::create($base + ['project_code' => $core, 'budget_line_id' => $bl, 'amount_usd' => $amount, 'kind' => $kind]);
+                        $n++;
+                        continue;
+                    }
+                    if (!$bl) {   // the project did not budget this cost: the core fund carries its share
+                        ExpenseAllocation::create($base + ['project_code' => $core, 'budget_line_id' => $bls[$core] ?? null, 'amount_usd' => $amount, 'kind' => 'gap', 'gap_from' => $code]);
+                        $n++;
+                        continue;
+                    }
+                    $avail = $left[$bl] ?? null;
+                    $take = $avail === null ? $amount : round(min($amount, max(0, $avail)), 2);
+                    if ($take > 0.004) {
+                        ExpenseAllocation::create($base + ['project_code' => $code, 'budget_line_id' => $bl, 'amount_usd' => $take, 'kind' => $kind]);
+                        $n++;
+                        if ($avail !== null) {
+                            $left[$bl] = $avail - $take;
+                        }
+                    }
+                    if ($amount - $take > 0.004) {   // the line of the project is exhausted this month
+                        ExpenseAllocation::create($base + ['project_code' => $core, 'budget_line_id' => $bls[$core] ?? null, 'amount_usd' => round($amount - $take, 2), 'kind' => 'cap', 'gap_from' => $code]);
+                        $n++;
+                    }
                 }
             }
             $run->allocated_at = now();
@@ -275,7 +315,7 @@ class SharedCosts
     public static function byProject(ExpenseRun $run): array
     {
         $rows = ExpenseAllocation::where('expense_run_id', $run->id)
-            ->selectRaw("project_code, SUM(amount_usd) as usd, SUM(CASE WHEN kind = 'gap' THEN amount_usd ELSE 0 END) as gap, SUM(CASE WHEN kind = 'direct' THEN amount_usd ELSE 0 END) as direct")
+            ->selectRaw("project_code, SUM(amount_usd) as usd, SUM(CASE WHEN kind IN ('gap', 'cap') THEN amount_usd ELSE 0 END) as gap, SUM(CASE WHEN kind = 'direct' THEN amount_usd ELSE 0 END) as direct")
             ->groupBy('project_code')->get();
         $total = (float) $rows->sum('usd');
         $names = Project::pluck('qb_name', 'code')->mapWithKeys(fn ($v, $k) => [(string) $k => $v])->all();
@@ -289,13 +329,14 @@ class SharedCosts
     public static function gaps(ExpenseRun $run): array
     {
         $rows = ExpenseAllocation::query()->join('expense_lines', 'expense_lines.id', '=', 'expense_allocations.expense_line_id')
-            ->where('expense_allocations.expense_run_id', $run->id)->where('kind', 'gap')
-            ->selectRaw('gap_from, expense_lines.category_code as category, SUM(expense_allocations.amount_usd) as usd')
-            ->groupBy('gap_from', 'expense_lines.category_code')->orderByDesc('usd')->get();
+            ->where('expense_allocations.expense_run_id', $run->id)->whereIn('kind', ['gap', 'cap'])
+            ->selectRaw('gap_from, kind, expense_lines.category_code as category, SUM(expense_allocations.amount_usd) as usd')
+            ->groupBy('gap_from', 'kind', 'expense_lines.category_code')->orderByDesc('usd')->get();
         $cats = CostCategory::pluck('name', 'code');
         $names = Project::pluck('qb_name', 'code')->mapWithKeys(fn ($v, $k) => [(string) $k => $v])->all();
         return $rows->map(fn ($r) => ['project' => (string) $r->gap_from, 'name' => $names[(string) $r->gap_from] ?? '', 'category' => $r->category,
-            'category_name' => $cats[$r->category] ?? $r->category, 'usd' => (float) $r->usd])->all();
+            'category_name' => $cats[$r->category] ?? $r->category, 'usd' => (float) $r->usd,
+            'why' => $r->kind === 'cap' ? 'Budget line exhausted this month' : 'No budget line for this cost'])->all();
     }
 
     /** Category × project matrix in US dollars. */
@@ -317,6 +358,6 @@ class SharedCosts
     {
         $lines = $run->lines()->get();
         return ['lines' => $lines->count(), 'usd' => (float) $lines->sum('amount_usd'), 'excluded' => (float) $lines->where('excluded', true)->sum('amount_usd'),
-            'allocated' => (float) $run->allocations()->sum('amount_usd'), 'gap' => (float) $run->allocations()->where('kind', 'gap')->sum('amount_usd')];
+            'allocated' => (float) $run->allocations()->sum('amount_usd'), 'gap' => (float) $run->allocations()->whereIn('kind', ['gap', 'cap'])->sum('amount_usd')];
     }
 }

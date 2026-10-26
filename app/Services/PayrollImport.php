@@ -79,7 +79,12 @@ class PayrollImport
         $errors = [];
         $save = [];
         foreach (static::rows($file) as $n => $c) {
-            [$id, $pos, $office, $emp, $basis, $rate, $cur, $fte, $start, $end, $bl, $number, $notes] = array_pad($c, 13, null);
+            [$id, $pos, $office, $emp, $basis, $rate, $cur, $fte, $start, $end, $bl, $number, $notes, $ctype] = array_pad($c, 14, null);
+            $ctype = strtolower(trim((string) $ctype)) ?: 'direct';
+            if (!isset(Contract::COST_TYPES[$ctype])) {
+                $errors[] = "Row $n: cost type must be direct or shared.";
+                continue;
+            }
             $ind = Payroll::findIndividual((string) $id);
             if (!$ind) {
                 $errors[] = "Row $n: employee '$id' is not in Individuals.";
@@ -131,7 +136,7 @@ class PayrollImport
             $save[] = ['individual_id' => $ind->id, 'position' => trim((string) $pos) ?: $ind->title, 'office' => $office, 'employment' => $emp,
                 'pay_basis' => $basis, 'rate' => $r, 'currency' => strtoupper(trim((string) $cur)) ?: ($office === 'Turkey' ? 'TRY' : 'USD'),
                 'fte' => $f > 0 ? $f : 1, 'start_date' => $s->toDateString(), 'end_date' => $e?->toDateString(), 'default_budget_line_id' => $blm?->id,
-                'number' => $number !== null ? trim((string) $number) : null, 'notes' => $notes, 'active' => true];
+                'number' => $number !== null ? trim((string) $number) : null, 'notes' => $notes, 'active' => true, 'cost_type' => $ctype];
         }
         if ($errors) {
             return [0, $errors];
@@ -220,7 +225,7 @@ class PayrollImport
         $errors = [];
         $att = [];
         $loe = [];
-        $lines = $run->lines()->with('individual')->get()->groupBy('individual_id');
+        $lines = $run->lines()->with(['individual', 'contract'])->get()->groupBy('individual_id');
         if (Payroll::loeLocked($run->period)) {
             return [0, ['The payroll of ' . $run->label() . ' is approved. Reopen it first.']];
         }
@@ -245,7 +250,11 @@ class PayrollImport
                 }
                 $att[$person->id] = $vals;
             }
-            if ($bl !== null && trim((string) $bl) !== '') {
+            if ($bl !== null && trim((string) $bl) !== '' && strtoupper(trim((string) $bl)) !== 'PLAN') {
+                if ($lines[$person->id]->contains(fn ($l) => $l->contract?->cost_type === 'shared')) {
+                    $errors[] = "Row $n: {$person->code} is shared support staff: the budget lines come from the cost recovery plan. Leave the budget line empty (or PLAN).";
+                    continue;
+                }
                 $blm = Payroll::findBudgetLine((string) $bl);
                 if (!$blm) {
                     $errors[] = "Row $n: budget line '$bl' does not exist.";

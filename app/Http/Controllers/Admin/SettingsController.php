@@ -30,7 +30,15 @@ class SettingsController extends Controller
             'uploader_email_to' => 'nullable|email', 'uploader_email_cc' => 'nullable|string|max:300',
             'logo_file' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'counters' => 'array', 'counters.*' => 'nullable|integer|min:1',
+            'cost_key' => 'nullable|in:auto,direct_fte,direct_budget', 'core_target_percent' => 'nullable|numeric|min:0|max:100',
+            'payroll_core_project' => 'nullable|string|max:20', 'core_staff_bl_syria' => 'nullable|string|max:80', 'core_staff_bl_turkey' => 'nullable|string|max:80',
+            'months_without_end_date' => 'nullable|integer|min:1|max:60', 'payroll_days_basis' => 'nullable|integer|min:28|max:31',
         ]);
+        foreach (['cost_key', 'core_target_percent', 'payroll_core_project', 'core_staff_bl_syria', 'core_staff_bl_turkey', 'months_without_end_date', 'payroll_days_basis'] as $k) {
+            if ($r->has($k)) {
+                Setting::put($k, $v[$k] ?? null);
+            }
+        }
         foreach (['org_name', 'org_name_tr', 'max_attachment_mb', 'idle_minutes', 'due_soon_days', 'uploader_email_to', 'uploader_email_cc'] as $k) {
             Setting::put($k, $v[$k] ?? null);
         }

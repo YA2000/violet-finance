@@ -31,6 +31,12 @@ class Setting extends Model
         'payroll_shift_full_month' => '22',
         'payroll_hourly_full_month' => '176',
         'payroll_lock_loe' => '1',
+        // cost recovery
+        'core_target_percent' => '10',
+        'core_staff_bl_syria' => '1-102-7',
+        'core_staff_bl_turkey' => '1-101-7-(1)',
+        'months_without_end_date' => '12',
+        'cost_key' => 'auto',   // auto | direct_fte | direct_budget
     ];
 
     public static function get(string $key, $default = null)

@@ -187,9 +187,10 @@ class PayrollExport
         [$w, $path] = static::writer('tpl_');
         $w->getCurrentSheet()->setName('Contracts');
         $w->addRow(Row::fromValues(['Employee ID', 'Position', 'Office (Syria/Turkey)', 'Employment (full_time/part_time/daily/shift)',
-            'Pay basis (monthly/daily/shift/hourly)', 'Rate', 'Currency', 'FTE (1 = full time)', 'Start date', 'End date', 'Default budget line (optional)', 'Contract number', 'Notes'], static::bold()));
-        $w->addRow(Row::fromValues(['VI-HR-00229', 'Treasury Officer', 'Syria', 'full_time', 'monthly', 1100, 'USD', 1, '2026-01-01', '2026-12-31', '', '', 'Example - delete this row']));
-        $w->addRow(Row::fromValues(['VI-SR-04066', 'Nurse (Hospital)', 'Syria', 'shift', 'shift', 25, 'USD', 1, '2026-01-01', '2026-12-31', '', '', 'Example - delete this row']));
+            'Pay basis (monthly/daily/shift/hourly)', 'Rate', 'Currency', 'FTE (1 = full time)', 'Start date', 'End date', 'Default budget line (optional)', 'Contract number', 'Notes',
+            'Cost type (direct/shared)'], static::bold()));
+        $w->addRow(Row::fromValues(['VI-HR-00229', 'Treasury Officer', 'Syria', 'full_time', 'monthly', 1100, 'USD', 1, '2026-01-01', '2026-12-31', '', '', 'Example - delete this row', 'shared']));
+        $w->addRow(Row::fromValues(['VI-SR-04066', 'Nurse (Hospital)', 'Syria', 'shift', 'shift', 25, 'USD', 1, '2026-01-01', '2026-12-31', '209-202-1.3.1', '', 'Example - delete this row', 'direct']));
         static::listsSheet($w);
         $w->close();
         return $path;
@@ -228,6 +229,7 @@ class PayrollExport
             'Insurance TRY (Turkey)', 'Tax TRY (Turkey)', 'Indirim TRY (Turkey)', 'Budget line (BL QB code)', 'Percent', 'Notes'], static::bold()));
         $lines = $run->lines()->with(['individual', 'contract.defaultBudgetLine'])->get()->sortBy(fn ($l) => mb_strtolower($l->individual?->name ?? ''));
         $loe = Payroll::loe($run, $lines);
+        // shared support staff: no LOE to fill
         // nothing this month yet: last month's LOE as a starting point
         $prev = \App\Models\LoeEntry::with('budgetLine')->whereDate('period', $run->period->copy()->subMonth()->toDateString())->get()->groupBy('individual_id');
         $done = [];
@@ -237,8 +239,9 @@ class PayrollExport
             }
             $done[$l->individual_id] = true;
             $person = $lines->where('individual_id', $l->individual_id);
-            $rows = $loe[$l->individual_id] ?? [];
-            if (!$rows && isset($prev[$l->individual_id])) {
+            $shared = $person->contains(fn ($x) => $x->contract?->cost_type === 'shared');
+            $rows = $shared ? [] : ($loe[$l->individual_id] ?? []);
+            if (!$shared && !$rows && isset($prev[$l->individual_id])) {
                 $rows = $prev[$l->individual_id]->map(fn ($e) => ['bl' => $e->budgetLine, 'percent' => (float) $e->percent])->all();
             }
             $rows = $rows ?: [['bl' => null, 'percent' => null]];
@@ -247,7 +250,7 @@ class PayrollExport
                 $w->addRow(Row::fromValues([$l->individual?->code, $first ? $l->individual?->name : '', $first ? $l->pay_basis : '',
                     $first ? (float) $person->sum('units') : '', $first ? (float) $person->sum('additions') : '', $first ? (float) $person->sum('deductions') : '',
                     $first && $l->isTurkey() ? (float) $l->tr_insurance : '', $first && $l->isTurkey() ? (float) $l->tr_tax : '', $first && $l->isTurkey() ? (float) $l->tr_indirim : '',
-                    $r['bl']?->code ?? '', $r['percent'] !== null ? round((float) $r['percent'], 3) : '', $first ? $l->notes : '']));
+                    $shared ? 'PLAN' : ($r['bl']?->code ?? ''), $r['percent'] !== null ? round((float) $r['percent'], 3) : '', $first ? ($shared ? trim('Shared staff: LOE from the cost recovery plan. ' . $l->notes) : $l->notes) : '']));
             }
         }
         $w->close();

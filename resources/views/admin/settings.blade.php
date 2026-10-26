@@ -43,6 +43,20 @@
       </div>
     </div>
   </div>
+  <div class="panel" style="margin-top:18px">
+    <div class="panel-head"><h2>Payroll &amp; cost recovery</h2></div>
+    <div class="panel-body fgrid">
+      @php($S = fn ($k) => old($k, \App\Models\Setting::get($k)))
+      <div class="field" style="grid-column:span 6"><label>Key to share the support costs</label>
+        <select class="input" name="cost_key">@foreach(['auto' => 'Automatic: direct FTE of the payroll, else direct budget', 'direct_fte' => 'Direct FTE (programme staff in the payroll, from their LOE)', 'direct_budget' => 'Direct budget per month ((direct lines − spent) ÷ months left)'] as $k => $l)<option value="{{ $k }}" @selected($S('cost_key') === $k)>{{ $l }}</option>@endforeach</select></div>
+      <div class="field" style="grid-column:span 3"><label>Core fund target</label><div class="input-unit"><input class="input num" name="core_target_percent" value="{{ $S('core_target_percent') }}"><span>%</span></div></div>
+      <div class="field" style="grid-column:span 3"><label>Core fund project code</label><input class="input" name="payroll_core_project" value="{{ $S('payroll_core_project') }}"></div>
+      <div class="field" style="grid-column:span 4"><label>Core line for Syria support staff</label><input class="input mono" name="core_staff_bl_syria" value="{{ $S('core_staff_bl_syria') }}"></div>
+      <div class="field" style="grid-column:span 4"><label>Core line for Turkey support staff</label><input class="input mono" name="core_staff_bl_turkey" value="{{ $S('core_staff_bl_turkey') }}"></div>
+      <div class="field" style="grid-column:span 2"><label>Days in a month</label><input class="input num" name="payroll_days_basis" value="{{ $S('payroll_days_basis') }}"></div>
+      <div class="field" style="grid-column:span 2"><label>Months, no end date</label><input class="input num" name="months_without_end_date" value="{{ $S('months_without_end_date') }}"></div>
+    </div>
+  </div>
   <div class="panel" style="margin-top:18px;max-width:720px">
     <div class="panel-head"><h2>Transaction number counters</h2><span class="right hint">Last reserved: <span class="ref">{{ $last ?: '—' }}</span></span></div>
     <div class="panel-body">

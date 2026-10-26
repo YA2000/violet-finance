@@ -190,6 +190,7 @@ class PayrollController extends Controller
             'number' => 'nullable|string|max:60', 'position' => 'nullable|string|max:190',
             'office' => ['required', Rule::in(array_keys(Contract::OFFICES))],
             'employment' => ['required', Rule::in(array_keys(Contract::EMPLOYMENT))],
+            'cost_type' => ['required', Rule::in(array_keys(Contract::COST_TYPES))],
             'pay_basis' => ['required', Rule::in(array_keys(Contract::BASIS))],
             'rate' => 'required|numeric|min:0', 'currency' => 'required|string|max:10', 'fte' => 'required|numeric|min:0.01|max:1',
             'start_date' => 'required|date', 'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -352,7 +353,7 @@ class PayrollController extends Controller
             }
         }
         $rows = $entries->map(fn ($e) => ['id' => $e->budget_line_id, 'text' => $e->budgetLine?->code, 'sub' => trim(($e->budgetLine?->description ?? '') . ' · ' . ($e->budgetLine?->project_name ?? ''), ' ·'), 'percent' => (float) $e->percent])->values()->all();
-        return ['individual' => $ind, 'period' => $period, 'rows' => $rows, 'source' => $source, 'contract' => $contract,
+        return ['individual' => $ind, 'period' => $period, 'rows' => $rows, 'source' => $source, 'contract' => $contract, 'shared' => $contract?->cost_type === 'shared',
             'locked' => Payroll::loeLocked($period), 'saved' => LoeEntry::whereDate('period', $period->toDateString())->where('individual_id', $ind->id)->max('updated_at')];
     }
 
@@ -361,6 +362,9 @@ class PayrollController extends Controller
         $period = Payroll::period($r->input('period'));
         if (Payroll::loeLocked($period)) {
             return back()->withErrors(['loe' => 'The payroll of ' . $period->format('M Y') . ' is approved; its LOE cannot change.']);
+        }
+        if (\App\Services\CostRecovery::isShared($ind->id, $period)) {
+            return back()->withErrors(['loe' => $ind->name . ' is shared support staff: the LOE comes from the cost recovery plan (key + funding lines), it is not entered by hand.']);
         }
         $rows = array_values(array_filter((array) $r->input('rows', []), fn ($x) => !empty($x['budget_line_id']) || (float) ($x['percent'] ?? 0) > 0));
         foreach ($rows as $n => $x) {

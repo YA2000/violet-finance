@@ -263,6 +263,9 @@ class Payroll
             }
             $seen[$l->individual_id] = true;
             $rows = $loe[$l->individual_id] ?? [];
+            if (!$rows && $l->contract?->cost_type === 'shared') {
+                continue;   // support staff: the LOE comes from the cost recovery plan at the allocation
+            }
             if (!$rows) {
                 $add('error', 'loe_missing', $l->individual_id, "$who: no LOE for this month.");
                 continue;
@@ -289,6 +292,10 @@ class Payroll
                     $add('warning', 'project_inactive', $l->individual_id, "$who: project {$p->code} is marked inactive ({$bl->code}).");
                 }
             }
+        }
+        // support staff: problems of the cost recovery plan
+        foreach (CostRecovery::planShared($run, false)[1] as $p) {
+            $out[] = $p;
         }
         // LOE entered by people without a contract this month
         $paid = $lines->pluck('individual_id')->unique()->all();
@@ -318,6 +325,7 @@ class Payroll
     {
         abort_unless($run->isDraft(), 422, 'The payroll is approved. Reopen it first.');
         static::recomputeAll($run);
+        CostRecovery::planShared($run, true);     // LOE of the support staff from the plan (key + funding lines + capacity)
         $errors = static::errors($run);
         if ($errors) {
             throw new \RuntimeException(count($errors) . ' problem(s) must be fixed before the allocation: ' . $errors[0]['msg']);
@@ -338,7 +346,7 @@ class Payroll
                     $fte = static::split4($comp === 'salary' ? (float) $l->fte_month : 0.0, array_column($rows, 'percent'));
                     foreach ($rows as $i => $r) {
                         PayrollAllocation::create(['payroll_run_id' => $run->id, 'payroll_line_id' => $l->id, 'individual_id' => $l->individual_id,
-                            'budget_line_id' => $r['budget_line_id'], 'project_code' => (string) $r['bl']->project_code, 'component' => $comp,
+                            'budget_line_id' => static::componentLine($r['bl'], $comp)->id, 'project_code' => (string) $r['bl']->project_code, 'component' => $comp,
                             'percent' => $r['percent'], 'amount' => $parts[$i], 'amount_usd' => $partsUsd[$i], 'fte' => $fte[$i]]);
                         $n++;
                     }
@@ -348,6 +356,21 @@ class Payroll
             $run->save();
         });
         return $n;
+    }
+
+    /**
+     * Turkey: a salary line with sub-lines "-(1)" salary, "-(2)" SGK insurance, "-(3)" tax (e.g. 167-101-2.1.20-(1)).
+     * The insurance and the tax go to their own sub-line when it exists, otherwise to the same line.
+     */
+    public static function componentLine(BudgetLine $bl, string $comp): BudgetLine
+    {
+        static $cache = [];
+        $n = ['insurance' => '2', 'tax' => '3'][$comp] ?? null;
+        if (!$n || (string) $bl->sub_line !== '1') {
+            return $bl;
+        }
+        $code = preg_replace('/-\(1\)$/', "-($n)", $bl->code);
+        return $cache[$code] ??= (BudgetLine::where('code', $code)->first() ?? $bl);
     }
 
     /** Salary components that go to QuickBooks as separate lines. */

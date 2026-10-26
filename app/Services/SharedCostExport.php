@@ -44,9 +44,9 @@ class SharedCostExport
         }
 
         $w->addNewSheetAndMakeItCurrent()->setName('Gaps');
-        $w->addRow(Row::fromValues(['Project without a budget line', 'Project name', 'Category', 'Category name', 'Carried by the core fund (USD)'], $b));
+        $w->addRow(Row::fromValues(['Project', 'Project name', 'Category', 'Category name', 'Why', 'Carried by the core fund (USD)'], $b));
         foreach (SharedCosts::gaps($run) as $g) {
-            $w->addRow(Row::fromValues([$g['project'], $g['name'], $g['category'], $g['category_name'], round($g['usd'], 2)]));
+            $w->addRow(Row::fromValues([$g['project'], $g['name'], $g['category'], $g['category_name'], $g['why'], round($g['usd'], 2)]));
         }
 
         $w->addNewSheetAndMakeItCurrent()->setName('Detail');
@@ -56,7 +56,7 @@ class SharedCostExport
             $l = $a->line;
             $w->addRow(Row::fromValues([$l->txn_date?->format('Y-m-d'), $l->num, $l->description, $l->category_code, (float) $l->amount_usd, $a->project_code,
                 $names[$a->project_code] ?? '', $a->budgetLine?->code, round((float) $a->share, 6), (float) $a->amount_usd,
-                ['key' => 'FTE key', 'direct' => 'Direct', 'gap' => 'Gap → core'][$a->kind] ?? $a->kind, $a->gap_from]));
+                ['key' => 'FTE key', 'direct' => 'Direct', 'gap' => 'No line → core', 'cap' => 'Line exhausted → core'][$a->kind] ?? $a->kind, $a->gap_from]));
         }
         $w->close();
         return $path;

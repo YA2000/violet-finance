@@ -86,10 +86,10 @@
 </div>
 
 <div x-show="tab === 'gaps'" x-cloak>
-  <div class="alert alert-warn"><i class="fa-solid fa-triangle-exclamation"></i><div>These projects had staff in the office this month but no budget line for the category, so their share went to the core fund. Add the budget line under <a href="{{ route('costs.categories') }}">Categories &amp; budget lines</a> (if the agreement allows the cost) and allocate again — or plan it in the next proposal.</div></div>
-  <div class="panel">@if($gaps)<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Category</th><th class="num">Carried by the core fund</th></tr></thead>
-    <tbody>@foreach($gaps as $g)<tr><td><b>{{ $g['project'] }}</b> <span class="hint">{{ $g['name'] }}</span></td><td>{{ $g['category'] }} <span class="hint">{{ $g['category_name'] }}</span></td><td class="num">{{ money($g['usd']) }}</td></tr>@endforeach</tbody>
-    <tfoot><tr><td colspan="2"><b>Total</b></td><td class="num"><b>{{ money(collect($gaps)->sum('usd')) }}</b></td></tr></tfoot></table></div>
+  <div class="alert alert-warn"><i class="fa-solid fa-triangle-exclamation"></i><div>These projects had direct staff in the office this month (so they owe a fair share), but either have no budget line for the category or the line has no capacity left this month, so that share went to the core fund. Add the budget line under <a href="{{ route('costs.categories') }}">Categories &amp; budget lines</a> (if the agreement allows the cost) and allocate again — or plan it in the next proposal.</div></div>
+  <div class="panel">@if($gaps)<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Category</th><th>Why</th><th class="num">Carried by the core fund</th></tr></thead>
+    <tbody>@foreach($gaps as $g)<tr><td><b>{{ $g['project'] }}</b> <span class="hint">{{ $g['name'] }}</span></td><td>{{ $g['category'] }} <span class="hint">{{ $g['category_name'] }}</span></td><td>{{ $g['why'] }}</td><td class="num">{{ money($g['usd']) }}</td></tr>@endforeach</tbody>
+    <tfoot><tr><td colspan="3"><b>Total</b></td><td class="num"><b>{{ money(collect($gaps)->sum('usd')) }}</b></td></tr></tfoot></table></div>
     @else<div class="empty"><i class="fa-solid fa-circle-check"></i><b>No gap</b>{{ $run->allocated_at ? 'Every project share found its budget line.' : 'Allocate first.' }}</div>@endif</div>
 </div>
 
