@@ -50,6 +50,11 @@ class Perms
                 'payroll.approve' => 'Approve or reopen a payroll run (finance)',
                 'payroll.view' => 'See payroll runs, allocations and payroll sheets',
             ],
+            'Shared costs' => [
+                'costs.manage' => 'Upload the QuickBooks report of the shared costs, categories and their budget lines, allocate',
+                'costs.approve' => 'Approve or reopen the shared costs of a month',
+                'costs.view' => 'See the shared costs allocation and its files',
+            ],
             'Reports' => ['reports.view' => 'Reports'],
             'Master data' => $master,
             'Administration' => [
@@ -95,7 +100,7 @@ class Perms
                 array_merge($ap, ['numbers.reserve', 'advances.manage', 'advances.view', 'reports.view'])],
             'AR Accountant' => ['Records received payments; expense reports of every project to match QuickBooks.', ['receipts.record', 'receipts.view', 'numbers.reserve', 'reports.view']],
             'Budgeting Officer' => ['Agreements (projects), partners, budget lines, accounts, accounting and cost centers, individuals and suppliers.',
-                ['payroll.view', 'master.projects.manage', 'master.partners.manage', 'master.budget_lines.manage', 'master.accounts.manage', 'master.cost_centers.manage',
+                ['payroll.view', 'costs.manage', 'costs.view', 'master.projects.manage', 'master.partners.manage', 'master.budget_lines.manage', 'master.accounts.manage', 'master.cost_centers.manage',
                  'master.accounting_centers.manage', 'master.individuals.manage', 'master.suppliers.manage', 'reports.view']],
             'Internal Viewer' => ['Audits every transaction, comments and returns them for correction; prepares Remittance Statements.',
                 ['review.access', 'form.*.view', 'form.remittance.create', 'remittance.prepare', 'receipts.view', 'advances.view', 'reports.view']],

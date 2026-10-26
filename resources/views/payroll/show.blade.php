@@ -47,8 +47,8 @@
 <div x-show="tab === 'lines'">
   @if($edit)
   <div class="panel" style="margin-bottom:14px"><div class="panel-body" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <span class="hint" style="flex:1;min-width:260px">Monthly staff get the days of their contract (30 for a full month). Daily workers, shifts and hours: enter what was worked. Turkey: enter insurance, tax and indirim from the bordro.</span>
-    <a class="btn btn-sm" href="{{ route('payroll.export', [$run, 'attendance']) }}"><i class="fa-solid fa-download"></i> Attendance file</a>
+    <span class="hint" style="flex:1;min-width:260px"><b>HR monthly file:</b> one file for the month. For each employee: worked days / shifts / hours, additions, deductions (Turkey: SGK, tax, indirim from the bordro) on the first row, and one row per budget line with its percent (100 % per employee). Download it filled with what the system knows, complete it, upload it.</span>
+    <a class="btn btn-sm" href="{{ route('payroll.export', [$run, 'attendance']) }}"><i class="fa-solid fa-download"></i> HR monthly file</a>
     <form method="post" action="{{ route('payroll.attendance', $run) }}" enctype="multipart/form-data" style="display:flex;gap:6px">@csrf
       <input type="file" name="file" accept=".xlsx" class="input" style="width:220px" required><button class="btn btn-sm"><i class="fa-solid fa-upload"></i> Upload</button></form>
   </div></div>

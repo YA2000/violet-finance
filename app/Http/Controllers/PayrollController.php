@@ -100,8 +100,8 @@ class PayrollController extends Controller
     {
         abort_unless($run->isDraft(), 422, 'The payroll is approved. Reopen it first.');
         $r->validate(['file' => 'required|file|mimes:xlsx|max:5120']);
-        [$n, $errors] = PayrollImport::attendance($run, $r->file('file')->getRealPath());
-        return $errors ? back()->withErrors($errors) : back()->with('ok', "$n employees updated from the file.");
+        [$n, $errors] = PayrollImport::attendance($run, $r->file('file')->getRealPath(), $r->user());
+        return $errors ? back()->withErrors($errors) : back()->with('ok', "$n employees updated from the HR file (attendance and LOE).");
     }
 
     public function allocate(Request $r, PayrollRun $run)
@@ -148,7 +148,7 @@ class PayrollController extends Controller
             'allocation' => [PayrollExport::allocation($run), "Payroll_Allocation_$tag.xlsx"],
             'uploader' => [PayrollExport::uploader($run), "Payroll_QB_Uploader_$tag.xlsx"],
             'fte' => [PayrollExport::fte($run), "FTE_by_project_$tag.xlsx"],
-            'attendance' => [PayrollExport::attendanceTemplate($run), "Attendance_$tag.xlsx"],
+            'attendance' => [PayrollExport::attendanceTemplate($run), "HR_monthly_file_$tag.xlsx"],
             default => abort(404),
         };
         if (in_array($kind, ['allocation', 'uploader', 'fte'], true) && !$run->allocations()->exists()) {

@@ -216,16 +216,39 @@ class PayrollExport
         return $path;
     }
 
+    /**
+     * HR monthly file: one block per employee. The first row of a block carries the attendance
+     * (worked units, additions, deductions, Turkey bordro); every row carries one budget line and its percent.
+     */
     public static function attendanceTemplate(PayrollRun $run): string
     {
         [$w, $path] = static::writer('tpl_');
-        $w->getCurrentSheet()->setName('Attendance ' . $run->tag());
-        $w->addRow(Row::fromValues(['Employee ID', 'Employee name (for reading only)', 'Pay basis (reading only)', 'Worked days / shifts / hours', 'Additions', 'Deductions',
-            'Insurance TRY (Turkey)', 'Tax TRY (Turkey)', 'Indirim TRY (Turkey)', 'Notes'], static::bold()));
-        foreach ($run->lines()->with('individual')->get()->sortBy(fn ($l) => $l->individual?->name) as $l) {
-            $w->addRow(Row::fromValues([$l->individual?->code, $l->individual?->name, $l->pay_basis, (float) $l->units, (float) $l->additions, (float) $l->deductions,
-                $l->isTurkey() ? (float) $l->tr_insurance : '', $l->isTurkey() ? (float) $l->tr_tax : '',
-                $l->isTurkey() ? (float) $l->tr_indirim : '', $l->notes]));
+        $w->getCurrentSheet()->setName('HR ' . $run->tag());
+        $w->addRow(Row::fromValues(['Employee ID', 'Employee name (reading only)', 'Pay basis (reading only)', 'Worked days / shifts / hours', 'Additions', 'Deductions',
+            'Insurance TRY (Turkey)', 'Tax TRY (Turkey)', 'Indirim TRY (Turkey)', 'Budget line (BL QB code)', 'Percent', 'Notes'], static::bold()));
+        $lines = $run->lines()->with(['individual', 'contract.defaultBudgetLine'])->get()->sortBy(fn ($l) => mb_strtolower($l->individual?->name ?? ''));
+        $loe = Payroll::loe($run, $lines);
+        // nothing this month yet: last month's LOE as a starting point
+        $prev = \App\Models\LoeEntry::with('budgetLine')->whereDate('period', $run->period->copy()->subMonth()->toDateString())->get()->groupBy('individual_id');
+        $done = [];
+        foreach ($lines as $l) {
+            if (isset($done[$l->individual_id])) {
+                continue;     // two contracts in the month: one block
+            }
+            $done[$l->individual_id] = true;
+            $person = $lines->where('individual_id', $l->individual_id);
+            $rows = $loe[$l->individual_id] ?? [];
+            if (!$rows && isset($prev[$l->individual_id])) {
+                $rows = $prev[$l->individual_id]->map(fn ($e) => ['bl' => $e->budgetLine, 'percent' => (float) $e->percent])->all();
+            }
+            $rows = $rows ?: [['bl' => null, 'percent' => null]];
+            foreach (array_values($rows) as $i => $r) {
+                $first = $i === 0;
+                $w->addRow(Row::fromValues([$l->individual?->code, $first ? $l->individual?->name : '', $first ? $l->pay_basis : '',
+                    $first ? (float) $person->sum('units') : '', $first ? (float) $person->sum('additions') : '', $first ? (float) $person->sum('deductions') : '',
+                    $first && $l->isTurkey() ? (float) $l->tr_insurance : '', $first && $l->isTurkey() ? (float) $l->tr_tax : '', $first && $l->isTurkey() ? (float) $l->tr_indirim : '',
+                    $r['bl']?->code ?? '', $r['percent'] !== null ? round((float) $r['percent'], 3) : '', $first ? $l->notes : '']));
+            }
         }
         $w->close();
         return $path;

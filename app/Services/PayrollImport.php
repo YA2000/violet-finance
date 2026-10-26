@@ -210,39 +210,76 @@ class PayrollImport
         return [$n, []];
     }
 
-    /** Worked units and amounts of a run. @return array{0:int, 1:array} */
-    public static function attendance(PayrollRun $run, string $file): array
+    /**
+     * HR monthly file: attendance + LOE of the month in one upload. Rows of one employee form a block:
+     * the first row with "worked" filled gives the attendance; every row with a budget line is one LOE line (block = 100 %).
+     * @return array{0:int, 1:array}
+     */
+    public static function attendance(PayrollRun $run, string $file, ?User $user = null): array
     {
         $errors = [];
-        $save = [];
+        $att = [];
+        $loe = [];
         $lines = $run->lines()->with('individual')->get()->groupBy('individual_id');
+        if (Payroll::loeLocked($run->period)) {
+            return [0, ['The payroll of ' . $run->label() . ' is approved. Reopen it first.']];
+        }
         foreach (static::rows($file) as $n => $c) {
-            [$id, , , $units, $add, $ded, $ins, $tax, $ind, $notes] = array_pad($c, 10, null);
+            [$id, , , $units, $add, $ded, $ins, $tax, $ind, $bl, $pc, $notes] = array_pad($c, 12, null);
             $person = Payroll::findIndividual((string) $id);
             if (!$person || !isset($lines[$person->id])) {
                 $errors[] = "Row $n: employee '$id' has no payroll line this month (check the contract).";
                 continue;
             }
-            $vals = ['units' => static::num($units), 'additions' => static::num($add) ?? 0.0, 'deductions' => static::num($ded) ?? 0.0];
-            if ($vals['units'] === null || $vals['units'] < 0) {
-                $errors[] = "Row $n: worked days / shifts / hours must be a number.";
-                continue;
-            }
-            foreach (['tr_insurance' => $ins, 'tr_tax' => $tax, 'tr_indirim' => $ind] as $k => $v) {
-                if ($v !== null && $v !== '') {
-                    $vals[$k] = static::num($v) ?? 0.0;
+            if ($units !== null && $units !== '' && !isset($att[$person->id])) {
+                $u = static::num($units);
+                if ($u === null || $u < 0) {
+                    $errors[] = "Row $n: worked days / shifts / hours must be a number.";
+                    continue;
                 }
+                $vals = ['units' => $u, 'additions' => static::num($add) ?? 0.0, 'deductions' => static::num($ded) ?? 0.0, 'notes' => $notes];
+                foreach (['tr_insurance' => $ins, 'tr_tax' => $tax, 'tr_indirim' => $ind] as $k => $v) {
+                    if ($v !== null && $v !== '') {
+                        $vals[$k] = static::num($v) ?? 0.0;
+                    }
+                }
+                $att[$person->id] = $vals;
             }
-            $vals['notes'] = $notes;
-            $save[$person->id] = $vals;
+            if ($bl !== null && trim((string) $bl) !== '') {
+                $blm = Payroll::findBudgetLine((string) $bl);
+                if (!$blm) {
+                    $errors[] = "Row $n: budget line '$bl' does not exist.";
+                    continue;
+                }
+                $p = static::num($pc);
+                if ($p === null || $p <= 0 || $p > 100) {
+                    $errors[] = "Row $n: percent of $bl must be more than 0 and at most 100.";
+                    continue;
+                }
+                if ($p <= 1) {
+                    $p *= 100;
+                }
+                $loe[$person->id][] = ['budget_line_id' => $blm->id, 'percent' => $p, 'row' => $n, 'code' => $person->code];
+            } elseif ($pc !== null && $pc !== '') {
+                $errors[] = "Row $n: a percent without a budget line.";
+            }
+        }
+        foreach ($loe as $rows) {
+            $sum = array_sum(array_column($rows, 'percent'));
+            if (abs($sum - 100) > Payroll::TOLERANCE) {
+                $errors[] = 'Employee ' . $rows[0]['code'] . ': rows ' . implode(', ', array_column($rows, 'row')) . ' add up to ' . round($sum, 3) . ' %, not 100 %.';
+            }
         }
         if ($errors) {
             return [0, $errors];
         }
-        DB::transaction(function () use ($save, $lines, $run) {
-            foreach ($save as $ind => $vals) {
-                // one employee with two contracts in the month: the units go to the last contract
+        DB::transaction(function () use ($att, $loe, $lines, $run, $user) {
+            foreach ($att as $ind => $vals) {
+                // two contracts in the month: the units go to the last one, the others keep their contract days
                 $line = $lines[$ind]->sortByDesc('id')->first();
+                if ($lines[$ind]->count() > 1) {
+                    $vals['units'] = max(0, $vals['units'] - (float) $lines[$ind]->where('id', '!=', $line->id)->sum('units'));
+                }
                 if (!$line->isTurkey()) {
                     unset($vals['tr_insurance'], $vals['tr_tax'], $vals['tr_indirim']);
                 }
@@ -251,8 +288,11 @@ class PayrollImport
                 Payroll::compute($line, $run);
                 $line->save();
             }
+            foreach ($loe as $ind => $rows) {
+                Payroll::saveLoe($run->period, (int) $ind, $rows, $user, 'import');
+            }
             Payroll::dropAllocation($run);
         });
-        return [count($save), []];
+        return [count(array_unique(array_merge(array_keys($att), array_keys($loe)))), []];
     }
 }

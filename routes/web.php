@@ -13,6 +13,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\SharedCostController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
@@ -143,6 +144,26 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     });
     Route::post('/payroll/{run}/approve', [PayrollController::class, 'approve'])->name('payroll.approve')->middleware('can:payroll.approve');
     Route::post('/payroll/{run}/reopen', [PayrollController::class, 'reopen'])->name('payroll.reopen')->middleware('can:payroll.approve');
+
+    // shared costs (QuickBooks report of the month, allocated by the FTE of the payroll)
+    Route::get('/shared-costs', [SharedCostController::class, 'index'])->name('costs.index');
+    Route::get('/shared-costs/categories', [SharedCostController::class, 'categories'])->name('costs.categories');
+    Route::middleware('can:costs.manage')->group(function () {
+        Route::post('/shared-costs', [SharedCostController::class, 'store'])->name('costs.store');
+        Route::post('/shared-costs/categories', [SharedCostController::class, 'saveCategory'])->name('costs.categories.store');
+        Route::put('/shared-costs/categories/{category}', [SharedCostController::class, 'saveCategory'])->name('costs.categories.update');
+        Route::post('/shared-costs/mapping', [SharedCostController::class, 'saveMapping'])->name('costs.mapping');
+    });
+    Route::get('/shared-costs/{run}', [SharedCostController::class, 'show'])->name('costs.show');
+    Route::get('/shared-costs/{run}/export/{kind}', [SharedCostController::class, 'export'])->name('costs.export');
+    Route::middleware('can:costs.manage')->group(function () {
+        Route::put('/shared-costs/{run}', [SharedCostController::class, 'update'])->name('costs.update');
+        Route::delete('/shared-costs/{run}', [SharedCostController::class, 'destroy'])->name('costs.destroy');
+        Route::put('/shared-costs/{run}/lines/{line}', [SharedCostController::class, 'line'])->name('costs.line');
+        Route::post('/shared-costs/{run}/allocate', [SharedCostController::class, 'allocate'])->name('costs.allocate');
+    });
+    Route::post('/shared-costs/{run}/approve', [SharedCostController::class, 'approve'])->name('costs.approve')->middleware('can:costs.approve');
+    Route::post('/shared-costs/{run}/reopen', [SharedCostController::class, 'reopen'])->name('costs.reopen')->middleware('can:costs.approve');
 
     // reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('can:reports.view');
