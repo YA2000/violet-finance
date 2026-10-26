@@ -3,7 +3,7 @@
 @section('content')
 @php
   $sumUsd = fn ($rows, $f) => $rows->sum(fn ($p) => $usd($p, $f) ?? 0);
-  $keep = request()->only(['q', 'office', 'manager', 'cur', 'soon', 'show']);
+  $keep = request()->only(['q', 'office', 'manager', 'cur', 'soon', 'show', 'sector']);
 @endphp
 <div class="page-head">
   <div class="grow"><h1>{{ $ended ? 'Ended projects' : 'Running projects' }}</h1>
@@ -13,7 +13,7 @@
     @if($canEdit)
       @if($edit)<a class="btn" href="{{ route('projects.index', $keep) }}"><i class="fa-solid fa-xmark"></i> Stop editing</a>
       @else<a class="btn" href="{{ route('projects.index', $keep + ['edit' => 1]) }}"><i class="fa-solid fa-pen-to-square"></i> Edit several</a>@endif
-      <a class="btn btn-primary" href="{{ route('admin.master.create', 'projects') }}"><i class="fa-solid fa-plus"></i> New project</a>
+      <a class="btn btn-primary" href="{{ route('projects.create') }}"><i class="fa-solid fa-plus"></i> New project</a>
     @endif
   </div>
 </div>
@@ -23,8 +23,14 @@
   <div class="lg strong"><b>{{ $donor->count() }}</b><span>Running projects</span></div>
   <div class="lg {{ $soon->count() ? 'bad' : '' }}"><b>{{ $soon->count() }}</b><span>Ending within 2 months</span></div>
   <div class="lg"><b>{{ money($sumUsd($donor, 'budget_total'), 0) }}</b><span>Budget, USD</span></div>
-  <div class="lg"><b>{{ money($sumUsd($donor, 'balance'), 0) }}</b><span>Remaining, USD</span></div>
+  <div class="lg"><b>{{ money($sumUsd($donor, 'remaining'), 0) }}</b><span>Remaining, USD · overhead earned {{ money($sumUsd($donor, 'overhead'), 0) }}</span></div>
 </div>
+@if($qbPending->count())
+<div class="panel" style="margin-bottom:14px"><div class="panel-body" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <i class="fa-solid fa-file-arrow-up" style="color:var(--violet)"></i><b>Waiting for QuickBooks:</b>
+  @foreach($qbPending as $q)<a class="chip" href="{{ route('projects.show', $q->id) }}">{{ $q->code }} {{ \Illuminate\Support\Str::limit($q->name, 26) }}</a>@endforeach
+</div></div>
+@endif
 @if($noRate->count())<p class="hint danger-text" style="margin:-8px 0 14px"><i class="fa-solid fa-triangle-exclamation"></i> No US-dollar rate for {{ $noRate->implode(', ') }} (Master data → Currencies): these projects are not in the USD totals.</p>@endif
 
 @if($soon->count() && !request('soon'))
@@ -34,8 +40,9 @@
     <tbody>@foreach($soon as $p)<tr class="clickable" onclick="location.href='{{ route('projects.show', $p->id) }}'">
       <td><b>{{ $p->code }}</b> {{ \Illuminate\Support\Str::limit($p->name, 40) }}</td><td>{{ $p->manager }}</td><td>{{ $p->end_date->format('d M Y') }}</td>
       <td class="num"><b class="danger-text">{{ number_format($p->monthsLeft(), 1) }}</b></td>
-      <td class="num">{{ $p->balance !== null ? money($p->balance) . ' ' . $p->currency?->code : '' }}</td>
-      <td class="num">{{ $p->budget_total > 0 && $p->spent_total !== null ? number_format(($p->spent_total + $p->icr_amount) / $p->budget_total * 100, 0) . ' %' : '' }}</td></tr>@endforeach</tbody></table></div>
+      @php($f = $figs[(string) $p->code])
+      <td class="num">{{ $f['remaining'] !== null ? money($f['remaining']) . ' ' . $f['cur'] : '' }}</td>
+      <td class="num">{{ $f['used'] !== null ? number_format($f['used'] * 100, 0) . ' %' : '' }}</td></tr>@endforeach</tbody></table></div>
 </div>
 @endif
 @endunless
@@ -45,6 +52,7 @@
   <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input class="input" name="q" value="{{ request('q') }}" placeholder="Code, name or manager"></div>
   <select class="input" name="office" style="width:auto" onchange="this.form.submit()"><option value="">All offices</option>@foreach($offices as $o)<option @selected(request('office') === $o)>{{ $o }}</option>@endforeach</select>
   <select class="input" name="manager" style="width:auto" onchange="this.form.submit()"><option value="">All managers</option>@foreach($managers as $o)<option @selected(request('manager') === $o)>{{ $o }}</option>@endforeach</select>
+  @if($sectors->count())<select class="input" name="sector" style="width:auto" onchange="this.form.submit()"><option value="">All sectors</option>@foreach($sectors as $o)<option @selected(request('sector') === $o)>{{ $o }}</option>@endforeach</select>@endif
   <select class="input" name="cur" style="width:auto" onchange="this.form.submit()"><option value="">All currencies</option>@foreach($currencies as $o)<option @selected(request('cur') === $o)>{{ $o }}</option>@endforeach</select>
   @unless($ended)<div class="chips"><a class="chip {{ request('soon') ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['soon' => request('soon') ? null : 1]) }}">Ending within 2 months</a></div>@endunless
 </form>
@@ -56,7 +64,7 @@
   @if($list->count())
   <div class="tbl-wrap"><table class="tbl {{ $edit ? 'tbl-edit' : '' }}">
     <thead><tr><th>Project</th><th>Office</th><th>Manager</th>@if($edit)<th>Status</th><th>Start</th>@endif<th>Ends</th><th class="num">Left</th>
-      <th class="num">Budget</th>@if($edit)<th class="num">ICR %</th>@endif<th class="num">Spent</th><th class="num">Remaining</th>@if($edit)<th class="num">Received</th>@else<th class="num">Used</th><th class="num">Lines</th>@endif</tr></thead>
+      <th class="num">Budget</th>@if($edit)<th class="num">ICR %</th>@endif<th class="num">Spent{{ $edit ? ' (opening)' : '' }}</th><th class="num">Remaining{{ $edit ? ' (opening)' : '' }}</th>@if($edit)<th class="num">Received (opening)</th>@else<th class="num">Used</th><th class="num">Lines</th>@endif</tr></thead>
     <tbody>@foreach($list as $p)
       @php($ls = $lineStats[(string) $p->code] ?? null)
       @php($m = $p->monthsLeft())
@@ -75,14 +83,15 @@
       </tr>
       @else
       <tr class="clickable" onclick="location.href='{{ route('projects.show', $p->id) }}'">
-        <td><b>{{ $p->code }}</b> {{ \Illuminate\Support\Str::limit($p->name, 38) }} <span class="hint">{{ $p->currency?->code }}</span></td>
-        <td>{{ $p->office }}</td><td>{{ $p->manager }}</td>
+        @php($f = $figs[(string) $p->code] ?? null)
+        <td><b>{{ $p->code }}</b> {{ \Illuminate\Support\Str::limit($p->name, 38) }} <span class="hint">{{ $p->currency?->code }}{{ $p->sector ? ' · ' . $p->sector : '' }}</span>@if(!$p->inQuickBooks())<span class="pill st-to_pay" style="height:18px;font-size:10.5px">not in QB</span>@endif</td>
+        <td>{{ $p->office }}</td><td>{{ $p->financeOfficer?->name ?? $p->manager }}</td>
         <td>{{ $p->end_date?->format('d M Y') }}</td>
         <td class="num">@if($m !== null)<span class="{{ $p->endsSoon(2) || $m == 0 ? 'danger-text' : '' }}">{{ number_format($m, 1) }}</span>@endif</td>
         <td class="num">{{ $p->budget_total !== null ? money($p->budget_total) : '' }}</td>
-        <td class="num">{{ $p->spent_total !== null ? money($p->spent_total) : '' }}</td>
-        <td class="num"><b class="{{ $p->balance < 0 ? 'danger-text' : '' }}">{{ $p->balance !== null ? money($p->balance) : '' }}</b></td>
-        <td class="num">{{ $p->budget_total > 0 && $p->spent_total !== null ? number_format(($p->spent_total + $p->icr_amount) / $p->budget_total * 100, 0) . ' %' : '' }}</td>
+        <td class="num">{{ $f && $f['spent'] !== null ? money($f['spent']) : '' }}</td>
+        <td class="num"><b class="{{ $f && $f['remaining'] < 0 ? 'danger-text' : '' }}">{{ $f && $f['remaining'] !== null ? money($f['remaining']) : '' }}</b></td>
+        <td class="num">{{ $f && $f['used'] !== null ? number_format($f['used'] * 100, 0) . ' %' : '' }}</td>
         <td class="num">{{ $ls->n ?? 0 }}@if($ls && $ls->unknown)<div class="hint" title="Lines without remaining">{{ $ls->unknown }} ?</div>@endif</td>
       </tr>
       @endif

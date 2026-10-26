@@ -44,14 +44,14 @@ class ProjectController extends Controller
     {
         $this->see($r);
         $ended = $r->input('show') === 'ended';
-        $all = Project::with(['currency', 'partner'])->when($ended, fn ($q) => $q->where('active', false), fn ($q) => $q->running())->orderBy('end_date')->orderBy('code')->get();
+        $all = Project::with(['currency', 'partner', 'financeOfficer'])->when($ended, fn ($q) => $q->where('active', false), fn ($q) => $q->running())->orderBy('end_date')->orderBy('code')->get();
         $donor = $all->reject->isInternal();
         $lineStats = BudgetLine::where('active', true)->selectRaw('project_code, COUNT(*) n, SUM(spent_before IS NULL) unknown')->groupBy('project_code')->get()->keyBy('project_code');
         $list = $donor;
         if ($s = trim((string) $r->input('q'))) {
             $list = $list->filter(fn ($p) => str_contains(mb_strtolower($p->code . ' ' . $p->name . ' ' . $p->qb_name . ' ' . $p->manager), mb_strtolower($s)));
         }
-        foreach (['office', 'manager'] as $f) {
+        foreach (['office', 'manager', 'sector'] as $f) {
             if ($r->filled($f)) {
                 $list = $list->where($f, $r->input($f));
             }
@@ -62,9 +62,12 @@ class ProjectController extends Controller
         if ($r->input('soon')) {
             $list = $list->filter->endsSoon(2);
         }
-        $usd = fn ($p, $f) => $p->$f !== null && ($rate = LineBudget::rateOf($p)) > 0 ? (float) $p->$f * $rate : null;
+        $figs = LineBudget::projectFigures($donor);
+        $usd = fn ($p, $f) => ($v = in_array($f, ['remaining', 'spent', 'received', 'overhead']) ? ($figs[(string) $p->code][$f] ?? null) : $p->$f) !== null
+            && ($rate = LineBudget::rateOf($p)) > 0 ? (float) $v * $rate : null;
         return view('projects.index', [
-            'list' => $list->values(), 'donor' => $donor, 'internal' => $all->filter->isInternal(), 'ended' => $ended, 'lineStats' => $lineStats, 'usd' => $usd,
+            'list' => $list->values(), 'donor' => $donor, 'figs' => $figs, 'sectors' => $donor->pluck('sector')->filter()->unique()->sort()->values(),
+            'qbPending' => Project::running()->where(fn ($q) => $q->whereNull('qb_added_at')->orWhereIn('code', BudgetLine::where('active', true)->whereNull('qb_added_at')->pluck('project_code')))->get(), 'internal' => $all->filter->isInternal(), 'ended' => $ended, 'lineStats' => $lineStats, 'usd' => $usd,
             'soon' => $donor->filter->endsSoon(2)->values(), 'endedCount' => Project::where('active', false)->count(),
             'offices' => $donor->pluck('office')->filter()->unique()->sort()->values(), 'managers' => $donor->pluck('manager')->filter()->unique()->sort()->values(),
             'currencies' => $donor->map(fn ($p) => $p->currency?->code)->filter()->unique()->sort()->values(),
@@ -223,6 +226,70 @@ class ProjectController extends Controller
         return back()->with('ok', "$n projects updated from the file.");
     }
 
+    // ================================================================= new / edit project
+    public function create(Request $r)
+    {
+        abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
+        $p = new Project(['code' => Project::nextCode(), 'status' => 'Ongoing', 'active' => true, 'start_date' => today()]);
+        return view('projects.form', $this->formData($p));
+    }
+
+    public function edit(Request $r, int $id)
+    {
+        abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
+        return view('projects.form', $this->formData(Project::with(['financeOfficer', 'mealOfficer', 'programOfficer'])->findOrFail($id)));
+    }
+
+    protected function formData(Project $p): array
+    {
+        return ['p' => $p, 'partners' => \App\Models\Partner::orderBy('name')->get(),
+            'sectors' => \App\Models\ListItem::where('category', 'program')->orderBy('sequence')->pluck('name'),
+            'currencies' => Currency::where('active', true)->orderBy('sequence')->orderBy('code')->get()];
+    }
+
+    protected function validated(Request $r, ?Project $p): array
+    {
+        $v = $r->validate([
+            'code' => ['required', 'integer', 'min:1', \Illuminate\Validation\Rule::unique('projects', 'code')->ignore($p?->id)],
+            'name' => 'required|string|max:200',
+            'partner_id' => 'nullable|integer|exists:partners,id', 'new_partner' => 'nullable|string|max:120',
+            'sector' => 'nullable|string|max:60', 'currency_id' => 'required|integer|exists:currencies,id',
+            'start_date' => 'required|date', 'end_date' => 'required|date|after_or_equal:start_date',
+            'budget_total' => 'required|numeric|min:0', 'icr_rate' => 'nullable|numeric|min:0|max:100',
+            'office' => 'nullable|in:Turkey,Syria', 'status' => 'nullable|in:' . implode(',', array_keys(Project::STATUSES)),
+            'finance_officer_id' => 'nullable|integer|exists:individuals,id', 'meal_officer_id' => 'nullable|integer|exists:individuals,id',
+            'program_officer_id' => 'nullable|integer|exists:individuals,id',
+        ], [], ['budget_total' => 'agreement value', 'icr_rate' => 'overhead %', 'currency_id' => 'currency']);
+        if (!empty($v['new_partner'])) {
+            $partner = \App\Models\Partner::firstOrCreate(['name' => trim($v['new_partner'])],
+                ['code' => (string) (((int) \App\Models\Partner::whereRaw('code REGEXP "^[0-9]+$"')->max(DB::raw('CAST(code AS UNSIGNED)'))) + 1)]);
+            $v['partner_id'] = $partner->id;
+        }
+        unset($v['new_partner']);
+        $v['icr_rate'] = isset($v['icr_rate']) && $v['icr_rate'] !== '' ? (float) $v['icr_rate'] / 100 : null;
+        $v['name'] = trim(preg_replace('/^' . preg_quote((string) $v['code'], '/') . '\s*-\s*/', '', $v['name']));   // "510-2026-…" → "2026-…"
+        $v['qb_name'] = $v['code'] . '-' . $v['name'];
+        $v['manager'] = $v['finance_officer_id'] ? \App\Models\Individual::find($v['finance_officer_id'])?->name : ($p?->manager);
+        return $v;
+    }
+
+    public function store(Request $r)
+    {
+        abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
+        $v = $this->validated($r, null);
+        $p = DB::transaction(fn () => Project::create($v + ['status' => 'Ongoing', 'active' => true, 'qb_added_at' => null]));
+        return redirect()->route('projects.show', [$p->id, 'add' => 1])->with('ok', "Project $p->code created. Now add its budget lines.");
+    }
+
+    public function update(Request $r, int $id)
+    {
+        abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
+        $p = Project::findOrFail($id);
+        $v = $this->validated($r, $p);
+        $p->fill(array_filter($v, fn ($x, $k) => $k !== 'status' || $x, ARRAY_FILTER_USE_BOTH))->save();
+        return redirect()->route('projects.show', $p->id)->with('ok', 'Project saved.');
+    }
+
     // ================================================================= one project
     public function show(Request $r, int $id)
     {
@@ -234,12 +301,125 @@ class ProjectController extends Controller
         $charged = CostRecovery::chargedBefore($lines->pluck('id')->all(), now()->addMonth()->startOfMonth());
         $lines->each(fn ($b) => $b->charged_usd = (float) ($charged[$b->id] ?? 0));
         $counts = BudgetLine::where('project_code', (string) $p->code)->selectRaw('active, COUNT(*) n')->groupBy('active')->pluck('n', 'active');
+        $p->load(['financeOfficer', 'mealOfficer', 'programOfficer']);
         return view('projects.show', [
+            'fig' => LineBudget::projectFigures([$p])[(string) $p->code],
+            'receipts' => \App\Models\Receipt::with(['reservation', 'bankAccount'])->where('project_id', $p->id)->orderByDesc('date')->get(),
+            'notInQb' => BudgetLine::where('project_code', (string) $p->code)->where('active', true)->whereNull('qb_added_at')->count(),
+            'centers' => \App\Models\AccountingCenter::orderBy('code')->get(),
+            'accounts' => \App\Models\Account::where('active', true)->whereIn('category', ['Expenditures', 'Other Expenditure'])->orderBy('code')->get(['id', 'code', 'name']),
+            'isAdmin' => $r->user()->hasPerm('users.manage'),
             'p' => $p, 'lines' => $lines, 'groups' => $lines->groupBy(fn ($b) => $b->accounting_center_code . ' · ' . $b->accounting_center_name),
             'archived' => $archived, 'counts' => $counts, 'rate' => LineBudget::rateOf($p), 'cur' => strtoupper($p->currency?->code ?? 'USD'),
             'funding' => FundingLine::with(['individual', 'budgetLine'])->where('project_code', (string) $p->code)->where('active', true)->get(),
             'canEdit' => $this->canEditLines($r), 'canEditProject' => $r->user()->hasPerm('master.projects.manage'),
         ]);
+    }
+
+    /** Many budget lines at once: rows[i] = {center, line, sub, description, account, amount}. The code is project-center-line(-(sub)). */
+    public function addLines(Request $r, int $id)
+    {
+        abort_unless($this->canEditLines($r), 403);
+        $p = Project::findOrFail($id);
+        $centers = \App\Models\AccountingCenter::pluck('code')->map(fn ($c) => (string) $c)->all();
+        $rows = collect((array) $r->input('rows', []))->map(fn ($x) => array_map(fn ($v) => is_string($v) ? trim($v) : $v, (array) $x))
+            ->filter(fn ($x) => collect($x)->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty())->values();
+        if ($rows->isEmpty()) {
+            return back()->withErrors(['rows' => 'Nothing to add: fill at least one row.']);
+        }
+        $errors = $make = [];
+        $seen = [];
+        foreach ($rows as $i => $x) {
+            $n = 'Row ' . ($i + 1);
+            $line = preg_replace('/^' . preg_quote((string) $p->code, '/') . '-\d{3}-/', '', (string) ($x['line'] ?? ''));   // accepts a full code too
+            $v = ['project_code' => (string) $p->code, 'accounting_center_code' => (string) ($x['center'] ?? ''), 'budget_line' => $line,
+                'sub_line' => ($x['sub'] ?? '') !== '' ? (string) $x['sub'] : null];
+            $code = BudgetLine::makeCode($v);
+            if (!in_array($v['accounting_center_code'], $centers, true)) {
+                $errors[] = "$n: choose the cost center.";
+            }
+            if ($line === '') {
+                $errors[] = "$n: the line number is missing.";
+            }
+            if (($x['description'] ?? '') === '') {
+                $errors[] = "$n: the description is missing.";
+            }
+            $amt = str_replace([',', ' '], '', (string) ($x['amount'] ?? ''));
+            if ($amt === '' || !is_numeric($amt) || (float) $amt < 0) {
+                $errors[] = "$n: the amount is not a number.";
+            }
+            if (isset($seen[$code])) {
+                $errors[] = "$n: $code is twice in the list.";
+            } elseif ($line !== '' && BudgetLine::where('code', $code)->exists()) {
+                $errors[] = "$n: $code exists already.";
+            }
+            $seen[$code] = true;
+            $acc = null;
+            if (($x['account'] ?? '') !== '') {
+                $acc = \App\Models\Account::where('id', $x['account'])->orWhere('code', explode(' ', (string) $x['account'])[0])->first();
+                if (!$acc) {
+                    $errors[] = "$n: unknown account {$x['account']}.";
+                }
+            }
+            // a new line starts at zero: everything spent on it comes from the system (PTR, JAR, payroll, shared costs)
+            $make[] = $v + ['description' => $x['description'] ?? '', 'expense_account_id' => $acc?->id, 'total_amount' => (float) $amt, 'active' => true, 'spent_before' => 0];
+        }
+        if ($errors) {
+            return back()->withErrors(array_slice($errors, 0, 20))->withInput();
+        }
+        DB::transaction(function () use ($make) {
+            foreach ($make as $v) {
+                BudgetLine::create($v);
+            }
+        });
+        return redirect()->route('projects.show', $p->id)->with('ok', count($make) . ' lines added. They are marked "not in QuickBooks yet".');
+    }
+
+    // ---------------------------------------------------------------- QuickBooks
+    /** Uploader for QuickBooks: the project as a customer (when new) and its lines not in QuickBooks yet as items. */
+    public function quickbooks(Request $r, int $id)
+    {
+        $this->see($r);
+        $p = Project::with(['currency', 'partner'])->findOrFail($id);
+        $lines = BudgetLine::with(['expenseAccount', 'incomeAccount'])->where('project_code', (string) $p->code)->where('active', true)->whereNull('qb_added_at')->orderBy('id')->get();
+        $path = storage_path('app/tmp/' . uniqid('qbproject_') . '.xlsx');
+        @mkdir(dirname($path), 0775, true);
+        $w = new Writer();
+        $w->openToFile($path);
+        $b = (new Style())->setFontBold();
+        $w->getCurrentSheet()->setName('Customer');
+        $w->addRow(Row::fromValues(['Customer', 'Company Name', 'Currency', 'Job Status', 'Job Start Date', 'Job Projected End Date', 'Job Type', 'Notes'], $b));
+        if (!$p->inQuickBooks()) {
+            $w->addRow(Row::fromValues([$p->qb_name ?: $p->code . '-' . $p->name, $p->partner?->name, $p->currency?->code, 'In progress',
+                $p->start_date?->format('Y-m-d'), $p->end_date?->format('Y-m-d'), $p->sector, trim(($p->office ? $p->office . ' office' : '') . ($p->icr_rate ? ' · overhead ' . round($p->icr_rate * 100, 2) . ' %' : ''), ' ·')]));
+        }
+        $w->addNewSheetAndMakeItCurrent()->setName('Items');
+        $w->addRow(Row::fromValues(['Item Name', 'Subitem Of', 'Item Type', 'Description', 'Expense Account', 'Expense Account No.', 'Income Account', 'Cost', 'Customer', 'Class'], $b));
+        $parents = [];
+        foreach ($lines as $l) {
+            if ($l->parent_bl && !isset($parents[$l->parent_bl]) && !BudgetLine::where('code', $l->parent_bl)->whereNotNull('qb_added_at')->exists()) {
+                $parents[$l->parent_bl] = true;   // Turkey salary lines: the parent item first
+                $w->addRow(Row::fromValues([$l->parent_bl, '', 'Service', $l->description, $l->expenseAccount?->name, $l->expenseAccount?->code, $l->incomeAccount?->name, '', $p->qb_name, $l->accounting_center_name]));
+            }
+            $w->addRow(Row::fromValues([$l->code, $l->parent_bl ?: '', 'Service', $l->description, $l->expenseAccount?->name, $l->expenseAccount?->code, $l->incomeAccount?->name,
+                (float) $l->total_amount, $p->qb_name, $l->accounting_center_name]));
+        }
+        $w->close();
+        return response()->download($path, 'QuickBooks_project_' . $p->code . '.xlsx')->deleteFileAfterSend();
+    }
+
+    /** The system admin confirms that the project and its new lines are in QuickBooks. */
+    public function confirmQuickbooks(Request $r, int $id)
+    {
+        abort_unless($r->user()->hasPerm('users.manage'), 403, 'Only the system admin confirms QuickBooks.');
+        $p = Project::findOrFail($id);
+        DB::transaction(function () use ($p, $r) {
+            if (!$p->qb_added_at) {
+                $p->forceFill(['qb_added_at' => now(), 'qb_added_by' => $r->user()->id])->saveQuietly();
+            }
+            BudgetLine::where('project_code', (string) $p->code)->whereNull('qb_added_at')->update(['qb_added_at' => now()]);
+        });
+        return back()->with('ok', 'Marked as added to QuickBooks.');
     }
 
     public function saveLines(Request $r, int $id)

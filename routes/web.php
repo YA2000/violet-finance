@@ -151,6 +151,13 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
 
     // allocation lab (test area)
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    Route::get('/projects/new', [ProjectController::class, 'create'])->name('projects.create');
+    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects/{id}/edit', [ProjectController::class, 'edit'])->whereNumber('id')->name('projects.edit');
+    Route::put('/projects/{id}', [ProjectController::class, 'update'])->whereNumber('id')->name('projects.update');
+    Route::post('/projects/{id}/lines', [ProjectController::class, 'addLines'])->whereNumber('id')->name('projects.lines.add');
+    Route::get('/projects/{id}/quickbooks', [ProjectController::class, 'quickbooks'])->whereNumber('id')->name('projects.qb');
+    Route::post('/projects/{id}/quickbooks', [ProjectController::class, 'confirmQuickbooks'])->whereNumber('id')->name('projects.qb.confirm');
     Route::put('/projects', [ProjectController::class, 'bulk'])->name('projects.bulk');
     Route::get('/projects/export', [ProjectController::class, 'exportList'])->name('projects.list.export');
     Route::post('/projects/import', [ProjectController::class, 'importList'])->name('projects.list.import');

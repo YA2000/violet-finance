@@ -3,7 +3,7 @@
 @section('content')
 @php
   $keep = request()->only(['p', 'center', 'acc', 'q', 'state']);
-  $unknown = $all->whereNull('spent_cur')->count();
+  $unknown = $all->where('opening_known', false)->count();
   $over = $all->filter(fn ($b) => $b->remaining_cur !== null && $b->remaining_cur < 0)->count();
   $chosen = collect((array) request('p'))->filter();
 @endphp
@@ -22,7 +22,7 @@
 <div class="ledger" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px">
   <div class="lg strong"><b>{{ number_format($all->count()) }}</b><span>Lines{{ $chosen->count() ? ' of ' . $chosen->count() . ' ' . \Illuminate\Support\Str::plural('project', $chosen->count()) : ' · ' . ($running->count() - 2) . ' running projects' }}</span></div>
   <div class="lg"><b>{{ money($all->sum(fn ($b) => $b->remaining_usd ?? 0), 0) }}</b><span>Remaining, USD</span></div>
-  <div class="lg {{ $unknown ? 'bad' : '' }}"><a href="{{ request()->fullUrlWithQuery(['state' => 'unknown', 'page' => null]) }}" style="color:inherit"><b>{{ number_format($unknown) }}</b><span>Without remaining</span></a></div>
+  <div class="lg {{ $unknown ? 'bad' : '' }}"><a href="{{ request()->fullUrlWithQuery(['state' => 'unknown', 'page' => null]) }}" style="color:inherit"><b>{{ number_format($unknown) }}</b><span>Without opening spent</span></a></div>
   <div class="lg {{ $over ? 'bad' : '' }}"><a href="{{ request()->fullUrlWithQuery(['state' => 'over', 'page' => null]) }}" style="color:inherit"><b>{{ number_format($over) }}</b><span>Overspent</span></a></div>
 </div>
 
@@ -40,7 +40,7 @@
   <input class="input" name="acc" value="{{ request('acc') }}" placeholder="Account (e.g. 531)" style="width:150px">
   <div class="chips">
     <a class="chip {{ !request('state') ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['state' => null, 'page' => null]) }}">All</a>
-    <a class="chip {{ request('state') === 'unknown' ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['state' => 'unknown', 'page' => null]) }}">Without remaining</a>
+    <a class="chip {{ request('state') === 'unknown' ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['state' => 'unknown', 'page' => null]) }}">Without opening spent</a>
     <a class="chip {{ request('state') === 'over' ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['state' => 'over', 'page' => null]) }}">Overspent</a>
   </div>
 </form>
@@ -59,7 +59,7 @@
         @if($edit)
           <td class="num"><input class="input num" name="total[{{ $l->id }}]" value="{{ old("total.$l->id", $l->total_amount) }}" style="width:120px"></td>
           <td class="num">{{ $l->spent_cur !== null ? money($l->spent_cur) : '—' }}</td>
-          <td class="num"><input class="input num" name="remaining[{{ $l->id }}]" value="{{ old("remaining.$l->id", $l->remaining_cur) }}" placeholder="?" style="width:120px" @disabled($l->rate <= 0) title="{{ $l->rate <= 0 ? 'No rate for ' . $l->cur : '' }}"></td>
+          <td class="num"><input class="input num" name="remaining[{{ $l->id }}]" value="{{ old("remaining.$l->id", $l->opening_known ? $l->remaining_cur : '') }}" placeholder="?" style="width:120px" @disabled($l->rate <= 0) title="{{ $l->rate <= 0 ? 'No rate for ' . $l->cur : '' }}"></td>
         @else
           <td class="num">{{ money($l->total_amount) }}</td>
           <td class="num">{{ $l->spent_cur !== null ? money($l->spent_cur) : '—' }}</td>

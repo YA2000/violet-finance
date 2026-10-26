@@ -7,9 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Project extends Model
 {
     protected $guarded = ['id'];
-    protected $casts = ['end_date' => 'date', 'active' => 'boolean', 'balance_date' => 'date', 'start_date' => 'date', 'icr_rate' => 'float', 'spent_total' => 'decimal:2', 'icr_amount' => 'decimal:2', 'received' => 'decimal:2', 'donor_balance' => 'decimal:2', 'budget_total' => 'decimal:2', 'balance' => 'decimal:2'];
+    protected $casts = ['end_date' => 'date', 'active' => 'boolean', 'balance_date' => 'date', 'qb_added_at' => 'datetime', 'start_date' => 'date', 'icr_rate' => 'float', 'spent_total' => 'decimal:2', 'icr_amount' => 'decimal:2', 'received' => 'decimal:2', 'donor_balance' => 'decimal:2', 'budget_total' => 'decimal:2', 'balance' => 'decimal:2'];
 
     public const STATUSES = ['Ongoing' => 'Ongoing', 'Ended' => 'Ended', 'Suspended' => 'Suspended', 'Cancelled' => 'Cancelled'];
+
+    public function financeOfficer() { return $this->belongsTo(Individual::class, 'finance_officer_id'); }
+    public function mealOfficer() { return $this->belongsTo(Individual::class, 'meal_officer_id'); }
+    public function programOfficer() { return $this->belongsTo(Individual::class, 'program_officer_id'); }
+    public function receipts() { return $this->hasMany(Receipt::class); }
+
+    public function inQuickBooks(): bool
+    {
+        return $this->qb_added_at !== null;
+    }
 
     public function budgetLines() { return $this->hasMany(BudgetLine::class, 'project_code', 'code'); }
 

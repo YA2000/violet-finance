@@ -108,6 +108,9 @@ class MasterController extends Controller
 
     public function create(string $entity)
     {
+        if ($entity === 'projects') {
+            return redirect()->route('projects.create');   // the guided project form
+        }
         $c = $this->cfg($entity);
         $item = new $c['model']();
         if ($entity === 'projects') {
@@ -124,6 +127,9 @@ class MasterController extends Controller
 
     public function edit(string $entity, int $id)
     {
+        if ($entity === 'projects') {
+            return redirect()->route('projects.edit', $id);
+        }
         $c = $this->cfg($entity);
         $item = $c['model']::findOrFail($id);
         return view('admin.master.edit', compact('c', 'item'));

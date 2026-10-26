@@ -30,7 +30,7 @@ class BudgetLineController extends Controller
             $q->where(fn ($w) => $w->where('code', 'like', "%$s%")->orWhere('description', 'like', "%$s%"));
         }
         if ($r->input('state') === 'unknown') {
-            $q->whereNull('spent_before');
+            $q->whereNull('spent_before');   // no opening spent yet
         } elseif ($r->input('state') === 'over') {
             $q->whereNotNull('spent_before');   // filtered after the figures
         }
