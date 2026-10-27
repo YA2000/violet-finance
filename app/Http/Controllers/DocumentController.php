@@ -256,7 +256,8 @@ class DocumentController extends Controller
     {
         $u = $r->user();
         abort_unless(in_array($doc->state, ['draft', 'cancel'], true) && ($doc->canManage($u) || $doc->isOwner($u)), 403);
-        DB::transaction(function () use ($doc) {
+        DB::transaction(function () use ($doc, $u) {
+            \App\Services\Advances::onJarDropped($doc, $u);
             Reservation::where('document_id', $doc->id)->get()->each->release();
             foreach ($doc->attachments as $a) {
                 Storage::disk('local')->delete($a->path);

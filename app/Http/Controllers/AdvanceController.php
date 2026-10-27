@@ -77,6 +77,9 @@ class AdvanceController extends Controller
         if (!empty($v['advance_id']) && !$adv) {
             return back()->withErrors(['advance_id' => 'Choose one of your open advances.'])->withInput();
         }
+        if ($adv && !empty($v['currency']) && $v['currency'] !== $adv->currency) {
+            return back()->withErrors(['currency' => 'An expense on ' . $adv->number . ' is in ' . $adv->currency . ' (the advance currency).'])->withInput();
+        }
         DB::transaction(function () use ($r, $v, $h, $adv) {
             $e = AdvanceExpense::create(collect($v)->except('files')->all() + ['holder_id' => $h->id, 'advance_id' => $adv?->id,
                 'currency' => $v['currency'] ?? $adv?->currency, 'grn' => $v['grn'] ?? 'Yes', 'status' => 'draft', 'created_by' => $r->user()->id]);
@@ -92,6 +95,9 @@ class AdvanceController extends Controller
         abort_unless($this->ownsHolder($r, $expense->holder) && $expense->editable(), 403);
         $v = $r->validate($this->expenseRules(), Files::messages());
         $adv = !empty($v['advance_id']) ? Advance::where('holder_id', $expense->holder_id)->where('status', 'open')->find($v['advance_id']) : null;
+        if ($adv && !empty($v['currency']) && $v['currency'] !== $adv->currency) {
+            return back()->withErrors(['currency' => 'An expense on ' . $adv->number . ' is in ' . $adv->currency . ' (the advance currency).'])->withInput();
+        }
         DB::transaction(function () use ($r, $v, $expense, $adv) {
             $expense->update(collect($v)->except('files')->all() + ['advance_id' => $adv?->id, 'grn' => $v['grn'] ?? 'Yes',
                 'status' => 'draft', 'settlement_id' => $expense->status === 'returned' ? null : $expense->settlement_id]);

@@ -38,6 +38,6 @@ class AuthController extends Controller
         Auth::logout();
         $r->session()->invalidate();
         $r->session()->regenerateToken();
-        return redirect()->route('login');
+        return redirect()->route('login')->with('status', 'You signed out.');
     }
 }
