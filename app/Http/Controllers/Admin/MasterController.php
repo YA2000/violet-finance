@@ -51,9 +51,15 @@ class MasterController extends Controller
 
     public function home(Request $r)
     {
-        foreach (array_keys(config('master')) as $k) {
+        // projects and budget lines have their own pages under Budget: open the first other sheet,
+        // otherwise "Master data" would land on the Projects page
+        $keys = array_keys(config('master'));
+        $own = ['projects', 'budget_lines'];
+        foreach (array_merge(array_diff($keys, $own), $own) as $k) {
             if ($r->user()->hasPerm("master.$k.manage")) {
-                return redirect()->route('admin.master.index', $k);
+                return in_array($k, $own, true)
+                    ? redirect()->route('admin.master.index', [$k, 'show' => 'all'])
+                    : redirect()->route('admin.master.index', $k);
             }
         }
         abort(403);
