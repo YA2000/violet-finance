@@ -192,6 +192,15 @@ class Workflow
         $doc->load('signatures.individual');
         $next = $doc->nextSignature();
         if (!$next) {
+            // a Remittance Statement waits for the treasury while items are unpaid, even with no Payment (Treasury) signer
+            if ($doc->form_code === Remittances::FORM && $doc->remittanceLines()->where('status', 'waiting')->exists()) {
+                if ($doc->state !== 'to_pay') {
+                    $doc->update(['state' => 'to_pay', 'current_signer_id' => null]);
+                    static::log($doc, 'Fully signed - waiting for payment by the treasury.', 'to_pay');
+                    Remittances::onReadyToPay($doc);
+                }
+                return;
+            }
             $doc->update(['state' => 'done', 'current_signer_id' => null, 'done_at' => now()]);
             static::log($doc, 'All signatures complete - transaction final.', 'done');
             static::notify($doc->user, $doc, 'is final');

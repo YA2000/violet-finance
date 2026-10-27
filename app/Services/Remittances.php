@@ -183,6 +183,10 @@ class Remittances
     {
         $doc->load('signatures.individual');
         $next = $doc->nextSignature();
+        if (!$next && $doc->state === 'to_pay') {
+            Workflow::advance($doc->refresh());   // no treasury signer on the form: final once everything is paid
+            return;
+        }
         if (!$next || !$next->is_payer) {
             return;
         }
