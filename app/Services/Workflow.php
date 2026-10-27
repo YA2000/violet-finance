@@ -277,6 +277,7 @@ class Workflow
         }
         $doc->update(['state' => 'cancel', 'current_signer_id' => null]);
         static::log($doc, 'Cancelled.', 'cancel', $u);
+        Advances::onJarDropped($doc, $u);
     }
 
     /** Payment step: link the reserved payment number + amounts. */

@@ -57,6 +57,19 @@ class Advances
         }
     }
 
+    /** The JAR of a settlement is cancelled or deleted: the settlement goes back to finance, its expenses with it. */
+    public static function onJarDropped(Document $doc, ?User $u = null): void
+    {
+        foreach (AdvanceSettlement::where('document_id', $doc->id)->where('status', 'accepted')->get() as $set) {
+            DB::transaction(function () use ($set) {
+                $set->update(['status' => 'submitted', 'document_id' => null, 'accepted_by' => null]);
+                $set->expenses()->where('status', 'in_jar')->update(['status' => 'submitted']);
+            });
+            Alert::send('advances.manage', 'Settlement ' . $set->number . ' is back', 'JAR ' . ($doc->number ?: '#' . $doc->id) . ' was dropped - accept it again or return it.',
+                route('settlements.show', $set), 'fa-rotate-left', $u?->id);
+        }
+    }
+
     /** Finance accepts a settlement: a JAR draft is prepared from its expenses (finance becomes the preparer). */
     public static function createJar(AdvanceSettlement $set, User $u, array $notes = []): Document
     {
