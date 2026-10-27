@@ -18,8 +18,8 @@
         <input class="input" name="new_partner" x-show="np" x-cloak value="{{ old('new_partner') }}" placeholder="Name of the new partner">
         <a href="#" class="hint" @click.prevent="np = !np" x-text="np ? 'Choose an existing partner' : '+ New partner'"></a></div>
       <div class="field" style="grid-column:span 6"><label>Sector</label><select class="input" name="sector"><option value=""></option>@foreach($sectors as $x)<option @selected($val('sector') === $x)>{{ $x }}</option>@endforeach</select></div>
-      <div class="field" style="grid-column:span 4"><label>Start <span class="req">*</span></label><input class="input" type="date" name="start_date" value="{{ $val('start_date', $p->start_date?->format('Y-m-d')) }}" required></div>
-      <div class="field" style="grid-column:span 4"><label>End <span class="req">*</span></label><input class="input" type="date" name="end_date" value="{{ $val('end_date', $p->end_date?->format('Y-m-d')) }}" required></div>
+      <div class="field" style="grid-column:span 4"><label>Start @unless($p->exists)<span class="req">*</span>@endunless</label><input class="input" type="date" name="start_date" value="{{ $val('start_date', $p->start_date?->format('Y-m-d')) }}" @required(!$p->exists)></div>
+      <div class="field" style="grid-column:span 4"><label>End @unless($p->exists)<span class="req">*</span>@endunless</label><input class="input" type="date" name="end_date" value="{{ $val('end_date', $p->end_date?->format('Y-m-d')) }}" @required(!$p->exists)></div>
       <div class="field" style="grid-column:span 4"><label>Office</label><select class="input" name="office"><option value=""></option>@foreach(\App\Models\Project::OFFICES as $o)<option @selected($val('office') === $o)>{{ $o }}</option>@endforeach</select></div>
       @if($p->exists)
       <div class="field" style="grid-column:span 4"><label>Status</label><select class="input" name="status">@foreach(\App\Models\Project::STATUSES as $s)<option @selected($val('status') === $s)>{{ $s }}</option>@endforeach</select>
@@ -30,7 +30,7 @@
   <div class="panel" style="margin-bottom:14px"><div class="panel-head"><h2><span class="step-n">2</span> The money</h2></div>
     <div class="panel-body fgrid">
       <div class="field" style="grid-column:span 3"><label>Currency <span class="req">*</span></label><select class="input" name="currency_id" required><option value=""></option>@foreach($currencies as $x)<option value="{{ $x->id }}" @selected((string) $val('currency_id') === (string) $x->id)>{{ $x->code }}</option>@endforeach</select></div>
-      <div class="field" style="grid-column:span 5"><label>Agreement value <span class="req">*</span></label><input class="input num" name="budget_total" value="{{ $val('budget_total') }}" required></div>
+      <div class="field" style="grid-column:span 5"><label>Agreement value @unless($p->exists)<span class="req">*</span>@endunless</label><input class="input num" name="budget_total" value="{{ $val('budget_total') }}" @required(!$p->exists)></div>
       <div class="field" style="grid-column:span 4"><label>Overhead %</label><input class="input num" name="icr_rate" value="{{ old('icr_rate', $p->icr_rate !== null ? round($p->icr_rate * 100, 2) : '') }}" placeholder="0">
         <div class="hint">Taken on the expenses: overhead = spent × %.</div></div>
     </div></div>
