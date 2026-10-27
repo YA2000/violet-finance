@@ -177,6 +177,62 @@ document.addEventListener('alpine:init', () => {
     }
   }));
 
+  /* sidebar: search the menu, sections open/closed (remembered), keep its scroll between pages --- */
+  Alpine.data('sideNav', () => ({
+    q: '', none: false, mac: /Mac|iPhone|iPad/.test(navigator.platform),
+    init() {
+      let shut = [];
+      try { shut = JSON.parse(localStorage.getItem('vf.side.shut') || '[]'); } catch (e) {}
+      this.$root.querySelectorAll('.side-sec').forEach(s => {
+        // the section of the open page always shows
+        if (shut.includes(s.dataset.sec) && !s.querySelector('a.nav.active')) s.classList.add('shut');
+      });
+      try {
+        const y = sessionStorage.getItem('vf.side.y');
+        if (y !== null) this.$root.scrollTop = +y;
+      } catch (e) {}
+      const act = this.$root.querySelector('a.nav.active');
+      if (act) {
+        const r = act.getBoundingClientRect(), s = this.$root.getBoundingClientRect();
+        if (r.top < s.top + 120 || r.bottom > s.bottom - 80) act.scrollIntoView({ block: 'center' });
+      }
+      window.addEventListener('pagehide', () => { try { sessionStorage.setItem('vf.side.y', this.$root.scrollTop); } catch (e) {} });
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          if (window.innerWidth <= 900) this.$dispatch('open-menu');
+          this.$refs.q.focus(); this.$refs.q.select();
+        }
+      });
+    },
+    toggle(btn) {
+      const s = btn.closest('.side-sec');
+      s.classList.toggle('shut');
+      const shut = [...this.$root.querySelectorAll('.side-sec.shut')].map(x => x.dataset.sec);
+      try { localStorage.setItem('vf.side.shut', JSON.stringify(shut)); } catch (e) {}
+    },
+    filter() {
+      const q = this.q.trim().toLowerCase();
+      let any = false;
+      this.$root.querySelectorAll('.side-nav a.nav').forEach(a => {
+        const sec = a.closest('.side-sec');
+        const hit = !q || a.textContent.toLowerCase().includes(q) || (sec && sec.querySelector('.side-group').textContent.toLowerCase().includes(q));
+        a.classList.toggle('hidden-by-search', !hit);
+        if (hit) any = true;
+      });
+      this.$root.querySelectorAll('.side-sec').forEach(s => {
+        const vis = s.querySelector('a.nav:not(.hidden-by-search)');
+        s.classList.toggle('hidden-by-search', !vis);
+        s.classList.toggle('searching', !!q);
+      });
+      this.none = !!q && !any;
+    },
+    go() {
+      const first = this.$root.querySelector('.side-nav a.nav:not(.hidden-by-search)');
+      if (first && this.q.trim()) window.location.href = first.href;
+    }
+  }));
+
   /* notifications bell ---------------------------------------------------- */
   Alpine.data('bell', (count) => ({
     open: false, count, items: [], loading: false,
@@ -279,6 +335,34 @@ document.addEventListener('alpine:init', () => {
     drop(e) { this.over = false; this.send(e.dataTransfer.files); }
   }));
 });
+
+/* page loading bar: shows while the next page is on its way ------------------- */
+(function () {
+  const bar = () => document.getElementById('navbar-progress');
+  const start = () => { const b = bar(); if (!b) return; b.classList.remove('done'); void b.offsetWidth; b.classList.add('go'); };
+  const stop = () => { const b = bar(); if (!b || !b.classList.contains('go')) return; b.classList.remove('go'); b.classList.add('done'); };
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest('a[href]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download') || a.origin !== location.origin) return;
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || /\/(export|download|print|files?)(\/|\?|$)|\.(pdf|xlsx|csv|zip)(\?|$)/i.test(a.pathname + a.search)) return;
+    if (a.pathname === location.pathname && a.search === location.search && a.hash) return;
+    start();
+    // the sidebar on a phone closes as soon as a page is chosen
+    if (a.closest('.side')) document.body.dispatchEvent(new CustomEvent('close-menu'));
+  });
+  document.addEventListener('submit', (e) => {
+    const f = e.target;
+    if (e.defaultPrevented || f.target === '_blank' || f.hasAttribute('data-no-progress')) return;
+    setTimeout(() => { if (!e.defaultPrevented) start(); }, 0);
+  });
+  window.addEventListener('pageshow', stop);
+  window.addEventListener('load', stop);
+  // a download or a cancelled navigation never unloads the page
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(stop, 1500); });
+  window.addEventListener('focus', () => setTimeout(stop, 800));
+})();
 
 /* sign out after the idle time set by the administrator ---------------------- */
 document.addEventListener('DOMContentLoaded', function () {
