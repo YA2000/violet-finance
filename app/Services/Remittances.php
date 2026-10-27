@@ -51,7 +51,10 @@ class Remittances
             ->whereDoesntHave('remittanceItems', fn ($i) => $i->whereHas('remittance', fn ($r) => $r->where('state', '!=', 'cancelled')))
             ->with(['signatures.individual', 'user'])->orderBy('number');
         if (!$u->hasPerm('remittance.all')) {
-            $q->whereHas('signatures', fn ($s) => $s->where('signed_by', $u->id)->where('is_preparer', false));
+            // the ones he signed, and the ones no internal viewer signed (otherwise nobody could ever list them)
+            $viewers = User::where('active', true)->get()->filter(fn ($x) => $x->hasPerm('remittance.prepare'))->pluck('id')->all();
+            $q->where(fn ($w) => $w->whereHas('signatures', fn ($s) => $s->where('signed_by', $u->id)->where('is_preparer', false))
+                ->orWhereDoesntHave('signatures', fn ($s) => $s->whereIn('signed_by', $viewers)->where('is_preparer', false)));
         }
         return $q->get();
     }
