@@ -249,13 +249,16 @@ class ProjectController extends Controller
 
     protected function validated(Request $r, ?Project $p): array
     {
+        // the imported running projects have no start date / agreement value yet: required for new projects only,
+        // otherwise none of them could be saved
+        $need = $p ? 'nullable' : 'required';
         $v = $r->validate([
             'code' => ['required', 'integer', 'min:1', \Illuminate\Validation\Rule::unique('projects', 'code')->ignore($p?->id)],
             'name' => 'required|string|max:200',
             'partner_id' => 'nullable|integer|exists:partners,id', 'new_partner' => 'nullable|string|max:120',
             'sector' => 'nullable|string|max:60', 'currency_id' => 'required|integer|exists:currencies,id',
-            'start_date' => 'required|date', 'end_date' => 'required|date|after_or_equal:start_date',
-            'budget_total' => 'required|numeric|min:0', 'icr_rate' => 'nullable|numeric|min:0|max:100',
+            'start_date' => "$need|date", 'end_date' => array_merge([$need, 'date'], $r->filled('start_date') ? ['after_or_equal:start_date'] : []),
+            'budget_total' => "$need|numeric|min:0", 'icr_rate' => 'nullable|numeric|min:0|max:100',
             'office' => 'nullable|in:Turkey,Syria', 'status' => 'nullable|in:' . implode(',', array_keys(Project::STATUSES)),
             'finance_officer_id' => 'nullable|integer|exists:individuals,id', 'meal_officer_id' => 'nullable|integer|exists:individuals,id',
             'program_officer_id' => 'nullable|integer|exists:individuals,id',
