@@ -74,8 +74,8 @@
   <div class="panel btn-row" style="position:sticky;bottom:12px;justify-content:flex-end;padding:10px 14px;margin-top:12px;box-shadow:0 6px 24px rgba(36,16,47,.12)">
     <span class="hint" style="margin-inline-end:auto">Type the remaining from QuickBooks (Budget vs Actuals); the spent = total − remaining. Saves the lines of this page, any project.</span>
     <button class="btn btn-primary"><i class="fa-solid fa-check"></i> Save all</button></div>
-</form>
 @endif
+@if($edit)</form>@endif
 
 @if($canEdit)
 <form class="panel" method="post" action="{{ route('lines.import') }}" enctype="multipart/form-data" style="margin-top:16px">@csrf
