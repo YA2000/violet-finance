@@ -1,6 +1,6 @@
 {{-- add an expense: $holder, $open (open advances), $currencies --}}
 <div class="modal-bg" x-show="exp" x-cloak @keydown.escape.window="exp = false">
-  <form class="modal modal-lg" method="post" action="{{ route('expenses.store') }}" enctype="multipart/form-data" @click.outside="exp = false" x-data="{ adv: '' }" @set-adv.window="adv = String($event.detail)">
+  <form class="modal modal-lg" method="post" action="{{ route('expenses.store') }}" enctype="multipart/form-data" @click.outside="exp = false" x-data="{ adv: '', curs: @js($open->pluck('currency', 'id')), cur: @js($holder->currency?->code ?? 'USD') }" x-effect="if (curs[adv]) cur = curs[adv]" @set-adv.window="adv = String($event.detail)">
     @csrf
     <div class="modal-head"><h2>Record an expense</h2><button type="button" class="x" @click="exp = false">&times;</button></div>
     <div class="modal-body fgrid">
@@ -23,7 +23,9 @@
         <span class="hint">Needed before the expense can be sent to finance.</span></div>
       <div class="field" style="grid-column: span 12"><label>What was paid <span class="req">*</span></label><input class="input" name="description" required maxlength="1000" placeholder="e.g. Fuel for the generator - 40 L"></div>
       <div class="field" style="grid-column: span 4"><label>Amount <span class="req">*</span></label><input class="input num" name="amount" inputmode="decimal" required></div>
-      <div class="field" style="grid-column: span 3"><label>Currency</label><select class="input" name="currency">@foreach($currencies as $c)<option @selected($c === ($holder->currency?->code ?? 'USD'))>{{ $c }}</option>@endforeach</select></div>
+      <div class="field" style="grid-column: span 3"><label>Currency</label><select class="input" name="currency" x-model="cur" :disabled="!!curs[adv]">@foreach($currencies as $c)<option @selected($c === ($holder->currency?->code ?? 'USD'))>{{ $c }}</option>@endforeach</select>
+        <input type="hidden" name="currency" :value="cur" :disabled="!curs[adv]">
+        <span class="hint" x-show="curs[adv]" x-cloak>Same currency as the advance.</span></div>
       <div class="field" style="grid-column: span 5"><label>Invoice / receipt files</label><input class="input" type="file" name="files[]" multiple accept=".pdf,.png,.jpg,.jpeg"></div>
     </div>
     <div class="modal-foot"><button type="button" class="btn" @click="exp = false">Close</button><button class="btn btn-primary"><i class="fa-solid fa-check"></i> Record expense</button></div>
