@@ -194,7 +194,8 @@ document.addEventListener('alpine:init', () => {
       const act = this.$root.querySelector('a.nav.active');
       if (act) {
         const r = act.getBoundingClientRect(), s = this.$root.getBoundingClientRect();
-        if (r.top < s.top + 120 || r.bottom > s.bottom - 80) act.scrollIntoView({ block: 'center' });
+        // only when the open page's item is out of sight, and without moving the page itself
+        if (r.top < s.top || r.bottom > s.bottom - 70) this.$root.scrollTop += r.top - s.top - s.height / 2;
       }
       window.addEventListener('pagehide', () => { try { sessionStorage.setItem('vf.side.y', this.$root.scrollTop); } catch (e) {} });
       window.addEventListener('keydown', (e) => {
@@ -334,6 +335,28 @@ document.addEventListener('alpine:init', () => {
     },
     drop(e) { this.over = false; this.send(e.dataTransfer.files); }
   }));
+});
+
+/* content rises in as it scrolls into view ------------------------------------ */
+document.addEventListener('DOMContentLoaded', function () {
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const seen = new IntersectionObserver((list) => {
+    let n = 0;
+    list.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.style.setProperty('--rv', (n++ * 55) + 'ms');
+      e.target.classList.add('in');
+      seen.unobserve(e.target);
+      // no transform left behind: drop-downs inside must stay positioned against the window
+      const el = e.target, done = (ev) => { if (ev.target === el) { el.classList.remove('rv', 'in'); el.removeEventListener('animationend', done); } };
+      el.addEventListener('animationend', done);
+    });
+  }, { rootMargin: '0px 0px -30px 0px' });
+  document.querySelectorAll('.content .panel, .content .ledger, .content .fcard, .content .form-card, .content .report-card, .content .adv-card, .content .role-card, .content .task-chip').forEach(el => {
+    if (el.closest('form#docform') || el.matches('.panel .panel')) return;   // forms being filled stay put
+    el.classList.add('rv');
+    seen.observe(el);
+  });
 });
 
 /* page loading bar: shows while the next page is on its way ------------------- */
