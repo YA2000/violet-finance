@@ -108,6 +108,118 @@ class ReservationController extends Controller
         return response()->download($path, 'Reservation_Template.xlsx')->deleteFileAfterSend();
     }
 
+    public function oldTemplate()
+    {
+        $path = storage_path('app/tmp/Old_Numbers_Template.xlsx');
+        @mkdir(dirname($path), 0775, true);
+        $w = new Writer();
+        $w->openToFile($path);
+        $bold = (new Style())->setFontBold()->setBackgroundColor('E6D8F4');
+        $w->addRow(Row::fromValues(['Number', 'Date (YYYY-MM-DD)', 'Time (HH:MM)', 'Description', 'Transaction Type', 'Project Code'], $bold));
+        $w->addRow(Row::fromValues(['T2500001', '2025-01-15', '10:30', 'Example - delete this row', TxnType::orderBy('sequence')->value('name'), '']));
+        $w->close();
+        return response()->download($path, 'Old_Numbers_Template.xlsx')->deleteFileAfterSend();
+    }
+
+    /** Numbers given before the system, with their descriptions: kept as they are, marked used; new numbers continue after them. All or nothing. */
+    public function importOld(Request $r)
+    {
+        abort_unless($r->user()->hasPerm('numbers.manage'), 403);
+        $r->validate(['file' => 'required|file|mimes:xlsx|max:20480']);
+        $reader = new Reader();
+        $reader->open($r->file('file')->getRealPath());
+        $types = TxnType::pluck('id', 'name')->mapWithKeys(fn ($id, $n) => [mb_strtolower(trim($n)) => $id])->all();
+        $firstType = TxnType::orderBy('sequence')->value('id');
+        $rows = [];
+        $errors = [];
+        $seen = [];
+        foreach ($reader->getSheetIterator() as $sheet) {
+            $i = 0;
+            foreach ($sheet->getRowIterator() as $row) {
+                $i++;
+                if ($i === 1) {
+                    continue;
+                }
+                $c = $row->toArray();
+                if (!array_filter($c, fn ($x) => $x !== null && $x !== '')) {
+                    continue;
+                }
+                [$num, $date, $time, $desc, $type, $proj] = array_pad($c, 6, null);
+                $num = strtoupper(trim((string) $num));
+                if (str_starts_with((string) $desc, 'Example - delete')) {
+                    continue;
+                }
+                if ($num === '' || mb_strlen($num) > 20) {
+                    $errors[] = "Row $i: the number is empty or too long.";
+                    continue;
+                }
+                if (isset($seen[$num])) {
+                    $errors[] = "Row $i: $num is repeated in the file (row {$seen[$num]}).";
+                    continue;
+                }
+                $seen[$num] = $i;
+                try {
+                    $at = $date instanceof \DateTimeInterface ? Carbon::instance($date) : Carbon::parse((string) $date);
+                    if ($time instanceof \DateTimeInterface) {
+                        $at->setTime((int) $time->format('H'), (int) $time->format('i'));
+                    } elseif (trim((string) $time) !== '') {
+                        [$h, $m] = array_pad(explode(':', trim((string) $time)), 2, 0);
+                        $at->setTime((int) $h, (int) $m);
+                    }
+                } catch (\Throwable) {
+                    $errors[] = "Row $i: the date or time of $num is not valid.";
+                    continue;
+                }
+                $typeName = mb_strtolower(trim((string) $type));
+                if ($typeName !== '' && !isset($types[$typeName])) {
+                    $errors[] = "Row $i: unknown transaction type '$type'.";
+                    continue;
+                }
+                $pid = $proj !== null && $proj !== '' ? Project::where('code', (int) $proj)->value('id') : null;
+                if ($proj && !$pid) {
+                    $errors[] = "Row $i: project $proj does not exist.";
+                    continue;
+                }
+                $rows[] = ['number' => $num, 'date' => $at->toDateString(), 'txn_type_id' => $types[$typeName] ?? $firstType, 'project_id' => $pid,
+                    'description' => mb_substr(trim((string) $desc), 0, 250), 'user_id' => $r->user()->id, 'state' => 'used', 'used_for' => 'Imported',
+                    'created_at' => $at->toDateTimeString(), 'updated_at' => now()];
+            }
+            break;
+        }
+        $reader->close();
+        $nums = array_column($rows, 'number');
+        foreach (array_chunk($nums, 500) as $chunk) {
+            foreach (Reservation::whereIn('number', $chunk)->pluck('number')->merge(\App\Models\Document::whereIn('number', $chunk)->pluck('number'))->unique() as $n) {
+                $errors[] = "$n already exists in the system.";
+            }
+        }
+        if ($errors) {
+            return back()->withErrors(array_slice($errors, 0, 30));
+        }
+        if (!$rows) {
+            return back()->withErrors(['file' => 'The file has no numbers.']);
+        }
+        DB::transaction(function () use ($rows, $nums) {
+            foreach (array_chunk($rows, 500) as $chunk) {
+                Reservation::insert($chunk);
+            }
+            // new numbers of those years continue after the imported ones
+            $max = [];
+            foreach ($nums as $n) {
+                if (preg_match('/^T(\d{2})(\d{5})$/', $n, $m)) {
+                    $max['20' . $m[1]] = max($max['20' . $m[1]] ?? 0, (int) $m[2]);
+                }
+            }
+            foreach ($max as $year => $serial) {
+                $c = \App\Models\TxnCounter::firstOrCreate(['year' => (int) $year], ['next_number' => $serial + 1]);
+                if ($c->next_number <= $serial) {
+                    $c->update(['next_number' => $serial + 1]);
+                }
+            }
+        });
+        return back()->with('ok', count($rows) . ' old numbers imported.');
+    }
+
     public function import(Request $r)
     {
         $r->validate(['file' => 'required|file|mimes:xlsx|max:5120']);

@@ -26,14 +26,10 @@ class DashboardController extends Controller
             $months[] = ['label' => $m->format('M'), 'year' => $m->format('Y'),
                 'value' => $visible()->where('state', '!=', 'cancel')->whereBetween('date', [$m->toDateString(), $m->copy()->endOfMonth()->toDateString()])->count()];
         }
-        $waiting = Document::where('current_signer_id', $u->id)->whereIn('state', ['signing', 'to_pay'])
-            ->with('user')->orderBy('submitted_at')->limit(12)->get();
         $docIds = $visible()->pluck('id');
         $recent = DocumentEvent::whereIn('document_id', $docIds)->with(['user', 'document'])->latest('id')->limit(9)->get();
         $free = Reservation::where('user_id', $u->id)->where('state', 'reserved')->with('type')->orderByDesc('number')->limit(8)->get();
         $kpi = [
-            'sign' => $waiting->where('state', 'signing')->count(),
-            'pay' => $waiting->where('state', 'to_pay')->count(),
             'drafts' => Document::where('user_id', $u->id)->where('state', 'draft')->count(),
             'month' => array_sum($monthByForm),
             'free' => Reservation::where('user_id', $u->id)->where('state', 'reserved')->count(),
@@ -71,7 +67,7 @@ class DashboardController extends Controller
         $forms = array_values(array_filter(FormRegistry::all(), fn ($f) => $u->hasPerm('form.' . $f->code . '.create') || $u->hasPerm('form.' . $f->code . '.view')));
         return view('dashboard', [
             'tasks' => $tasks, 'creatable' => array_values(array_filter($forms, fn ($f) => $u->hasPerm('form.' . $f->code . '.create'))),
-            'kpi' => $kpi, 'states' => $states, 'months' => $months, 'waiting' => $waiting, 'recent' => $recent,
+            'kpi' => $kpi, 'states' => $states, 'months' => $months, 'recent' => $recent,
             'free' => $free, 'forms' => $forms, 'byForm' => $byForm, 'monthByForm' => $monthByForm,
         ]);
     }

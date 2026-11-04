@@ -299,7 +299,7 @@ class AdvanceController extends Controller
         if ($settlement->holder->user_id) {
             Alert::send($settlement->holder->user_id, 'Settlement ' . $settlement->number . ' accepted', 'Finance is preparing the JAR.', route('advances.mine'), 'fa-circle-check');
         }
-        return redirect()->route('documents.show', $doc)->with('ok', 'JAR prepared from ' . $settlement->number . ' - reserve its number, check and submit.');
+        return redirect()->route('documents.show', $doc)->with('ok', 'JAR prepared from ' . $settlement->number . ' - choose its number, check and save.');
     }
 
     public function returnSettlement(Request $r, AdvanceSettlement $settlement)

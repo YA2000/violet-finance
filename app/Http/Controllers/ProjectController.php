@@ -251,6 +251,7 @@ class ProjectController extends Controller
     {
         // the imported running projects have no start date / agreement value yet: required for new projects only,
         // otherwise none of them could be saved
+        $r->merge(['code' => $p ? $p->code : Project::nextCode()]);   // the number is given by the system, never typed
         $need = $p ? 'nullable' : 'required';
         $v = $r->validate([
             'code' => ['required', 'integer', 'min:1', \Illuminate\Validation\Rule::unique('projects', 'code')->ignore($p?->id)],

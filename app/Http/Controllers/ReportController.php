@@ -21,9 +21,7 @@ use OpenSpout\Writer\XLSX\Writer;
 class ReportController extends Controller
 {
     public const REPORTS = [
-        'documents' => ['Documents by status', 'fa-folder-tree', 'Every form and where it stands: draft, in signature, waiting for payment, final.'],
-        'signatures' => ['Waiting signatures', 'fa-hourglass-half', 'Who holds which document, and for how many days.'],
-        'spending' => ['Spending by budget line', 'fa-chart-pie', 'Final PTR / JAR (and other forms set up for it) added up by project and budget line.'],
+        'documents' => ['Documents by status', 'fa-folder-tree', 'Every form and where it stands: draft or final.'],
         'advances' => ['Advances by holder', 'fa-hand-holding-dollar', 'Granted, spent, cleared and still to clear, with overdue advances.'],
         'receipts' => ['Received payments', 'fa-hand-holding-dollar', 'Payments received, by status and project.'],
         'numbers' => ['Transaction numbers', 'fa-hashtag', 'Reserved numbers not used yet, by person and age.'],
@@ -40,6 +38,67 @@ class ReportController extends Controller
             'free_numbers' => Reservation::where('state', 'reserved')->count(),
         ];
         return view('reports.index', ['reports' => static::REPORTS, 'kpi' => $kpi]);
+    }
+
+    /** Budget line report: every line with its total, spent and remaining, and every expense recorded on it. */
+    public function lines(Request $r)
+    {
+        $projects = \App\Models\Project::orderBy('code')->get(['id', 'code', 'name', 'active', 'currency_id']);
+        $spent = array_keys(\App\Services\LineBudget::documentSpending());
+        $q = BudgetLine::query()->orderByRaw('CAST(project_code AS UNSIGNED)')->orderBy('code');
+        if ($r->filled('project')) {
+            $q->where('project_code', (string) $r->input('project'));
+        } else {
+            $q->where(fn ($w) => $w->where('active', true)->orWhereIn('id', $spent));
+        }
+        if ($s = trim((string) $r->input('q'))) {
+            $q->where(fn ($w) => $w->where('code', 'like', "%$s%")->orWhere('description', 'like', "%$s%")->orWhere('project_name', 'like', "%$s%"));
+        }
+        $lines = \App\Services\LineBudget::figures($q->get());
+        $from = $r->input('from');
+        $to = $r->input('to');
+        $inRange = fn ($d) => (!$from || $d['date'] >= $from) && (!$to || $d['date'] <= $to);
+        $lines = $lines->each(fn ($b) => $b->shown = collect($b->doc_list)->filter($inRange)->sortBy('date')->values());
+        $show = $r->input('show', 'spent');
+        $lines = $lines->filter(fn ($b) => match ($show) {
+            'all' => true,
+            'over' => $b->remaining_cur !== null && $b->remaining_cur < 0,
+            default => $b->shown->count() || (!$from && !$to && (float) $b->spent_cur != 0),
+        })->values();
+        if ($r->input('export')) {
+            return $this->linesXlsx($lines);
+        }
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $items = new \Illuminate\Pagination\LengthAwarePaginator($lines->forPage($page, 50)->values(), $lines->count(), 50, $page,
+            ['path' => $r->url(), 'query' => $r->query()]);
+        $forms = collect(FormRegistry::all(true))->mapWithKeys(fn ($f) => [$f->code => $f->short]);
+        return view('reports.lines', ['items' => $items, 'projects' => $projects, 'forms' => $forms, 'show' => $show,
+            'count' => $lines->count(), 'over' => $lines->filter(fn ($b) => $b->remaining_cur !== null && $b->remaining_cur < 0)->count(),
+            'expenses' => $lines->sum(fn ($b) => $b->shown->count()), 'noRate' => $lines->where('no_rate', true)->count()]);
+    }
+
+    protected function linesXlsx($lines)
+    {
+        $path = storage_path('app/tmp/' . uniqid('rep_') . '.xlsx');
+        @mkdir(dirname($path), 0775, true);
+        $w = new Writer();
+        $w->openToFile($path);
+        $bold = (new Style())->setFontBold();
+        $w->getCurrentSheet()->setName('Budget lines');
+        $w->addRow(Row::fromValues(['Project', 'Budget line', 'Description', 'Accounting center', 'Currency', 'Total', 'Spent before the system', 'Forms', 'Payroll & shared costs', 'Spent', 'Remaining', 'Used %'], $bold));
+        foreach ($lines as $b) {
+            $w->addRow(Row::fromValues([$b->project_name, $b->code, $b->description, $b->accounting_center_name, $b->cur, (float) $b->total_amount, $b->opening_cur, $b->docs_cur, $b->alloc_cur,
+                $b->spent_cur, $b->remaining_cur, $b->used !== null ? round($b->used * 100, 1) : null]));
+        }
+        $w->addNewSheetAndMakeItCurrent()->setName('Expenses');
+        $w->addRow(Row::fromValues(['Project', 'Budget line', 'Date', 'Number', 'Form', 'Note', 'Amount paid', 'Paid in', 'Amount on the line', 'Line currency'], $bold));
+        foreach ($lines as $b) {
+            foreach ($b->shown as $d) {
+                $w->addRow(Row::fromValues([$b->project_name, $b->code, $d['date'], $d['number'], $d['form'], $d['note'], $d['paid'], $d['paid_cur'], round($d['amount'], 2), $b->cur]));
+            }
+        }
+        $w->close();
+        return response()->download($path, 'budget-lines-' . date('Y-m-d') . '.xlsx')->deleteFileAfterSend();
     }
 
     public function show(Request $r, string $report)

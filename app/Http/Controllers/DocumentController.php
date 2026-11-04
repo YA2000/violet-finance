@@ -57,11 +57,8 @@ class DocumentController extends Controller
 
     public function inbox(Request $r)
     {
-        $u = $r->user();
-        $docs = Document::where('current_signer_id', $u->id)->whereIn('state', ['signing', 'to_pay'])
-            ->with(['user'])->orderBy('submitted_at')->paginate(30);
-        $returned = Document::where('user_id', $u->id)->where('state', 'draft')->latest('updated_at')->limit(10)->get();
-        return view('documents.inbox', ['docs' => $docs, 'drafts' => $returned]);
+        $drafts = Document::where('user_id', $r->user()->id)->where('state', 'draft')->latest('updated_at')->limit(50)->get();
+        return view('documents.inbox', ['drafts' => $drafts]);
     }
 
     // ---------------------------------------------------------------- entry screen
@@ -154,28 +151,26 @@ class DocumentController extends Controller
             if ($rid = $r->input('reservation_id')) {
                 Workflow::attachNumber($doc, Reservation::findOrFail($rid), $u);
             }
+            Workflow::finalize($doc->refresh(), $u);
             return $doc;
         });
-        if ($r->input('then') === 'submit') {
-            return $this->submit($r, $doc->refresh());
-        }
         return redirect()->route('documents.show', $doc)->with('ok', 'Saved.');
     }
 
-    /** Signer choices posted with the form: signer[<sig id>] = individual id (new docs use the step order). */
+    /** Signature fields posted with the form: signer[<sig id>] = individual id, signer_date[<sig id>] = date (new docs use the step order). */
     protected function applySigners(Request $r, Document $doc, bool $byOrder = false): void
     {
         $in = (array) $r->input('signer', []);
-        if (!$in) {
-            return;
-        }
-        $u = $r->user();
+        $dates = (array) $r->input('signer_date', []);
         $sigs = $doc->signatures()->get()->values();
-        foreach ($in as $key => $indId) {
+        foreach (array_keys($in + $dates) as $key) {
             $s = $byOrder ? $sigs->get(abs((int) $key) - 1) : $sigs->firstWhere('id', (int) $key);
-            if ($s && (!$s->is_preparer || $u->hasPerm('documents.manage'))) {
-                $s->update(['individual_id' => $indId ?: null]);
+            if (!$s) {
+                continue;
             }
+            $date = $dates[$key] ?? null;
+            $s->update(['individual_id' => ($in[$key] ?? null) ?: null,
+                'date' => $date && strtotime($date) ? date('Y-m-d', strtotime($date)) : null]);
         }
     }
 
@@ -189,10 +184,8 @@ class DocumentController extends Controller
             if (($rid = $r->input('reservation_id')) && !$doc->number) {
                 Workflow::attachNumber($doc, Reservation::findOrFail($rid), $u);
             }
+            Workflow::finalize($doc->refresh(), $u);
         });
-        if ($r->input('then') === 'submit') {
-            return $this->submit($r, $doc->refresh());
-        }
         return redirect()->route('documents.show', $doc)->with('ok', 'Saved.');
     }
 
@@ -222,8 +215,9 @@ class DocumentController extends Controller
     // ---------------------------------------------------------------- workflow
     public function submit(Request $r, Document $doc)
     {
-        Workflow::submit($doc, $r->user());
-        return redirect()->route('documents.show', $doc)->with('ok', 'Sent for signature.');
+        abort_unless($doc->canEdit($r->user()), 403);
+        Workflow::finalize($doc, $r->user());
+        return redirect()->route('documents.show', $doc)->with('ok', 'Saved.');
     }
 
     public function sign(Request $r, Document $doc)

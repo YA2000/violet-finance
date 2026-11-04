@@ -10,8 +10,14 @@ use Illuminate\Http\Request;
 /** Internal viewer: Remittance Statements from fully signed transactions. Treasury: pay their items. */
 class RemittanceController extends Controller
 {
+    protected function guard(): void
+    {
+        abort_unless(Remittances::enabled(), 404);   // payment is no longer done through the system
+    }
+
     public function index(Request $r)
     {
+        $this->guard();
         $u = $r->user();
         $ready = Remittances::ready($u)->groupBy(fn ($d) => $d->currency ?: '—');
         $statements = Document::where('form_code', Remittances::FORM)->where('state', '!=', 'cancelled')
@@ -22,6 +28,7 @@ class RemittanceController extends Controller
 
     public function store(Request $r)
     {
+        $this->guard();
         $v = $r->validate(['docs' => 'required|array|min:1', 'docs.*' => 'integer'], ['docs.required' => 'Tick the transactions to pay.']);
         $rem = Remittances::create($v['docs'], $r->user());
         return redirect()->route('documents.show', $rem)->with('ok', 'Remittance Statement ' . $rem->number . ' prepared. Check it and press Submit to send it for signature.');
@@ -29,11 +36,13 @@ class RemittanceController extends Controller
 
     public function payments(Request $r)
     {
+        $this->guard();
         return view('remittances.payments', ['statements' => Remittances::payable()]);
     }
 
     public function pay(Request $r)
     {
+        $this->guard();
         [$arr, $file] = Files::rules(true);
         $v = $r->validate(['items' => 'required|array|min:1', 'items.*' => 'integer', 'amount' => 'array', 'amount.*' => 'nullable|numeric|min:0',
             'note' => 'array', 'note.*' => 'nullable|string|max:300', 'paid_date' => 'required|date', 'files' => $arr, 'files.*' => $file],
