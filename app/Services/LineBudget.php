@@ -24,7 +24,7 @@ class LineBudget
         }
         $out = [];
         $forms = [];
-        foreach (\App\Models\Document::where('state', 'done')->get(['id', 'form_code', 'number', 'date', 'paid_date', 'done_at', 'currency', 'data']) as $d) {
+        foreach (\App\Models\Document::where('state', 'done')->get(['id', 'form_code', 'number', 'date', 'paid_date', 'done_at', 'currency', 'description', 'data']) as $d) {
             $f = $forms[$d->form_code] ??= \App\Forms\FormRegistry::has($d->form_code) ? \App\Forms\FormRegistry::get($d->form_code) : false;
             $an = $f ? ($f->settings()['analytics'] ?? null) : null;
             if (!$an || empty($an['table']) || empty($an['amount']) || empty($an['budget_line'])) {
@@ -35,7 +35,7 @@ class LineBudget
                 $bl = (int) ($l[$an['budget_line']] ?? 0);
                 $amt = (float) ($l[$an['amount']] ?? 0);
                 if ($bl && $amt) {
-                    $out[$bl][] = [$date, $amt, strtoupper((string) $d->currency ?: 'USD'), $d->id, $d->number];
+                    $out[$bl][] = [$date, $amt, strtoupper((string) $d->currency ?: 'USD'), $d->id, $d->number, $d->form_code, $l['special_note'] ?? $d->description];
                 }
             }
         }
@@ -75,18 +75,23 @@ class LineBudget
             $p = $projects[(string) $b->project_code] ?? null;
             $rate = static::rateOf($p);
             $total = (float) $b->total_amount;
-            $from = $b->spent_before_date ? \Illuminate\Support\Carbon::parse($b->spent_before_date)->format('Y-m-d') : null;
+            // the date only marks an opening value: without one, nothing recorded may be left out
+            $from = $b->spent_before !== null && $b->spent_before_date ? \Illuminate\Support\Carbon::parse($b->spent_before_date)->format('Y-m-d') : null;
             $d = 0.0;
             $list = [];
-            foreach ($docs[$b->id] ?? [] as [$date, $amt, $cur, $id, $num]) {
+            $noRate = false;
+            $own = $p?->currency?->code ? strtoupper($p->currency->code) : 'USD';
+            foreach ($docs[$b->id] ?? [] as [$date, $amt, $cur, $id, $num, $form, $note]) {
                 if ($from === null || $date > $from) {
                     $r = CostRecovery::usdRate($cur);
-                    $v = $cur === ($p?->currency?->code ? strtoupper($p->currency->code) : 'USD') ? $amt : ($rate > 0 && $r > 0 ? $amt * $r / $rate : 0);
+                    $noRate = $noRate || ($cur !== $own && !($rate > 0 && $r > 0));
+                    $v = $cur === $own ? $amt : ($rate > 0 && $r > 0 ? $amt * $r / $rate : 0);
                     $d += $v;
-                    $list[] = ['id' => $id, 'number' => $num, 'date' => $date, 'amount' => $v];
+                    $list[] = ['id' => $id, 'number' => $num, 'date' => $date, 'amount' => $v, 'paid' => $amt, 'paid_cur' => $cur, 'form' => $form, 'note' => $note];
                 }
             }
             $b->doc_list = $list;
+            $b->no_rate = $noRate;
             $a = 0.0;
             foreach ($alloc[$b->id] ?? [] as [$date, $usd]) {
                 if (($from === null || $date > $from) && $rate > 0) {

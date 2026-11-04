@@ -115,6 +115,29 @@ class Workflow
         static::log($doc, 'Number ' . $res->number . ' reserved automatically.', 'number', $u);
     }
 
+    /** Saving makes a form final: nobody signs or pays in the system, the signature fields are only filled for the printout. */
+    public static function finalize(Document $doc, User $u): void
+    {
+        $err = [];
+        if (!$doc->number && !empty($doc->form()->settings()['open_to_all'])) {
+            static::autoNumber($doc, $u);
+        }
+        if (!$doc->number) {
+            $err[] = 'Choose a transaction number first.';
+        }
+        $err = array_merge($err, $doc->form()->checkSubmit($doc));
+        if ($err) {
+            static::fail($err);
+        }
+        if ($doc->state === 'done') {
+            static::log($doc, 'Changes saved.', 'note', $u);
+            return;
+        }
+        $doc->update(['state' => 'done', 'current_signer_id' => null, 'submitted_at' => $doc->submitted_at ?? now(), 'done_at' => now()]);
+        static::log($doc, 'Saved - final.', 'done', $u);
+        Advances::onDocumentDone($doc->refresh());
+    }
+
     public static function submit(Document $doc, User $u): void
     {
         if ($doc->state !== 'draft') {
@@ -253,7 +276,6 @@ class Workflow
             static::fail('Only the current signer can return the document.');
         }
         DB::transaction(function () use ($doc, $u, $reason) {
-            $doc->signatures()->update(['state' => 'pending', 'signature' => null, 'signed_at' => null, 'signed_by' => null, 'date' => null]);
             $doc->update(['state' => 'draft', 'current_signer_id' => null, 'done_at' => null]);
             static::log($doc, 'Returned to the preparer by ' . $u->name . ': ' . $reason, 'return', $u);
         });
