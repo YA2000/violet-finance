@@ -6,7 +6,7 @@
   .hello h1 { font-size: 28px; }
   .hello .date { color: var(--muted); margin-top: 4px; }
   .hello .grow { flex: 1; }
-  .ledger { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  .ledger { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #fff; border: 1px solid var(--line); border-radius: 16px;
     box-shadow: var(--shadow); margin-bottom: 22px; overflow: hidden; }
   .ledger a { padding: 18px 20px 16px; text-decoration: none !important; color: inherit; position: relative; transition: background .15s; }
   .ledger a + a { border-left: 1px solid var(--line-2); }
@@ -49,7 +49,7 @@
   .numbers a { border: 1px dashed #C9B9DB; border-radius: 8px; padding: 6px 10px; text-decoration: none !important; color: var(--plum); background: #FCFAFE; }
   .numbers a b { font-family: var(--slab); font-size: 16px; font-weight: 600; display: block; }
   .numbers a small { font-size: 11.5px; display: block; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  @media (max-width: 1200px) { .ledger { grid-template-columns: repeat(3, 1fr); } .ledger a:nth-child(4) { border-left: 0; } .ledger a:nth-child(n+4) { border-top: 1px solid var(--line-2); } }
+  
   @media (max-width: 1000px) { .dash { grid-template-columns: 1fr; } }
   @media (max-width: 600px) { .ledger { grid-template-columns: repeat(2, 1fr); } .task { grid-template-columns: 1fr auto; } .task .ref { grid-column: 1 / -1; } }
 </style>
@@ -62,7 +62,7 @@
   $stateColors = ['draft' => '#B6ADC4', 'signing' => '#2457C5', 'to_pay' => '#C98A1E', 'done' => '#1F8A5B'];
   $total = array_sum(array_intersect_key($states, $stateColors));
 @endphp
-<div class="hello">
+<div class="hello hero">
   <div class="grow">
     <h1>{{ $greet }}, {{ explode(' ', $u->name)[0] }}</h1>
     <div class="date">{{ now()->format('l, j F Y') }}</div>
@@ -81,8 +81,6 @@
 </div>
 
 <div class="ledger">
-  <a href="{{ route('documents.inbox') }}" class="{{ $kpi['sign'] ? 'hot' : '' }}"><div class="v" x-data="countUp({{ $kpi['sign'] }})" x-text="n">{{ $kpi['sign'] }}</div><div class="l"><i class="fa-solid fa-signature"></i>To sign</div></a>
-  <a href="{{ route('documents.inbox') }}" class="{{ $kpi['pay'] ? 'hot' : '' }}"><div class="v" x-data="countUp({{ $kpi['pay'] }}, 80)" x-text="n">{{ $kpi['pay'] }}</div><div class="l"><i class="fa-solid fa-money-bill-wave"></i>To pay</div></a>
   <a href="{{ route('documents.inbox') }}"><div class="v" x-data="countUp({{ $kpi['drafts'] }}, 160)" x-text="n">{{ $kpi['drafts'] }}</div><div class="l"><i class="fa-regular fa-pen-to-square"></i>My drafts</div></a>
   <a href="{{ route('reservations.index', ['mine' => 1, 'state' => 'reserved']) }}"><div class="v" x-data="countUp({{ $kpi['free'] }}, 240)" x-text="n">{{ $kpi['free'] }}</div><div class="l"><i class="fa-solid fa-hashtag"></i>My free numbers</div></a>
   <a href="#forms"><div class="v" x-data="countUp({{ $kpi['month'] }}, 320)" x-text="n">{{ $kpi['month'] }}</div><div class="l"><i class="fa-regular fa-calendar"></i>Forms this month</div></a>
@@ -98,21 +96,6 @@
 
 <div class="dash">
   <div class="grid" style="gap:20px">
-    <section class="panel">
-      <div class="panel-head"><h2>Waiting for you</h2><a class="right btn btn-ghost btn-sm" href="{{ route('documents.inbox') }}">Open the list</a></div>
-      <div style="margin-top:12px">
-        @forelse($waiting as $d)
-          <a class="task" href="{{ route('documents.show', $d) }}">
-            <span class="ref">{{ $d->number }}</span>
-            <span class="d"><b>{{ $d->description }}</b><small>{{ $d->form()->short }} · {{ $d->user->name }} · {{ $d->submitted_at?->diffForHumans() }}</small></span>
-            @if($d->state === 'to_pay')<span class="pill st-to_pay">Pay &amp; sign</span>@else<span class="pill st-signing">Sign</span>@endif
-          </a>
-        @empty
-          <div class="empty" style="padding:30px 20px; border-top:1px solid var(--line-2)"><i class="fa-solid fa-mug-hot"></i><b>Nothing to sign</b>New requests appear here and in the bell.</div>
-        @endforelse
-      </div>
-    </section>
-
     <section class="panel" id="forms">
       <div class="panel-head"><h2>Forms</h2></div>
       <div class="forms-grid" style="margin-top:12px">
@@ -136,32 +119,6 @@
   </div>
 
   <div class="grid" style="gap:20px">
-    <section class="panel">
-      <div class="panel-head"><h2>Status</h2></div>
-      <div class="panel-body">
-        <div class="donut" x-data="{ on: false }" x-init="setTimeout(() => on = true, 120)">
-          <svg width="128" height="128" viewBox="0 0 42 42" role="img" aria-label="Documents by status">
-            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#EFEBF4" stroke-width="5"/>
-            @php($off = 0)
-            @foreach($stateColors as $sk => $col)
-              @php($pct = $total ? 100 * ($states[$sk] ?? 0) / $total : 0)
-              @if($pct > 0)
-                <circle class="seg" cx="21" cy="21" r="15.9" fill="none" stroke="{{ $col }}" stroke-width="5" pathLength="100"
-                  stroke-dasharray="{{ $pct }} {{ 100 - $pct }}" :stroke-dashoffset="on ? {{ 25 - $off }} : {{ 25 - $off + $pct }}" style="stroke-dashoffset: {{ 25 - $off + $pct }}"/>
-              @endif
-              @php($off += $pct)
-            @endforeach
-            <text x="21" y="21" text-anchor="middle" dominant-baseline="central" style="font-family: var(--slab); font-size: 9px; font-weight: 600; fill: var(--plum)">{{ $total }}</text>
-          </svg>
-          <div class="legend">
-            @foreach($stateColors as $sk => $col)
-              <div><i style="background: {{ $col }}"></i>{{ \App\Models\Document::STATES[$sk] }}<b>{{ $states[$sk] ?? 0 }}</b></div>
-            @endforeach
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="panel">
       <div class="panel-head"><h2>Last six months</h2></div>
       <div class="panel-body">
