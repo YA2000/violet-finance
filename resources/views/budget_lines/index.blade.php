@@ -1,5 +1,5 @@
 @extends('layouts.app', ['title' => 'Budget lines'])
-@section('crumbs')<span>Budget</span><i class="fa-solid fa-chevron-right"></i><b>Budget lines</b>@endsection
+@section('crumbs')<a href="{{ route('admin.master.home') }}">Master data</a><i class="fa-solid fa-chevron-right"></i><b>Budget lines</b>@endsection
 @section('content')
 @php
   $keep = request()->only(['p', 'center', 'acc', 'q', 'state']);
@@ -19,9 +19,8 @@
   </div>
 </div>
 
-<div class="ledger" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px">
+<div class="ledger" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px">
   <div class="lg strong"><b>{{ number_format($all->count()) }}</b><span>Lines{{ $chosen->count() ? ' of ' . $chosen->count() . ' ' . \Illuminate\Support\Str::plural('project', $chosen->count()) : ' · ' . ($running->count() - 2) . ' running projects' }}</span></div>
-  <div class="lg"><b>{{ money($all->sum(fn ($b) => $b->remaining_usd ?? 0), 0) }}</b><span>Remaining, USD</span></div>
   <div class="lg {{ $unknown ? 'bad' : '' }}"><a href="{{ request()->fullUrlWithQuery(['state' => 'unknown', 'page' => null]) }}" style="color:inherit"><b>{{ number_format($unknown) }}</b><span>Without opening spent</span></a></div>
   <div class="lg {{ $over ? 'bad' : '' }}"><a href="{{ request()->fullUrlWithQuery(['state' => 'over', 'page' => null]) }}" style="color:inherit"><b>{{ number_format($over) }}</b><span>Overspent</span></a></div>
 </div>
