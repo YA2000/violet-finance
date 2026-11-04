@@ -58,7 +58,7 @@ h3 { font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
 .side { view-transition-name: side; }
 .top { view-transition-name: top; }
 ::view-transition-old(side), ::view-transition-new(side), ::view-transition-old(top), ::view-transition-new(top) { animation: none; }
-.content { animation: pageIn .38s var(--ease) both; }
+.content { animation: pageIn .38s var(--ease) backwards; }
 @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } }
 
 /* loading bar while the next page loads */
@@ -267,6 +267,7 @@ select.input[multiple] { background-image: none; padding-right: 11px; }
 
 /* ------------------------------------------------------------------ cards & misc */
 .empty i { color: var(--fill-2); font-size: 34px; }
+.empty .btn i { color: inherit; font-size: 12.5px; display: inline; margin: 0; }
 .drop { border-radius: 14px; border-color: var(--line); background: #FAFAFC; }
 .file, .note, .role-pick, .pay-row { border-color: var(--line-2); border-radius: 12px; }
 .form-card, .role-card, .report-card, .print-card, .adv-card, .fcard { border: 0 !important; box-shadow: var(--shadow); border-radius: var(--r-lg); }
@@ -287,6 +288,59 @@ select.input[multiple] { background-image: none; padding-right: 11px; }
 code { background: var(--fill); color: var(--ink); border-radius: 5px; }
 .sticky-save { background: linear-gradient(to top, var(--paper) 70%, transparent); }
 
+/* ------------------------------------------------------------------ budget line report */
+.lr-chev { font-size: 10px; color: var(--muted); transition: transform .3s var(--spring); }
+.lr-chev.open { transform: rotate(90deg); color: var(--violet); }
+.lr-bar { display: block; height: 6px; border-radius: 99px; background: var(--fill); overflow: hidden; margin-bottom: 3px; }
+.lr-bar span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--violet-2), var(--violet)); transform-origin: left; animation: lrGrow 1s var(--ease) backwards; }
+.lr-bar span.over { background: var(--danger); }
+@keyframes lrGrow { from { transform: scaleX(0); } }
+.lr-detail > td { background: #FAFAFC; padding-top: 2px; padding-bottom: 14px; animation: lrIn .3s var(--ease) backwards; }
+.lr-detail .tbl th, .lr-detail .tbl tbody tr:hover { background: transparent; }
+@keyframes lrIn { from { opacity: 0; transform: translateY(-4px); } }
+
+/* ------------------------------------------------------------------ motion */
+/* the bar under the header drifts slowly; the home greeting floats on a moving light */
+.hero { position: relative; isolation: isolate; padding: 26px 28px; margin-bottom: 22px; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: var(--shadow); }
+.hero::before { content: ''; position: absolute; inset: -60%; z-index: -1; opacity: .75; filter: blur(46px);
+  background: radial-gradient(closest-side at 25% 35%, #D7C3F8, transparent), radial-gradient(closest-side at 75% 30%, #C4DCFF, transparent), radial-gradient(closest-side at 55% 80%, #F6CFE9, transparent);
+  animation: heroDrift 16s ease-in-out infinite alternate; }
+@keyframes heroDrift { to { transform: rotate(14deg) scale(1.12) translate(3%, -2%); } }
+.hero h1 { background: linear-gradient(90deg, var(--ink), var(--violet) 70%, var(--ink)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: titleSheen 7s linear infinite; }
+@keyframes titleSheen { to { background-position: -200% center; } }
+
+/* content rises in as it comes into view */
+.rv { opacity: 0; }
+.rv.in { opacity: 1; animation: reveal .7s cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: var(--rv, 0ms); }
+@keyframes reveal { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+
+/* the selected menu item glides to its new place between pages */
+.side a.nav.active { view-transition-name: nav-active; }
+::view-transition-group(nav-active) { animation-duration: .42s; animation-timing-function: var(--spring); }
+::view-transition-old(root) { animation-name: pageOut; }
+::view-transition-new(root) { animation-name: pageNew; }
+@keyframes pageOut { to { opacity: 0; transform: scale(.992); } }
+@keyframes pageNew { from { opacity: 0; transform: translateY(8px); } }
+
+/* touch feedback */
+.side a.nav i { transition: transform .3s var(--spring); }
+.side a.nav:hover i { transform: scale(1.14); }
+.side a.nav { transition: background .15s, color .15s, transform .25s var(--spring); }
+.side a.nav:active { transform: scale(.97); }
+.btn-primary { background-size: 180% 100%; background-image: linear-gradient(100deg, var(--violet) 40%, #9566E0 60%, var(--violet)); background-position: 0 0; transition: background-position .55s var(--ease), transform .2s var(--spring), box-shadow .2s; }
+.btn-primary:hover { background-position: 90% 0; box-shadow: 0 6px 18px -6px rgba(123, 63, 209, .55); transform: translateY(-1px); }
+.btn:active { transform: scale(.96); }
+.panel, .form-card, .role-card, .report-card, .fcard, .adv-card { transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s; }
+.fcard:hover, .adv-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); }
+.fcard .ic, .fc-icon { transition: transform .35s var(--spring); }
+.fcard:hover .ic, .form-card:hover .fc-icon, .report-card:hover .fc-icon { transform: scale(1.1) rotate(-4deg); }
+.tbl tbody tr { transition: background .18s; }
+.bell:hover i { animation: bellRing .7s var(--ease); transform-origin: top center; }
+@keyframes bellRing { 20% { transform: rotate(14deg); } 45% { transform: rotate(-10deg); } 70% { transform: rotate(5deg); } }
+.input, .lk-btn { transition: border-color .15s, box-shadow .25s, transform .2s; }
+.input:focus { transform: translateY(-.5px); }
+[x-transition] { will-change: auto; }
+
 /* ------------------------------------------------------------------ responsive */
 @media (max-width: 900px) {
   .side { width: 284px; background: rgba(246, 246, 249, .94); }
@@ -302,6 +356,8 @@ code { background: var(--fill); color: var(--ink); border-radius: 5px; }
 }
 @media (min-width: 901px) { .scrim { display: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .content { animation: none; }
+  .content, .hero::before, .hero h1, .rv.in, .lr-bar span, .bell:hover i { animation: none; }
+  .rv { opacity: 1; }
+  .hero h1 { color: var(--ink); background: none; }
   @view-transition { navigation: none; }
 }
