@@ -118,7 +118,10 @@ class Document extends Model
 
     public function canEdit(User $u): bool
     {
-        return $this->state === 'draft' && ($this->isOwner($u) || $u->hasPerm('form.' . $this->form_code . '.edit'));
+        // a saved form stays correctable, unless it already opened an advance on someone
+        return in_array($this->state, ['draft', 'done'], true) && $this->form_code !== \App\Services\Remittances::FORM
+            && ($this->isOwner($u) || $u->hasPerm('form.' . $this->form_code . '.edit'))
+            && !($this->state === 'done' && Advance::where('document_id', $this->id)->exists());
     }
 
     public function canManage(User $u): bool

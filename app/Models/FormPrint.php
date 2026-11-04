@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class FormPrint extends Model
 {
     protected $guarded = ['id'];
-    protected $casts = ['active' => 'boolean', 'show_header' => 'boolean', 'show_logo' => 'boolean', 'in_final' => 'boolean',
+    protected $casts = ['active' => 'boolean', 'show_header' => 'boolean', 'show_logo' => 'boolean', 'in_final' => 'boolean', 'rtl' => 'boolean',
                         'labels' => 'array', 'hidden_keys' => 'array'];
 
     public function isHidden(string $key): bool
