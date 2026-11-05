@@ -45,6 +45,8 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::put('/numbers/{reservation}', [ReservationController::class, 'update'])->name('reservations.update');
     Route::get('/numbers/template', [ReservationController::class, 'template'])->name('reservations.template');
     Route::post('/numbers/import', [ReservationController::class, 'import'])->name('reservations.import')->middleware('can:numbers.reserve');
+    Route::get('/numbers/old-template', [ReservationController::class, 'oldTemplate'])->name('reservations.old-template')->middleware('can:numbers.manage');
+    Route::post('/numbers/import-old', [ReservationController::class, 'importOld'])->name('reservations.import-old')->middleware('can:numbers.manage');
     Route::get('/numbers/mine', [ReservationController::class, 'mine'])->name('reservations.mine');
 
     // forms / documents
@@ -214,6 +216,7 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
 
     // reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('can:reports.view');
+    Route::get('/reports/budget-lines', [ReportController::class, 'lines'])->name('reports.lines')->middleware('can:reports.view');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show')->middleware('can:reports.view');
 
     // account
