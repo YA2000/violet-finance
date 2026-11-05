@@ -2,12 +2,6 @@
 @php
   $u = auth()->user();
   $canEdit = !$ro;
-  $canSign = !$new && $doc->canSign($u);
-  $next = $new ? null : $doc->nextSignature();
-  $viaRem = !$new && \App\Services\Remittances::enabled() && in_array($doc->form_code, \App\Services\Remittances::payableForms(), true);
-  $remSt = $viaRem ? \App\Services\Remittances::statusOf($doc) : null;
-  $remItems = !$new && $doc->form_code === \App\Services\Remittances::FORM ? $doc->remittanceLines()->with('document')->get() : collect();
-  $payStep = !$new && !$viaRem && !$remItems->count() && $doc->isPayStep($u);
   $action = $new ? route('documents.store', $form->code) : route('documents.update', $doc);
   $stateKey = $new ? 'draft' : $doc->state;
 @endphp
@@ -38,7 +32,7 @@
         @if(!$new && $doc->uploaded)<span class="tag"><i class="fa-solid fa-cloud-arrow-up"></i> Uploaded {{ $doc->uploaded_at?->format('d M') }}</span>@endif
       </div>
       @if($canEdit && !$doc->number && !empty($form->settings()['open_to_all']) && !$u->hasPerm('numbers.reserve'))
-        <p class="hint" style="margin-top:10px"><i class="fa-solid fa-hashtag"></i> The transaction number is given automatically when you submit.</p>
+        <p class="hint" style="margin-top:10px"><i class="fa-solid fa-hashtag"></i> The transaction number is given automatically when you save.</p>
       @elseif($canEdit && !$doc->number)
         <div class="btn-row" style="margin-top:12px" x-data="{ res: @js((string) old('reservation_id', '')), opts: @js($freeNumbers->map(fn ($x) => ['id' => (string) $x->id, 'text' => $x->number . ' — ' . \Illuminate\Support\Str::limit($x->description, 50)])->values()) }"
              @reserved.window="opts.push({ id: String($event.detail.id), text: $event.detail.text }); $nextTick(() => res = String($event.detail.id))">
@@ -51,20 +45,12 @@
         </div>
       @endif
       @if(!$new && $doc->state !== 'draft')
-        <p class="muted" style="margin-top:8px">Prepared by {{ $doc->user->name }} · {{ $doc->date?->format('d M Y') }}
-          @if($doc->currentSigner) · waiting for <b style="color:var(--ink)">{{ $doc->currentSigner->name }}</b>@endif</p>
+        <p class="muted" style="margin-top:8px">Prepared by {{ $doc->user->name }} · {{ $doc->date?->format('d M Y') }}</p>
       @endif
     </div>
     <div class="actions-bar">
       @if($canEdit)
-        <button class="btn" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> Save</button>
-        <button class="btn btn-primary" type="submit" name="then" value="submit" :disabled="busy"><i class="fa-solid fa-paper-plane"></i> Save &amp; submit</button>
-      @endif
-      @if($canSign && !$next?->is_payer)
-        <button class="btn btn-sign" type="submit" form="f-sign"><i class="fa-solid fa-signature"></i> Sign</button>
-      @endif
-      @if(!$new && ($canSign || ($doc->canManage($u) && in_array($doc->state, ['signing', 'to_pay']))))
-        <button class="btn btn-danger" type="button" @click="$dispatch('open-return')"><i class="fa-solid fa-rotate-left"></i> Return</button>
+        <button class="btn btn-primary" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> Save</button>
       @endif
       @if(!$new)
         <div x-data="{ o: false }" style="position:relative" @click.outside="o = false">
@@ -91,14 +77,11 @@
           <div class="lk-pop" x-show="o" x-cloak x-transition style="width:220px; right:0; left:auto">
             <div class="lk-list">
               <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit" form="f-duplicate"><b><i class="fa-regular fa-copy"></i> Duplicate</b></button>
-              @if($doc->state === 'draft' && $doc->canEdit($u))
-                <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit" form="f-cancel"><b><i class="fa-solid fa-ban"></i> Cancel</b></button>
+              @if($doc->canEdit($u) || ($doc->canManage($u) && $doc->state === 'done'))
+                <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit" form="f-cancel" onclick="return confirm('Cancel this form? Its amounts leave the budget line report.')"><b><i class="fa-solid fa-ban"></i> Cancel</b></button>
               @endif
               @if(in_array($doc->state, ['draft', 'cancel']) && ($doc->isOwner($u) || $doc->canManage($u)))
                 <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit;color:var(--danger)" form="f-delete" onclick="return confirm('Delete this document? Its number goes back to the free numbers.')"><b><i class="fa-regular fa-trash-can"></i> Delete</b></button>
-              @endif
-              @if($doc->canManage($u) && $doc->state !== 'draft')
-                <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit" form="f-reset" onclick="return confirm('Reset to draft? All signatures are cleared.')"><b><i class="fa-solid fa-arrow-rotate-left"></i> Reset to draft</b><small>Admin</small></button>
               @endif
             </div>
           </div>
@@ -106,22 +89,6 @@
       @endif
     </div>
   </div>
-
-  {{-- ============================================== signature trail --}}
-  @if(count($chain))
-  <div class="trail" aria-label="Signature steps">
-    @foreach($chain as $s)
-      @php
-        $isNow = !$new && $next && $s->id === $next->id && in_array($doc->state, ['signing', 'to_pay']);
-        $cls = !$s->individual_id ? ($stateKey === 'draft' ? 'pick' : 'skip') : ($s->state === 'signed' ? 'done' : ($isNow ? 'now' : ''));
-        $icon = match($cls) { 'done' => 'fa-check', 'now' => 'fa-pen-nib', 'pick' => 'fa-user-plus', 'skip' => 'fa-minus', default => $s->is_payer ? 'fa-money-bill' : 'fa-clock' };
-        $sub = match($cls) { 'done' => $s->date?->format('d M Y') ?? 'signed', 'now' => $s->is_payer ? 'waiting for payment' : 'waiting', 'pick' => $s->is_preparer ? 'link your login to an employee' : ($s->required ? 'choose the signer' : 'optional'), 'skip' => 'not needed', default => 'pending' };
-        if ($s->is_preparer && $s->state !== 'signed' && $cls !== 'pick') { $sub = 'signs automatically on submit'; $icon = 'fa-wand-magic-sparkles'; }
-      @endphp
-      <div class="step {{ $cls }}"><div class="dot"><i class="fa-solid {{ $icon }}"></i></div><b>{{ $s->role }}</b><span>{{ $s->individual?->name ?? '—' }}</span><small>{{ $sub }}</small></div>
-    @endforeach
-  </div>
-  @endif
 
   @include('documents._blocks')
   @include('documents._signers')
@@ -129,82 +96,16 @@
 
 {{-- ============================================== payment / attachments / activity --}}
 @unless($new)
-<div class="panel" id="lower" x-data="{ t2: '{{ request('tab') ?: ($payStep ? 'payment' : ($openNotes ? 'review' : 'files')) }}' }">
+<div class="panel" id="lower" x-data="{ t2: '{{ request('tab') ?: ($openNotes ? 'review' : 'files') }}' }">
   <div class="panel-body">
     <div class="tabs">
-      @if($form->hasPayment)<button type="button" :class="t2 === 'payment' && 'on'" @click="t2 = 'payment'"><i class="fa-solid fa-money-bill-wave"></i> Payment details</button>@endif
       <button type="button" :class="t2 === 'files' && 'on'" @click="t2 = 'files'"><i class="fa-solid fa-paperclip"></i> Attachments <span class="n">{{ $doc->attachments->count() }}</span></button>
       <button type="button" :class="t2 === 'review' && 'on'" @click="t2 = 'review'"><i class="fa-regular fa-comments"></i> Review notes @if($openNotes)<span class="n warn">{{ $openNotes }}</span>@endif</button>
       <button type="button" :class="t2 === 'log' && 'on'" @click="t2 = 'log'"><i class="fa-solid fa-clock-rotate-left"></i> Activity</button>
     </div>
 
-    @if($form->hasPayment)
-    <div x-show="t2 === 'payment'">
-      @if($payStep)
-        <form method="post" action="{{ route('documents.payment', $doc) }}">
-          @csrf
-          <div class="alert alert-info"><i class="fa-solid fa-circle-info"></i><div>Reserve the number of the payment (or pick one of your reserved numbers), enter the paid amount, attach the receipt, then press <b>Save &amp; sign</b>.</div></div>
-          <div class="fgrid">
-            <div class="field" style="grid-column: span 5">
-              <label>Payment number <span class="req">*</span></label>
-              <div class="btn-row">
-                <select class="input" name="paid_reservation_id" style="flex:1; min-width:200px">
-                  <option value="">Pick one of my reserved numbers…</option>
-                  @if($doc->paidReservation)<option value="{{ $doc->paid_reservation_id }}" selected>{{ $doc->paid_ref }} — {{ \Illuminate\Support\Str::limit($doc->paidReservation->description, 40) }}</option>@endif
-                  @foreach($freeNumbers as $fn)<option value="{{ $fn->id }}">{{ $fn->number }} — {{ \Illuminate\Support\Str::limit($fn->description, 40) }}</option>@endforeach
-                </select>
-                <button type="button" class="btn" @click="$dispatch('open-paynum')"><i class="fa-solid fa-hashtag"></i> Reserve payment number</button>
-              </div>
-            </div>
-            <div class="field" style="grid-column: span 3"><label>Paid amount <span class="req">*</span></label><input class="input num" name="paid_amount" inputmode="decimal" value="{{ old('paid_amount', $doc->paid_amount) }}"></div>
-            <div class="field" style="grid-column: span 2"><label>Actual exchange rate</label><input class="input num" name="paid_rate" inputmode="decimal" value="{{ old('paid_rate', $doc->paid_rate) }}"></div>
-            <div class="field" style="grid-column: span 2"><label>Payment date</label><input class="input" type="date" name="paid_date" value="{{ old('paid_date', $doc->paid_date?->toDateString() ?? date('Y-m-d')) }}"></div>
-          </div>
-          <div class="btn-row" style="margin-top:16px">
-            <button class="btn">Save</button>
-            <button class="btn btn-sign" name="then" value="sign"><i class="fa-solid fa-signature"></i> Save &amp; sign</button>
-          </div>
-        </form>
-      @elseif($remItems->count())
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Transaction</th><th>Description</th><th class="num">Planned</th><th class="num">Paid</th><th>Payment</th><th>Status</th></tr></thead>
-          <tbody>@foreach($remItems as $it)
-            <tr><td><a class="ref" href="{{ route('documents.show', $it->document) }}">{{ $it->document->number }}</a></td>
-              <td>{{ \Illuminate\Support\Str::limit($it->document->description, 60) }}</td>
-              <td class="num">{{ money($it->amount) }} {{ $it->currency }}</td>
-              <td class="num">{{ $it->paid_amount !== null ? money($it->paid_amount) : '—' }}@if($it->adjusted) <span class="tag">adjusted</span>@endif</td>
-              <td>{{ $it->paid_ref }} {{ $it->paid_date?->format('d M Y') }}</td>
-              <td><span class="pill st-{{ $it->status === 'paid' ? 'done' : 'to_pay' }}">{{ $it->status === 'paid' ? 'Paid' : 'To pay' }}</span></td></tr>
-          @endforeach</tbody>
-        </table></div>
-        @can('payments.pay')@if($doc->state === 'to_pay')<a class="btn btn-primary" style="margin-top:12px" href="{{ route('payments.index') }}"><i class="fa-solid fa-money-bill-transfer"></i> Pay on the Payments page</a>@endif @endcan
-      @elseif($viaRem && !$doc->paid_ref)
-        @if($remSt)
-          @php($it = $remSt['item'])
-          <div class="alert alert-info"><i class="fa-solid fa-list-check"></i><div>Listed for payment on Remittance Statement
-            <a class="ref" href="{{ route('documents.show', $remSt['remittance']) }}">{{ $remSt['remittance']->number }}</a>
-            ({{ \App\Models\Document::STATES[$remSt['remittance']->state] ?? $remSt['remittance']->state }}). The treasury pays it from the Payments page.</div></div>
-        @elseif($doc->state === 'to_pay')
-          <div class="empty"><i class="fa-solid fa-list-check"></i><b>Ready to pay</b>Every signer has signed. The internal viewer adds it to a Remittance Statement, then the treasury pays it.</div>
-        @else
-          <div class="empty"><i class="fa-solid fa-money-bill-wave"></i><b>Not paid yet</b>When every signature is done it goes on a Remittance Statement and the treasury pays it.</div>
-        @endif
-      @elseif($doc->paid_ref)
-        <div class="grid grid-3">
-          <div><small>Payment number</small><div class="ref">{{ $doc->paid_ref }}</div></div>
-          <div><small>Paid amount</small><div class="slab" style="font-size:20px">{{ money($doc->paid_amount) }}</div></div>
-          <div><small>Actual exchange rate / date</small><div>{{ $doc->paid_rate ?: '—' }} · {{ $doc->paid_date?->format('d/m/Y') }}</div></div>
-        </div>
-        @if(!empty($doc->data['payment_note']))<div class="alert alert-warn" style="margin-top:12px"><i class="fa-solid fa-scale-unbalanced"></i><div>{{ $doc->data['payment_note'] }}</div></div>@endif
-        @if($remSt)<p class="hint" style="margin-top:8px">Paid through Remittance Statement <a class="ref" href="{{ route('documents.show', $remSt['remittance']) }}">{{ $remSt['remittance']->number }}</a>.</p>@endif
-      @else
-        <div class="empty"><i class="fa-solid fa-money-bill-wave"></i><b>Not paid yet</b>The treasury fills the payment when every signature is done.</div>
-      @endif
-    </div>
-    @endif
-
-    <div x-show="t2 === 'files'" x-cloak>
-      @php($canAttach = $doc->canManage($u) || $doc->canEdit($u) || $payStep)
+    <div x-show="t2 === 'files'">
+      @php($canAttach = $doc->canManage($u) || $doc->canEdit($u))
       @if($canAttach)
         <div x-data="uploader('{{ route('documents.attach', $doc) }}')">
           <label class="drop" :class="over && 'over'" @dragover.prevent="over = true" @dragleave="over = false" @drop.prevent="drop($event)">
@@ -249,41 +150,10 @@
   </div>
 </div>
 
-<form id="f-sign" method="post" action="{{ route('documents.sign', $doc) }}">@csrf</form>
-<form id="f-reset" method="post" action="{{ route('documents.reset', $doc) }}">@csrf</form>
 <form id="f-cancel" method="post" action="{{ route('documents.cancel', $doc) }}">@csrf</form>
 <form id="f-duplicate" method="post" action="{{ route('documents.duplicate', $doc) }}">@csrf</form>
 <form id="f-delete" method="post" action="{{ route('documents.destroy', $doc) }}">@csrf @method('DELETE')</form>
 
-{{-- return modal --}}
-<div x-data="{ open: false }" @open-return.window="open = true">
-  <div class="modal-bg" x-show="open" x-cloak @keydown.escape.window="open = false">
-    <form class="modal" method="post" action="{{ route('documents.return', $doc) }}" @click.outside="open = false">
-      @csrf
-      <div class="modal-head"><h2>Return to the preparer</h2><button type="button" class="x" @click="open = false" aria-label="Close">&times;</button></div>
-      <div class="modal-body"><div class="field"><label>Reason</label><textarea class="input" name="reason" required placeholder="What needs to be corrected?"></textarea></div>
-        <p class="hint" style="margin-top:8px">All signatures are cleared and {{ $doc->user->name }} gets the document back as a draft.</p></div>
-      <div class="modal-foot"><button type="button" class="btn" @click="open = false">Keep it</button><button class="btn btn-danger"><i class="fa-solid fa-rotate-left"></i> Return</button></div>
-    </form>
-  </div>
-</div>
-
-{{-- payment number modal --}}
-@if($payStep)
-<div x-data="{ open: false }" @open-paynum.window="open = true">
-  <div class="modal-bg" x-show="open" x-cloak @keydown.escape.window="open = false">
-    <form class="modal" method="post" action="{{ route('documents.payment-number', $doc) }}">
-      @csrf
-      <div class="modal-head"><h2>Reserve the payment number</h2><button type="button" class="x" @click="open = false">&times;</button></div>
-      <div class="modal-body">
-        @include('reservations._fields', ['defaults' => ['date' => date('Y-m-d'), 'txn_type_id' => $payType,
-          'description' => 'Payment of ' . $doc->number . ' - ' . \Illuminate\Support\Str::limit($doc->description, 120)]])
-      </div>
-      <div class="modal-foot"><button type="button" class="btn" @click="open = false">Close</button><button class="btn btn-primary"><i class="fa-solid fa-hashtag"></i> Reserve and link</button></div>
-    </form>
-  </div>
-</div>
-@endif
 @endunless
 
 {{-- reserve number modal (draft without number): reserved by fetch so the typed form is kept --}}
