@@ -1,7 +1,7 @@
 @extends('layouts.app', ['title' => 'Transaction numbers'])
 @section('crumbs')<b>Transaction numbers</b>@endsection
 @section('content')
-<div x-data="{ reserve: {{ request('reserve') || ($errors->any() && old('description') !== null) ? 'true' : 'false' }}, upload: false }">
+<div x-data="{ reserve: {{ request('reserve') || ($errors->any() && old('description') !== null) ? 'true' : 'false' }}, upload: false, old: false }">
 <div class="page-head">
   <div class="grow">
     <h1>Transaction numbers</h1>
@@ -9,6 +9,7 @@
   </div>
   @can('numbers.reserve')
   <div class="btn-row">
+    @can('numbers.manage')<button class="btn" @click="old = true"><i class="fa-solid fa-clock-rotate-left"></i> Import old numbers</button>@endcan
     <button class="btn" @click="upload = true"><i class="fa-regular fa-file-excel"></i> Reserve from Excel</button>
     <button class="btn btn-primary" @click="reserve = true"><i class="fa-solid fa-hashtag"></i> Reserve number</button>
   </div>
@@ -42,12 +43,13 @@
 <div class="panel">
   @if($items->count())
   <div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th>Number</th><th>Date</th><th>Type</th><th>Description</th><th>Project</th><th>Reserved by</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Number</th><th>Date</th><th>Reserved at</th><th>Type</th><th>Description</th><th>Project</th><th>Reserved by</th><th>Status</th><th></th></tr></thead>
     <tbody>
     @foreach($items as $r)
       <tr>
         <td><span class="ref">{{ $r->number }}</span></td>
         <td>{{ $r->date->format('d M Y') }}</td>
+        <td style="white-space:nowrap">{{ $r->created_at?->format('d M Y') }} <b>{{ $r->created_at?->format('H:i') }}</b></td>
         <td>{{ $r->type?->name }}</td>
         <td style="max-width:360px">{{ $r->description }}</td>
         <td>{{ $r->project ? $r->project->code . ' - ' . \Illuminate\Support\Str::limit($r->project->name, 26) : '' }}</td>
@@ -79,6 +81,25 @@
     <div class="modal-foot"><button type="button" class="btn" @click="reserve = false">Close</button><button class="btn btn-primary"><i class="fa-solid fa-hashtag"></i> Reserve</button></div>
   </form>
 </div>
+
+{{-- old numbers --}}
+@can('numbers.manage')
+<div class="modal-bg" x-show="old" x-cloak @keydown.escape.window="old = false">
+  <form class="modal" method="post" action="{{ route('reservations.import-old') }}" enctype="multipart/form-data" @click.outside="old = false">
+    @csrf
+    <div class="modal-head"><h2>Import old numbers</h2><button type="button" class="x" @click="old = false" aria-label="Close">&times;</button></div>
+    <div class="modal-body">
+      <ol style="margin:0 0 14px; padding-left:18px; color:var(--ink-2)">
+        <li>Download the template and fill one row per old number: number, date, time, description. Type and project are optional.</li>
+        <li>Upload it. The numbers stay exactly as written and are marked <b>Used</b>; new numbers continue after them. If any row is wrong, nothing is saved.</li>
+      </ol>
+      <a class="btn" href="{{ route('reservations.old-template') }}"><i class="fa-solid fa-download"></i> Download template</a>
+      <div class="field" style="margin-top:16px"><label>Filled template (.xlsx)</label><input class="input" type="file" name="file" accept=".xlsx" required style="padding-top:6px"></div>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn" @click="old = false">Close</button><button class="btn btn-primary"><i class="fa-solid fa-upload"></i> Import</button></div>
+  </form>
+</div>
+@endcan
 
 {{-- upload --}}
 <div class="modal-bg" x-show="upload" x-cloak @keydown.escape.window="upload = false">
