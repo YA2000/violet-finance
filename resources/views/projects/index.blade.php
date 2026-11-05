@@ -1,8 +1,7 @@
 @extends('layouts.app', ['title' => 'Projects'])
-@section('crumbs')<span>Budget</span><i class="fa-solid fa-chevron-right"></i><b>Projects</b>@endsection
+@section('crumbs')<a href="{{ route('admin.master.home') }}">Master data</a><i class="fa-solid fa-chevron-right"></i><b>Projects</b>@endsection
 @section('content')
 @php
-  $sumUsd = fn ($rows, $f) => $rows->sum(fn ($p) => $usd($p, $f) ?? 0);
   $keep = request()->only(['q', 'office', 'manager', 'cur', 'soon', 'show', 'sector']);
 @endphp
 <div class="page-head">
@@ -19,11 +18,9 @@
 </div>
 
 @unless($ended)
-<div class="ledger" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px">
+<div class="ledger" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:18px">
   <div class="lg strong"><b>{{ $donor->count() }}</b><span>Running projects</span></div>
   <div class="lg {{ $soon->count() ? 'bad' : '' }}"><b>{{ $soon->count() }}</b><span>Ending within 2 months</span></div>
-  <div class="lg"><b>{{ money($sumUsd($donor, 'budget_total'), 0) }}</b><span>Budget, USD</span></div>
-  <div class="lg"><b>{{ money($sumUsd($donor, 'remaining'), 0) }}</b><span>Remaining, USD · overhead earned {{ money($sumUsd($donor, 'overhead'), 0) }}</span></div>
 </div>
 @if($qbPending->count())
 <div class="panel" style="margin-bottom:14px"><div class="panel-body" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -31,7 +28,6 @@
   @foreach($qbPending as $q)<a class="chip" href="{{ route('projects.show', $q->id) }}">{{ $q->code }} {{ \Illuminate\Support\Str::limit($q->name, 26) }}</a>@endforeach
 </div></div>
 @endif
-@if($noRate->count())<p class="hint danger-text" style="margin:-8px 0 14px"><i class="fa-solid fa-triangle-exclamation"></i> No US-dollar rate for {{ $noRate->implode(', ') }} (Master data → Currencies): these projects are not in the USD totals.</p>@endif
 
 @if($soon->count() && !request('soon'))
 <div class="panel" style="margin-bottom:16px">

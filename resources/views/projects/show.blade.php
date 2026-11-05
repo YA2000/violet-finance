@@ -1,5 +1,5 @@
 @extends('layouts.app', ['title' => $p->code . ' ' . $p->name])
-@section('crumbs')<span>Budget</span><i class="fa-solid fa-chevron-right"></i><a href="{{ route('projects.index') }}">Projects</a><i class="fa-solid fa-chevron-right"></i><b>{{ $p->code }}</b>@endsection
+@section('crumbs')<a href="{{ route('admin.master.home') }}">Master data</a><i class="fa-solid fa-chevron-right"></i><a href="{{ route('projects.index') }}">Projects</a><i class="fa-solid fa-chevron-right"></i><b>{{ $p->code }}</b>@endsection
 @section('content')
 @php
   $tab = request('tab', $archived ? 'archived' : 'lines');

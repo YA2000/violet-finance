@@ -1,5 +1,5 @@
 @extends('layouts.app', ['title' => $p->exists ? 'Edit ' . $p->code : 'New project'])
-@section('crumbs')<span>Budget</span><i class="fa-solid fa-chevron-right"></i><a href="{{ route('projects.index') }}">Projects</a><i class="fa-solid fa-chevron-right"></i><b>{{ $p->exists ? $p->code : 'New project' }}</b>@endsection
+@section('crumbs')<a href="{{ route('admin.master.home') }}">Master data</a><i class="fa-solid fa-chevron-right"></i><a href="{{ route('projects.index') }}">Projects</a><i class="fa-solid fa-chevron-right"></i><b>{{ $p->exists ? $p->code : 'New project' }}</b>@endsection
 @section('content')
 @php($val = fn ($k, $d = null) => old($k, $d ?? $p->$k))
 <form method="post" action="{{ $p->exists ? route('projects.update', $p->id) : route('projects.store') }}" style="max-width:780px;margin:0 auto" x-data="{ np: {{ old('new_partner') ? 'true' : 'false' }}, code: @js((string) old('code', $p->code)) }">
@@ -9,8 +9,8 @@
 
   <div class="panel" style="margin-bottom:14px"><div class="panel-head"><h2><span class="step-n">1</span> The agreement</h2></div>
     <div class="panel-body fgrid">
-      <div class="field" style="grid-column:span 3"><label>Project number</label><input class="input num" name="code" x-model="code" required>
-        @unless($p->exists)<div class="hint">The next free number.</div>@endunless</div>
+      <div class="field" style="grid-column:span 3"><label>Project number</label><input class="input num" value="{{ $p->code }}" readonly aria-readonly="true">
+        <div class="hint">{{ $p->exists ? 'Given by the system.' : 'Given automatically when you save.' }}</div></div>
       <div class="field" style="grid-column:span 9"><label>Name <span class="req">*</span></label><input class="input" name="name" value="{{ $val('name') }}" placeholder="2026-076-Donor-Agreement no." required>
         <div class="hint">In QuickBooks: <b x-text="code + '-'"></b>name.</div></div>
       <div class="field" style="grid-column:span 6"><label>Partner (donor)</label>
