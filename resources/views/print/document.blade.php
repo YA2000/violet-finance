@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html @if($p->rtl) dir="rtl" lang="ar" @endif>
 <head>
 <meta charset="utf-8"/>
 <title>{{ $o->number }}</title>
@@ -54,6 +54,13 @@ table.bil tr.first td { font-weight: bold; }
 .sig img { max-height: 13mm; max-width: 44mm; }
 .sig .c { text-align: center; }
 .empty-row td { color: #888; text-align: center; }
+@if($p->rtl)
+body { direction: rtl; font-family: 'Noto Sans Arabic', 'Carlito', sans-serif; }
+.band .right { text-align: left; }
+.grid .num, .data td.num, .totals .val { text-align: left; direction: ltr; }
+.totals { margin-left: 0; margin-right: auto; }
+.grid .val, .data td, .sig td { unicode-bidi: -webkit-plaintext; unicode-bidi: plaintext; }
+@endif
 </style>
 </head>
 <body>
@@ -98,7 +105,7 @@ table.bil tr.first td { font-weight: bold; }
     <div class="blk">
       @if($b['title'])<div class="blk-title">{{ $b['title'] }}</div>@endif
       <table class="data">
-        <thead><tr><th style="width: {{ round(34 * 100 / $tw, 2) }}%">SN</th>
+        <thead><tr><th style="width: {{ round(34 * 100 / $tw, 2) }}%">{{ $L->label('_sn', 'SN') }}</th>
           @foreach($b['cols'] as $c)<th style="width: {{ round($c['w'] * 100 / $tw, 2) }}%">{{ $c['label'] }}</th>@endforeach</tr></thead>
         <tbody>
           @forelse($b['rows'] as $i => $r)
@@ -124,14 +131,14 @@ table.bil tr.first td { font-weight: bold; }
     </div>
   @elseif($b['type'] === 'signatures')
     <div class="blk" style="page-break-inside: avoid">
-      <div class="blk-title">{{ $b['title'] ?: 'Approvals' }}</div>
+      <div class="blk-title">{{ $b['title'] ?: $L->label('_approvals', 'Approvals') }}</div>
       <table class="sig">
-        <thead><tr><th style="width:32%">Step</th><th style="width:30%">Name &amp; Title</th><th style="width:24%">Signature</th><th style="width:14%">Date</th></tr></thead>
+        <thead><tr><th style="width:32%">{{ $L->label('_step', 'Step') }}</th><th style="width:30%">{{ $L->label('_name_title', 'Name & Title') }}</th><th style="width:24%">{{ $L->label('_signature', 'Signature') }}</th><th style="width:14%">{{ $L->label('_date', 'Date') }}</th></tr></thead>
         <tbody>
         @foreach($o->signatures as $s)
           @if($s->individual_id || $s->required)
           <tr>
-            <td><span class="role">{{ $s->role }}</span>@if($s->print_label)<span class="pl">{{ $s->print_label }}</span>@endif</td>
+            <td><span class="role">{{ $L->label('role:' . $s->role, $s->role) }}</span>@if($s->print_label)<span class="pl">{{ $L->label('rolelabel:' . $s->role, $s->print_label) }}</span>@endif</td>
             <td>@if($s->individual)<b>{{ $s->individual->name }}</b><br><span style="font-size:8pt">{{ $s->individual->title }}</span>@endif</td>
             <td class="c">@if($s->signature)<img src="{{ $s->signature }}" alt="">@endif</td>
             <td class="c">{{ $s->date?->format('d/m/Y') }}</td>
@@ -140,7 +147,7 @@ table.bil tr.first td { font-weight: bold; }
         @endforeach
         </tbody>
       </table>
-      @if($o->form()->hasPayment && ($o->paid_ref || $o->state === 'done'))
+      @if($o->form()->hasPayment && $o->paid_ref)
         <table class="grid" style="margin-top:2mm"><tr>
           <td class="lbl" style="width:14%">Payment T Ref</td><td class="val" style="width:16%"><b>{{ $o->paid_ref }}</b></td>
           <td class="lbl" style="width:14%">Paid Amount</td><td class="val num" style="width:18%">{{ $o->paid_amount !== null ? \App\Support\Print\Layout::num($o->paid_amount, 2) : '' }}</td>
