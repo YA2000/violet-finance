@@ -306,7 +306,7 @@ class DocumentController extends Controller
         return response($pdf, 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $name . '"']);
     }
 
-    /** Print: every active printout of the form (English + Arabic for the PTR) in one PDF named by the transaction number, signed once (last copy). */
+    /** Print: every active printout of the form (English + Arabic for the PTR) in one PDF named by the transaction number, signed once (English copy). */
     public function printAll(Document $doc)
     {
         $this->guardView($doc);
@@ -319,10 +319,10 @@ class DocumentController extends Controller
         $tmp = storage_path('app/tmp/' . uniqid('print_'));
         @mkdir($tmp, 0775, true);
         $files = [];
-        $last = $prints->count() - 1;
+        // signed once, on the English copy (the first left-to-right printout); the Arabic copy is a translation only
+        $signId = ($prints->firstWhere('rtl', false) ?? $prints->first())->id;
         foreach ($prints->values() as $i => $p) {
-            // signed once: the signatures table is printed on the last copy only
-            file_put_contents($files[] = "$tmp/p$i.pdf", Pdf::render($doc, (string) $p->id, $i < $last));
+            file_put_contents($files[] = "$tmp/p$i.pdf", Pdf::render($doc, (string) $p->id, $p->id !== $signId));
         }
         Pdf::merge($files, "$tmp/all.pdf");
         $pdf = file_get_contents("$tmp/all.pdf");

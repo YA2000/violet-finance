@@ -24,7 +24,7 @@ class Pdf
         return $p;
     }
 
-    /** $noSig: leave the signatures table out (the merged print signs once, on its last copy). */
+    /** $noSig: leave the signatures table out (the merged print signs once, on the English copy). */
     public static function html(Document $doc, string $report, bool $noSig = false): string
     {
         $doc->loadMissing('signatures.individual');
