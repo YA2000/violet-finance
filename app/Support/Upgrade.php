@@ -33,6 +33,7 @@ class Upgrade
         V3::run();
         V4::run();
         V5::run();
+        V6::run();
     }
 
     public static function formFiles(): array

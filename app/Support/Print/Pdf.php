@@ -24,18 +24,19 @@ class Pdf
         return $p;
     }
 
-    public static function html(Document $doc, string $report): string
+    /** $noSig: leave the signatures table out (the merged print signs once, on its last copy). */
+    public static function html(Document $doc, string $report, bool $noSig = false): string
     {
         $doc->loadMissing('signatures.individual');
-        return view('print.document', ['o' => $doc, 'p' => static::printFor($doc, $report), 'fontCss' => Assets::fontCss()])->render();
+        return view('print.document', ['o' => $doc, 'p' => static::printFor($doc, $report), 'fontCss' => Assets::fontCss(), 'noSig' => $noSig])->render();
     }
 
-    public static function render(Document $doc, string $report): string
+    public static function render(Document $doc, string $report, bool $noSig = false): string
     {
         $p = static::printFor($doc, $report);
         $tmp = storage_path('app/tmp/' . uniqid('pdf_', true));
         @mkdir($tmp, 0775, true);
-        file_put_contents("$tmp/body.html", static::html($doc, $report));
+        file_put_contents("$tmp/body.html", static::html($doc, $report, $noSig));
         file_put_contents("$tmp/footer.html", view('print.footer', ['o' => $doc, 'p' => $p, 'fontCss' => Assets::fontCss()])->render());
         $args = [static::binary(), '--quiet', '--encoding', 'utf-8', '--page-size', 'A4',
             '--orientation', $p->orientation === 'landscape' ? 'Landscape' : 'Portrait',

@@ -75,6 +75,8 @@ Route::middleware(['auth', 'active', 'idle', 'modules'])->group(function () {
     Route::post('/documents/{doc}/payment-number', [DocumentController::class, 'paymentNumber'])->name('documents.payment-number');
     Route::get('/documents/{doc}/print', [DocumentController::class, 'printAll'])->name('documents.print-all');
     Route::get('/documents/{doc}/print/{report}', [DocumentController::class, 'print'])->name('documents.print');
+    Route::post('/documents/{doc}/uploader/email', [DocumentController::class, 'uploaderEmail'])->name('documents.uploader.email');
+    Route::post('/documents/{doc}/treasury', [DocumentController::class, 'treasury'])->name('documents.treasury');
     Route::post('/documents/{doc}/unlock', [DocumentController::class, 'unlock'])->name('documents.unlock');
     Route::post('/documents/{doc}/lock', [DocumentController::class, 'lock'])->name('documents.lock');
     Route::get('/documents/{doc}/final', [DocumentController::class, 'finalFile'])->name('documents.final');

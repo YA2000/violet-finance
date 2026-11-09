@@ -306,7 +306,7 @@ class DocumentController extends Controller
         return response($pdf, 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $name . '"']);
     }
 
-    /** Print: every active printout of the form (English + Arabic for the PTR) in one PDF named by the transaction number. */
+    /** Print: every active printout of the form (English + Arabic for the PTR) in one PDF named by the transaction number, signed once (last copy). */
     public function printAll(Document $doc)
     {
         $this->guardView($doc);
@@ -319,8 +319,10 @@ class DocumentController extends Controller
         $tmp = storage_path('app/tmp/' . uniqid('print_'));
         @mkdir($tmp, 0775, true);
         $files = [];
-        foreach ($prints as $i => $p) {
-            file_put_contents($files[] = "$tmp/p$i.pdf", Pdf::render($doc, (string) $p->id));
+        $last = $prints->count() - 1;
+        foreach ($prints->values() as $i => $p) {
+            // signed once: the signatures table is printed on the last copy only
+            file_put_contents($files[] = "$tmp/p$i.pdf", Pdf::render($doc, (string) $p->id, $i < $last));
         }
         Pdf::merge($files, "$tmp/all.pdf");
         $pdf = file_get_contents("$tmp/all.pdf");
@@ -377,13 +379,14 @@ class DocumentController extends Controller
         return response()->download($out, ($doc->number ?: 'document') . '-Final.pdf')->deleteFileAfterSend();
     }
 
-    public function uploader(Request $r, Document $doc)
+    /** The QuickBooks uploader of a document as a temporary .xlsx: [path, file name, export]. */
+    protected function buildUploader(Request $r, Document $doc, ?string $key): array
     {
         $this->guardView($doc);
         $form = $doc->form();
-        $x = $form->export($r->query('x'));
+        $x = $form->export($key);
         abort_unless($x && $r->user()->hasPerm('form.' . $doc->form_code . '.uploader'), 404);
-        abort_if($doc->state === 'draft' && !$doc->canManage($r->user()), 422, 'Submit the document first.');
+        abort_if($doc->state === 'draft' && !$doc->canManage($r->user()), 422, 'Save the document first.');
         $path = storage_path('app/tmp/' . uniqid('upl_') . '.xlsx');
         @mkdir(dirname($path), 0775, true);
         $w = new Writer();
@@ -394,20 +397,103 @@ class DocumentController extends Controller
             $w->addRow(Row::fromValues(array_map(fn ($v) => $v instanceof \DateTimeInterface ? $v->format('Y-m-d') : $v, $row)));
         }
         $w->close();
-        $name = ($doc->number ?: 'draft') . '-' . str_replace(' ', '_', $x['name']) . '.xlsx';
+        return [$path, ($doc->number ?: 'draft') . '-' . str_replace(' ', '_', $x['name']) . '.xlsx', $x];
+    }
+
+    protected function markUploaded(Document $doc, string $how): void
+    {
+        $doc->update(['uploaded' => true, 'uploaded_at' => now()]);
+        Workflow::log($doc, $how . ' - marked as uploaded.', 'upload');
+    }
+
+    /** Save to the computer (mark=1 marks the form as uploaded). */
+    public function uploader(Request $r, Document $doc)
+    {
+        [$path, $name] = $this->buildUploader($r, $doc, $r->query('x'));
         if ($r->query('mark')) {
-            $doc->update(['uploaded' => true, 'uploaded_at' => now()]);
-            Workflow::log($doc, 'Uploader generated - marked as uploaded.', 'upload');
-        }
-        if ($r->query('email') && config('mail.default') !== 'log') {
-            $to = array_filter(array_map('trim', explode(',', (string) Setting::get('uploader_email_to'))));
-            $cc = array_filter(array_map('trim', explode(',', (string) Setting::get('uploader_email_cc'))));
-            Mail::raw("Uploader of {$doc->number} attached.", function ($m) use ($to, $cc, $path, $name, $doc, $x) {
-                $m->to($to)->cc($cc)->subject($x['name'] . ' - ' . $doc->number)->attach($path, ['as' => $name]);
-            });
-            Workflow::log($doc, 'Uploader e-mailed to ' . implode(', ', $to) . '.', 'upload');
+            $this->markUploaded($doc, 'Uploader saved to the computer');
         }
         return response()->download($path, $name)->deleteFileAfterSend();
+    }
+
+    /** Send by e-mail: subject = number + description, a short plain text, the file attached. */
+    public function uploaderEmail(Request $r, Document $doc)
+    {
+        $v = $r->validate(['to' => 'required|string|max:300', 'cc' => 'nullable|string|max:300'], ['to.required' => 'Write at least one address.']);
+        $split = fn ($s) => array_values(array_filter(array_map('trim', preg_split('/[,;\s]+/', (string) $s))));
+        $to = $split($v['to']);
+        $cc = $split($v['cc'] ?? '');
+        foreach (array_merge($to, $cc) as $a) {
+            if (!filter_var($a, FILTER_VALIDATE_EMAIL)) {
+                return back()->withErrors(['to' => "\"$a\" is not an e-mail address."]);
+            }
+        }
+        if (config('mail.default') === 'log') {
+            return back()->withErrors(['to' => 'E-mail is not set up on the server yet (MAIL_ settings in .env). Save the file to the computer for now.']);
+        }
+        [$path, $name] = $this->buildUploader($r, $doc, $r->input('x'));
+        $subject = trim(($doc->number ?: 'Draft') . ' - ' . $doc->description);
+        $amount = $doc->amount !== null ? number_format((float) $doc->amount, 2) . ' ' . $doc->currency : '';
+        $body = "Hello,\n\nAttached is the QuickBooks uploader of {$doc->number}.\n\n{$doc->description}" . ($amount ? "\nAmount: $amount" : '')
+            . "\n\nSent by " . $r->user()->name . ' from Violet Finance.';
+        try {
+            Mail::raw($body, function ($m) use ($to, $cc, $path, $name, $subject) {
+                $m->to($to)->subject(mb_substr($subject, 0, 180))->attach($path, ['as' => $name]);
+                if ($cc) {
+                    $m->cc($cc);
+                }
+            });
+        } catch (\Throwable $e) {
+            @unlink($path);
+            return back()->withErrors(['to' => 'The e-mail could not be sent: ' . $e->getMessage()]);
+        }
+        @unlink($path);
+        $this->markUploaded($doc, 'Uploader e-mailed to ' . implode(', ', $to));
+        return back()->with('ok', 'Uploader sent to ' . implode(', ', $to) . '.');
+    }
+
+    /**
+     * Treasury changes the value to pay (rate or total in the payment currency) of a final PTR. The lines follow, and so does
+     * the QuickBooks bill: the due is always what is paid.
+     */
+    public function treasury(Request $r, Document $doc)
+    {
+        $u = $r->user();
+        abort_unless(($u->hasPerm('payments.pay') || $doc->canManage($u)) && $doc->state === 'done', 403);
+        $d = $doc->data ?? [];
+        abort_unless(array_key_exists('pay_per_usd', $d), 404);
+        $v = $r->validate(['pay_per_usd' => 'nullable|numeric|gt:0', 'total' => 'nullable|numeric|gt:0', 'reason' => 'nullable|string|max:250']);
+        $ipu = (float) ($d['inv_per_usd'] ?? 1) ?: 1;
+        $base = 0.0;
+        foreach ($d['lines'] ?? [] as $l) {
+            $base += (float) ($l['invoice_amount'] ?? 0) * (($l['allocation'] ?? '') === '' || $l['allocation'] === null ? 1 : (float) $l['allocation']);
+        }
+        if (!empty($v['total'])) {
+            abort_if($base == 0, 422, 'The lines have no amount.');
+            $ppu = (float) $v['total'] * $ipu / $base;
+        } elseif (!empty($v['pay_per_usd'])) {
+            $ppu = (float) $v['pay_per_usd'];
+        } else {
+            return back()->withErrors(['treasury' => 'Write the new rate or the total paid.']);
+        }
+        $oldRate = (float) ($d['pay_per_usd'] ?? 1);
+        $oldTotal = (float) ($d['total_expected'] ?? $doc->amount);
+        $d['pay_per_usd'] = round($ppu, 10);
+        $form = $doc->form();
+        $data = $form->normalize($d);
+        if (abs((float) ($data['pay_per_usd'] ?? 0) - $d['pay_per_usd']) > 1e-9) {
+            return back()->withErrors(['treasury' => 'The payment rate is fixed for this form (US dollars, or the same currency as the invoice).']);
+        }
+        if ($errors = $form->validate($data)) {
+            return back()->withErrors(['treasury' => implode(' ', (array) $errors)]);
+        }
+        $wasUploaded = $doc->uploaded;
+        $doc->forceFill(['data' => $data, 'amount' => $form->amount($data), 'uploaded' => false, 'uploaded_at' => null])->save();
+        $fmt = fn ($n, $dec = 2) => rtrim(rtrim(number_format($n, $dec, '.', ','), '0'), '.');
+        Workflow::log($doc, sprintf('Treasury changed the value to pay: rate %s → %s, total %s → %s %s.%s%s', $fmt($oldRate, 4), $fmt($ppu, 4),
+            number_format($oldTotal, 2), number_format((float) $doc->amount, 2), $doc->currency,
+            !empty($v['reason']) ? ' Reason: ' . $v['reason'] . '.' : '', $wasUploaded ? ' Upload the new uploader again.' : ''), 'payment', $u);
+        return back()->with('ok', 'Value to pay updated: ' . number_format((float) $doc->amount, 2) . ' ' . $doc->currency . '.' . ($wasUploaded ? ' The form was uploaded before: send the new uploader.' : ''));
     }
 
     // ---------------------------------------------------------------- attachments

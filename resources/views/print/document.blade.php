@@ -129,7 +129,7 @@ body { direction: rtl; font-family: 'Noto Sans Arabic', 'Carlito', sans-serif; }
         <div class="note {{ $b['style'] }}">{{ $b['text'] }}</div>
       @endif
     </div>
-  @elseif($b['type'] === 'signatures')
+  @elseif($b['type'] === 'signatures' && empty($noSig))
     <div class="blk" style="page-break-inside: avoid">
       <div class="blk-title">{{ $b['title'] ?: $L->label('_approvals', 'Approvals') }}</div>
       <table class="sig">

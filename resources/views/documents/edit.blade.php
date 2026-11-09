@@ -61,7 +61,7 @@
           <a class="btn" href="{{ route('documents.print-all', $doc) }}" target="_blank" title="{{ count($form->reports) > 1 ? implode(' + ', $form->reports) . ' in one PDF' : 'PDF printout' }}"><i class="fa-solid fa-print"></i> Print</a>
         @endif
         @if($canUpl)
-          <a class="btn" href="{{ route('documents.uploader', [$doc, 'mark' => 1]) }}" title="Downloads the QuickBooks uploader and marks the form as uploaded"><i class="fa-solid fa-cloud-arrow-up"></i> Uploader</a>
+          <button type="button" class="btn" @click="$dispatch('uploader-open')" title="Save the QuickBooks uploader or send it by e-mail"><i class="fa-solid fa-cloud-arrow-up"></i> Uploader</button>
         @endif
         @if($doc->canManage($u) && $doc->state === 'done')
           @if($doc->edit_open)
@@ -101,6 +101,22 @@
   </div>
 
   @include('documents._blocks')
+
+  {{-- the same actions at the end of the form: no scrolling back up after the last line --}}
+  <div class="form-foot">
+    <span class="hint" x-show="dirty" x-cloak><i class="fa-solid fa-circle" style="font-size:7px; color:var(--warn)"></i> Unsaved changes</span>
+    <div class="btn-row" style="margin-left:auto">
+      @if(!$new)
+        @if(count($form->reports))<a class="btn" href="{{ route('documents.print-all', $doc) }}" target="_blank"><i class="fa-solid fa-print"></i> Print</a>@endif
+        @if($doc->state !== 'draft' && count($form->exports()) && $u->hasPerm('form.' . $form->code . '.uploader'))
+          <button type="button" class="btn" @click="$dispatch('uploader-open')"><i class="fa-solid fa-cloud-arrow-up"></i> Uploader</button>
+        @endif
+      @endif
+      @if($canEdit)
+        <button class="btn btn-primary btn-lg" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> {{ !$new && $doc->state === 'done' ? 'Save and lock' : 'Save' }}</button>
+      @endif
+    </div>
+  </div>
   @include('documents._signers')
 </form>
 
@@ -159,6 +175,61 @@
     </div>
   </div>
 </div>
+
+{{-- treasury: the value actually paid (the QuickBooks bill follows it) --}}
+@if($doc->state === 'done' && array_key_exists('pay_per_usd', $doc->data ?? []) && ($u->hasPerm('payments.pay') || $doc->canManage($u)))
+  @php($dd = $doc->data)
+  @php($base = collect($dd['lines'] ?? [])->sum(fn ($l) => (float) ($l['invoice_amount'] ?? 0) * ((($l['allocation'] ?? '') === '' || ($l['allocation'] ?? null) === null) ? 1 : (float) $l['allocation'])))
+  @php($ipu = (float) ($dd['inv_per_usd'] ?? 1) ?: 1)
+  @php($cur = \App\Services\Lookup::label('currencies', $dd['payment_currency_id'] ?? null))
+  <form class="panel treasury" method="post" action="{{ route('documents.treasury', $doc) }}"
+    x-data="{ open: false, rate: '{{ (float) ($dd['pay_per_usd'] ?? 1) }}', total: '{{ round((float) $doc->amount, 2) }}', base: {{ $base }}, ipu: {{ $ipu }},
+      fromRate() { const r = parseFloat(this.rate); this.total = r > 0 ? (Math.round(this.base * r / this.ipu * 100) / 100).toString() : ''; },
+      fromTotal() { const t = parseFloat(String(this.total).replace(/,/g, '')); this.rate = t > 0 && this.base ? (Math.round(t * this.ipu / this.base * 10000) / 10000).toString() : ''; } }">
+    @csrf
+    <div class="panel-head"><h2><i class="fa-solid fa-building-columns" style="color:var(--violet-2)"></i> Treasury · value to pay</h2>
+      <span class="hint">Now <b>{{ number_format((float) $doc->amount, 2) }} {{ $doc->currency }}</b> at 1 USD = {{ rtrim(rtrim(number_format((float) ($dd['pay_per_usd'] ?? 1), 4), '0'), '.') }}</span>
+      <div class="right"><button type="button" class="btn btn-sm" @click="open = !open" x-text="open ? 'Close' : 'Change at payment'"></button></div></div>
+    <div class="panel-body" x-show="open" x-cloak x-transition>
+      <p class="muted" style="margin:0 0 12px">Change the rate or the total actually paid; the other one is calculated. The lines and the QuickBooks bill follow, so the due is always what is paid.</p>
+      <div class="fgrid">
+        <div class="field" style="grid-column: span 3"><label>Payment rate (1 USD = ?)</label><input class="input num" name="pay_per_usd" x-model="rate" @input="fromRate()" inputmode="decimal"></div>
+        <div class="field" style="grid-column: span 3"><label>Total paid ({{ $cur ?: $doc->currency }})</label><input class="input num" name="total" x-model="total" @input="fromTotal()" inputmode="decimal"></div>
+        <div class="field" style="grid-column: span 6"><label>Reason <small>(optional)</small></label><input class="input" name="reason" maxlength="250" placeholder="e.g. rate of the payment day"></div>
+      </div>
+      <div class="btn-row" style="margin-top:12px; justify-content:flex-end"><button class="btn btn-primary" onclick="return confirm('Change the value to pay of this PTR?')"><i class="fa-solid fa-check"></i> Save value to pay</button></div>
+    </div>
+  </form>
+@endif
+
+{{-- uploader: save to the computer or send by e-mail --}}
+@if($doc->state !== 'draft' && count($form->exports()) && $u->hasPerm('form.' . $form->code . '.uploader'))
+<div x-data="{ o: {{ $errors->has('to') ? 'true' : 'false' }}, mail: {{ $errors->has('to') ? 'true' : 'false' }} }" @uploader-open.window="o = true; mail = false">
+  <div class="modal-bg" x-show="o" x-cloak @keydown.escape.window="o = false">
+    <div class="modal" @click.outside="o = false">
+      <div class="modal-head"><h2>QuickBooks uploader <span class="ref" style="font-size:16px">{{ $doc->number }}</span></h2><button type="button" class="x" @click="o = false">&times;</button></div>
+      <div class="modal-body">
+        <div class="choice-row" x-show="!mail">
+          <a class="choice" href="{{ route('documents.uploader', [$doc, 'mark' => 1]) }}" @click="setTimeout(() => location.reload(), 1500)">
+            <i class="fa-solid fa-download"></i><b>Save to computer</b><small>Downloads the Excel file</small></a>
+          <button type="button" class="choice" @click="mail = true; $nextTick(() => $refs.to.focus())">
+            <i class="fa-regular fa-envelope"></i><b>Send by e-mail</b><small>The file goes as an attachment</small></button>
+        </div>
+        <form x-show="mail" x-cloak method="post" action="{{ route('documents.uploader.email', $doc) }}" id="f-upl-mail">
+          @csrf
+          @error('to')<div class="alert alert-err"><i class="fa-solid fa-circle-exclamation"></i><span>{{ $message }}</span></div>@enderror
+          <div class="field"><label>To</label><input class="input" name="to" x-ref="to" value="{{ old('to', \App\Models\Setting::get('uploader_email_to')) }}" required></div>
+          <div class="field" style="margin-top:10px"><label>Copy to <small>(optional, separate with commas)</small></label><input class="input" name="cc" value="{{ old('cc', \App\Models\Setting::get('uploader_email_cc')) }}"></div>
+          <div class="mail-preview"><small>Subject</small><b>{{ \Illuminate\Support\Str::limit(trim($doc->number . ' - ' . $doc->description), 120) }}</b></div>
+        </form>
+        <p class="hint" style="margin:12px 0 0">Either way the form is marked as uploaded.</p>
+      </div>
+      <div class="modal-foot" x-show="mail" x-cloak><button type="button" class="btn" @click="mail = false">Back</button>
+        <button class="btn btn-primary" form="f-upl-mail"><i class="fa-regular fa-paper-plane"></i> Send</button></div>
+    </div>
+  </div>
+</div>
+@endif
 
 <form id="f-cancel" method="post" action="{{ route('documents.cancel', $doc) }}">@csrf</form>
 <form id="f-duplicate" method="post" action="{{ route('documents.duplicate', $doc) }}">@csrf</form>
