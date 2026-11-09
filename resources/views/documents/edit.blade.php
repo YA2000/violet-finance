@@ -177,24 +177,24 @@
 </div>
 
 {{-- treasury: the value actually paid (the QuickBooks bill follows it) --}}
-@if($doc->state === 'done' && array_key_exists('pay_per_usd', $doc->data ?? []) && ($u->hasPerm('payments.pay') || $doc->canManage($u)))
-  @php($dd = $doc->data)
-  @php($base = collect($dd['lines'] ?? [])->sum(fn ($l) => (float) ($l['invoice_amount'] ?? 0) * ((($l['allocation'] ?? '') === '' || ($l['allocation'] ?? null) === null) ? 1 : (float) $l['allocation'])))
-  @php($ipu = (float) ($dd['inv_per_usd'] ?? 1) ?: 1)
-  @php($cur = \App\Services\Lookup::label('currencies', $dd['payment_currency_id'] ?? null))
+@php($tr = $doc->state === 'done' && ($u->hasPerm('payments.pay') || $doc->canManage($u)) ? \App\Support\TreasuryRate::for($doc) : null)
+@if($tr)
   <form class="panel treasury" method="post" action="{{ route('documents.treasury', $doc) }}"
-    x-data="{ open: false, rate: '{{ (float) ($dd['pay_per_usd'] ?? 1) }}', total: '{{ round((float) $doc->amount, 2) }}', base: {{ $base }}, ipu: {{ $ipu }},
-      fromRate() { const r = parseFloat(this.rate); this.total = r > 0 ? (Math.round(this.base * r / this.ipu * 100) / 100).toString() : ''; },
-      fromTotal() { const t = parseFloat(String(this.total).replace(/,/g, '')); this.rate = t > 0 && this.base ? (Math.round(t * this.ipu / this.base * 10000) / 10000).toString() : ''; } }">
+    x-data="{ open: {{ $errors->has('treasury') ? 'true' : 'false' }}, rate: '{{ $tr['rate'] }}', total: '{{ round((float) $doc->amount, 2) }}', t: @js($tr),
+      x(r) { const u = this.t.strong ? r : 1 / r; return this.t.mode === 'pay' ? this.t.invUsd / u : u; },
+      fromRate() { const r = parseFloat(this.rate); this.total = r > 0 ? (Math.round(this.t.base * this.x(r) * 100) / 100).toString() : ''; },
+      fromTotal() { const v = parseFloat(String(this.total).replace(/,/g, '')); if (!(v > 0) || !this.t.base) { this.rate = ''; return; }
+        const X = v / this.t.base, u = this.t.mode === 'pay' ? this.t.invUsd / X : X; this.rate = (Math.round((this.t.strong ? u : 1 / u) * 10000) / 10000).toString(); } }">
     @csrf
     <div class="panel-head"><h2><i class="fa-solid fa-building-columns" style="color:var(--violet-2)"></i> Treasury · value to pay</h2>
-      <span class="hint">Now <b>{{ number_format((float) $doc->amount, 2) }} {{ $doc->currency }}</b> at 1 USD = {{ rtrim(rtrim(number_format((float) ($dd['pay_per_usd'] ?? 1), 4), '0'), '.') }}</span>
+      <span class="hint">Now <b>{{ number_format((float) $doc->amount, 2) }} {{ $doc->currency }}</b> · {{ strtolower(strtok($tr['label'], '(')) }} {{ rtrim(rtrim(number_format($tr['rate'], 4), '0'), '.') }}</span>
       <div class="right"><button type="button" class="btn btn-sm" @click="open = !open" x-text="open ? 'Close' : 'Change at payment'"></button></div></div>
     <div class="panel-body" x-show="open" x-cloak x-transition>
+      @error('treasury')<div class="alert alert-err"><i class="fa-solid fa-circle-exclamation"></i><span>{{ $message }}</span></div>@enderror
       <p class="muted" style="margin:0 0 12px">Change the rate or the total actually paid; the other one is calculated. The lines and the QuickBooks bill follow, so the due is always what is paid.</p>
       <div class="fgrid">
-        <div class="field" style="grid-column: span 3"><label>Payment rate (1 USD = ?)</label><input class="input num" name="pay_per_usd" x-model="rate" @input="fromRate()" inputmode="decimal"></div>
-        <div class="field" style="grid-column: span 3"><label>Total paid ({{ $cur ?: $doc->currency }})</label><input class="input num" name="total" x-model="total" @input="fromTotal()" inputmode="decimal"></div>
+        <div class="field" style="grid-column: span 3"><label>{{ $tr['label'] }}</label><input class="input num" name="rate" x-model="rate" @input="fromRate()" inputmode="decimal"></div>
+        <div class="field" style="grid-column: span 3"><label>Total paid ({{ $tr['payCode'] }})</label><input class="input num" name="total" x-model="total" @input="fromTotal()" inputmode="decimal"></div>
         <div class="field" style="grid-column: span 6"><label>Reason <small>(optional)</small></label><input class="input" name="reason" maxlength="250" placeholder="e.g. rate of the payment day"></div>
       </div>
       <div class="btn-row" style="margin-top:12px; justify-content:flex-end"><button class="btn btn-primary" onclick="return confirm('Change the value to pay of this PTR?')"><i class="fa-solid fa-check"></i> Save value to pay</button></div>

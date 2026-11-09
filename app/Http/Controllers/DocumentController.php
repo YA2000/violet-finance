@@ -460,38 +460,33 @@ class DocumentController extends Controller
     {
         $u = $r->user();
         abort_unless(($u->hasPerm('payments.pay') || $doc->canManage($u)) && $doc->state === 'done', 403);
-        $d = $doc->data ?? [];
-        abort_unless(array_key_exists('pay_per_usd', $d), 404);
-        $v = $r->validate(['pay_per_usd' => 'nullable|numeric|gt:0', 'total' => 'nullable|numeric|gt:0', 'reason' => 'nullable|string|max:250']);
-        $ipu = (float) ($d['inv_per_usd'] ?? 1) ?: 1;
-        $base = 0.0;
-        foreach ($d['lines'] ?? [] as $l) {
-            $base += (float) ($l['invoice_amount'] ?? 0) * (($l['allocation'] ?? '') === '' || $l['allocation'] === null ? 1 : (float) $l['allocation']);
-        }
+        $t = \App\Support\TreasuryRate::for($doc);
+        abort_unless($t, 422, 'Same currency on both sides: there is no rate to change.');
+        $v = $r->validate(['rate' => 'nullable|numeric|gt:0', 'total' => 'nullable|numeric|gt:0', 'reason' => 'nullable|string|max:250']);
         if (!empty($v['total'])) {
-            abort_if($base == 0, 422, 'The lines have no amount.');
-            $ppu = (float) $v['total'] * $ipu / $base;
-        } elseif (!empty($v['pay_per_usd'])) {
-            $ppu = (float) $v['pay_per_usd'];
+            abort_if($t['base'] == 0, 422, 'The lines have no amount.');
+            $rate = \App\Support\TreasuryRate::rateFor($t, (float) $v['total']);
+        } elseif (!empty($v['rate'])) {
+            $rate = (float) $v['rate'];
         } else {
             return back()->withErrors(['treasury' => 'Write the new rate or the total paid.']);
         }
-        $oldRate = (float) ($d['pay_per_usd'] ?? 1);
-        $oldTotal = (float) ($d['total_expected'] ?? $doc->amount);
-        $d['pay_per_usd'] = round($ppu, 10);
+        $d = $doc->data;
+        $oldTotal = (float) $doc->amount;
+        $d[$t['field']] = round($rate, 12);
         $form = $doc->form();
         $data = $form->normalize($d);
-        if (abs((float) ($data['pay_per_usd'] ?? 0) - $d['pay_per_usd']) > 1e-9) {
-            return back()->withErrors(['treasury' => 'The payment rate is fixed for this form (US dollars, or the same currency as the invoice).']);
+        if (abs((float) ($data[$t['field']] ?? 0) - $d[$t['field']]) > 1e-9) {
+            return back()->withErrors(['treasury' => 'This rate is fixed for this form.']);
         }
         if ($errors = $form->validate($data)) {
             return back()->withErrors(['treasury' => implode(' ', (array) $errors)]);
         }
         $wasUploaded = $doc->uploaded;
         $doc->forceFill(['data' => $data, 'amount' => $form->amount($data), 'uploaded' => false, 'uploaded_at' => null])->save();
-        $fmt = fn ($n, $dec = 2) => rtrim(rtrim(number_format($n, $dec, '.', ','), '0'), '.');
-        Workflow::log($doc, sprintf('Treasury changed the value to pay: rate %s → %s, total %s → %s %s.%s%s', $fmt($oldRate, 4), $fmt($ppu, 4),
-            number_format($oldTotal, 2), number_format((float) $doc->amount, 2), $doc->currency,
+        $fmt = fn ($n) => rtrim(rtrim(number_format($n, 4, '.', ','), '0'), '.');
+        Workflow::log($doc, sprintf('Treasury changed the value to pay: %s %s → %s, total %s → %s %s.%s%s', strtolower(trim(strtok($t['label'], '('))),
+            $fmt($t['rate']), $fmt($rate), number_format($oldTotal, 2), number_format((float) $doc->amount, 2), $doc->currency,
             !empty($v['reason']) ? ' Reason: ' . $v['reason'] . '.' : '', $wasUploaded ? ' Upload the new uploader again.' : ''), 'payment', $u);
         return back()->with('ok', 'Value to pay updated: ' . number_format((float) $doc->amount, 2) . ' ' . $doc->currency . '.' . ($wasUploaded ? ' The form was uploaded before: send the new uploader.' : ''));
     }
