@@ -203,10 +203,7 @@ class DocumentController extends Controller
         if ($rid = $r->input('reservation_id')) {
             Workflow::attachNumber($doc, Reservation::findOrFail($rid), $r->user());
         } else {
-            $v = $r->validate(['date' => 'required|date', 'txn_type_id' => 'required|exists:txn_types,id',
-                'project_id' => 'nullable|exists:projects,id', 'cost_center_id' => 'nullable|exists:cost_centers,id',
-                'description' => 'required|string|max:250']);
-            $res = Reservation::reserve($v, $r->user());
+            $res = Reservation::reserve(Reservation::check($r->all()), $r->user());
             Workflow::attachNumber($doc, $res, $r->user());
         }
         return back()->with('ok', 'Number ' . $doc->refresh()->number . ' assigned.');
@@ -293,10 +290,7 @@ class DocumentController extends Controller
     public function paymentNumber(Request $r, Document $doc)
     {
         abort_unless($doc->isPayStep($r->user()), 403, 'Only the treasury / cashier of this document can reserve its payment number.');
-        $v = $r->validate(['date' => 'required|date', 'txn_type_id' => 'required|exists:txn_types,id',
-            'project_id' => 'nullable|exists:projects,id', 'cost_center_id' => 'nullable|exists:cost_centers,id',
-            'description' => 'required|string|max:250']);
-        $res = Reservation::reserve($v, $r->user());
+        $res = Reservation::reserve(Reservation::check($r->all()), $r->user());
         Workflow::savePayment($doc, $r->user(), ['paid_reservation_id' => $res->id, 'paid_amount' => $doc->paid_amount,
             'paid_rate' => $doc->paid_rate, 'paid_date' => $doc->paid_date?->toDateString() ?? $res->date->toDateString()]);
         return back()->with('ok', 'Payment number ' . $res->number . ' reserved and linked.');
@@ -310,6 +304,48 @@ class DocumentController extends Controller
         $pdf = Pdf::render($doc, $report);
         $name = ($doc->number ?: 'draft') . '-' . \Illuminate\Support\Str::slug($doc->form()->reports[$report]) . '.pdf';
         return response($pdf, 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $name . '"']);
+    }
+
+    /** Print: every active printout of the form (English + Arabic for the PTR) in one PDF named by the transaction number. */
+    public function printAll(Document $doc)
+    {
+        $this->guardView($doc);
+        $prints = $doc->formType()->prints()->where('active', true)->orderBy('sequence')->get();
+        abort_unless($prints->count(), 404, 'This form has no printout.');
+        $name = ($doc->number ?: 'draft-' . $doc->id) . '.pdf';
+        if ($prints->count() === 1) {
+            return response(Pdf::render($doc, (string) $prints[0]->id), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $name . '"']);
+        }
+        $tmp = storage_path('app/tmp/' . uniqid('print_'));
+        @mkdir($tmp, 0775, true);
+        $files = [];
+        foreach ($prints as $i => $p) {
+            file_put_contents($files[] = "$tmp/p$i.pdf", Pdf::render($doc, (string) $p->id));
+        }
+        Pdf::merge($files, "$tmp/all.pdf");
+        $pdf = file_get_contents("$tmp/all.pdf");
+        foreach (glob("$tmp/*") as $f) {
+            @unlink($f);
+        }
+        @rmdir($tmp);
+        return response($pdf, 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $name . '"']);
+    }
+
+    /** documents.manage opens a final form for one more round of changes; the next save locks it again. */
+    public function unlock(Request $r, Document $doc)
+    {
+        abort_unless($doc->canManage($r->user()) && $doc->state === 'done', 403);
+        $doc->update(['edit_open' => true]);
+        Workflow::log($doc, 'Editing allowed.', 'note', $r->user());
+        return back()->with('ok', ($doc->number ?: 'The form') . ' can be changed now. Saving locks it again.');
+    }
+
+    public function lock(Request $r, Document $doc)
+    {
+        abort_unless($doc->canManage($r->user()) && $doc->state === 'done', 403);
+        $doc->update(['edit_open' => false]);
+        Workflow::log($doc, 'Locked.', 'note', $r->user());
+        return back()->with('ok', 'Locked.');
     }
 
     public function finalFile(Document $doc)
@@ -359,7 +395,7 @@ class DocumentController extends Controller
         }
         $w->close();
         $name = ($doc->number ?: 'draft') . '-' . str_replace(' ', '_', $x['name']) . '.xlsx';
-        if ($doc->canManage($r->user()) && $r->query('mark')) {
+        if ($r->query('mark')) {
             $doc->update(['uploaded' => true, 'uploaded_at' => now()]);
             Workflow::log($doc, 'Uploader generated - marked as uploaded.', 'upload');
         }
@@ -378,7 +414,7 @@ class DocumentController extends Controller
     public function attach(Request $r, Document $doc)
     {
         $u = $r->user();
-        abort_unless($doc->canManage($u) || $doc->canEdit($u) || $doc->isPayStep($u), 403, 'You cannot add files to this document now.');
+        abort_unless($doc->canAttach($u) || $doc->isPayStep($u), 403, 'You cannot add files to this document now.');
         $max = (int) (((float) Setting::get('max_attachment_mb')) * 1024);
         $r->validate(['files' => 'required|array|max:20', 'files.*' => "file|mimetypes:application/pdf,image/png,image/jpeg|max:$max"],
             ['files.*.mimetypes' => 'Only PDF, PNG or JPG files can be attached.', 'files.*.max' => "Each file must be at most " . Setting::get('max_attachment_mb') . ' MB.']);
@@ -402,7 +438,7 @@ class DocumentController extends Controller
     {
         $u = $r->user();
         $doc = $attachment->document;
-        abort_unless($doc && ($doc->canManage($u) || ($attachment->user_id === $u->id && ($doc->canEdit($u) || $doc->isPayStep($u)))), 403);
+        abort_unless($doc && ($doc->canManage($u) || ($attachment->user_id === $u->id && ($doc->canAttach($u) || $doc->isPayStep($u)))), 403);
         Storage::disk('local')->delete($attachment->path);
         $attachment->delete();
         Workflow::log($doc, 'File ' . $attachment->name . ' removed.', 'attach', $u);

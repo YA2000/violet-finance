@@ -110,7 +110,7 @@ document.addEventListener('alpine:init', () => {
 
   /* document entry form --------------------------------------------------- */
   Alpine.data('docForm', (cfg) => ({
-    data: cfg.data, labels: cfg.labels || {}, ro: cfg.readonly, busy: false, dirty: false, timer: null, locks: {},
+    data: cfg.data, labels: (Array.isArray(cfg.labels) ? {} : cfg.labels) || {}, ro: cfg.readonly, busy: false, dirty: false, timer: null, locks: {},
     computed: cfg.computed, tab: cfg.tab || 'lines',
     isRo() { return this.ro; },
     init() {
@@ -144,6 +144,138 @@ document.addEventListener('alpine:init', () => {
       }
       this.labels = nl;
       this.changed();
+    },
+    /* ---- lines grid: many lines fast (QuickBooks-style) ---- */
+    addLines(t, n = 10) {
+      n = Math.max(1, Math.min(200, parseInt(n) || 1));
+      const first = this.data[t].length;
+      for (let k = 0; k < n; k++) this.addLine(t, false);
+      this.$nextTick(() => this.focusCell(t, first, null));
+    },
+    clearLines(t) {
+      if (!confirm('Remove every line of this table?')) return;
+      this.data[t] = [];
+      for (const k of Object.keys(this.labels)) if (k.startsWith(t + '.')) delete this.labels[k];
+      this.addLine(t, false);
+      this.changed();
+    },
+    dupLine(t, i) {
+      const copy = JSON.parse(JSON.stringify(this.data[t][i]));
+      copy._new = true;
+      this.data[t].splice(i + 1, 0, copy);
+      const nl = {};
+      for (const [k, v] of Object.entries(this.labels)) {
+        const m = k.match(new RegExp(`^${t}\\.(\\d+)\\.(.+)$`));
+        if (!m) { nl[k] = v; continue; }
+        const n = +m[1];
+        if (n <= i) nl[k] = v;
+        if (n === i) nl[`${t}.${i + 1}.${m[2]}`] = v;
+        if (n > i) nl[`${t}.${n + 1}.${m[2]}`] = v;
+      }
+      this.labels = nl;
+      this.changed();
+    },
+    gridCols(t) {
+      return [...this.$root.querySelectorAll(`[data-table="${t}"] thead th[data-key]`)]
+        .filter(th => th.dataset.type !== 'computed')
+        .map(th => ({ key: th.dataset.key, type: th.dataset.type, source: th.dataset.source, def: th.dataset.default,
+          options: th.dataset.options ? JSON.parse(th.dataset.options) : null }));
+    },
+    focusCell(t, i, key) {
+      this.$nextTick(() => {
+        const tr = this.$root.querySelector(`[data-table="${t}"] tbody tr[data-row="${i}"]`);
+        if (!tr) return;
+        const td = key ? tr.querySelector(`td[data-col="${key}"]`) : tr.querySelector('td[data-col] input, td[data-col] button.lk-btn')?.closest('td');
+        const el = td && td.querySelector('input:not([type=hidden]), select, textarea, button.lk-btn');
+        if (el) { el.focus(); if (el.select && el.type !== 'checkbox') el.select(); }
+      });
+    },
+    gridKey(e, t) {
+      if (this.ro || e.target.closest('.lk-pop')) return;
+      const td = e.target.closest('td[data-col]');
+      if (!td) return;
+      const i = +td.closest('tr').dataset.row, key = td.dataset.col, tag = e.target.tagName;
+      if (e.key === 'Enter' && !e.shiftKey && !e.altKey && (tag === 'INPUT' || tag === 'SELECT')) {
+        e.preventDefault();
+        if (i + 1 >= this.data[t].length) this.addLine(t, false);
+        this.focusCell(t, i + 1, key);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        if (i < 1) return;
+        this.data[t][i][key] = this.data[t][i - 1][key];
+        const lab = this.labels[`${t}.${i - 1}.${key}`];
+        if (lab !== undefined) this.labels[`${t}.${i}.${key}`] = lab;
+        this.changed();
+      } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && tag === 'INPUT' && e.target.type !== 'number') {
+        const j = i + (e.key === 'ArrowDown' ? 1 : -1);
+        if (j < 0 || j >= this.data[t].length) return;
+        e.preventDefault();
+        this.focusCell(t, j, key);
+      }
+    },
+    gridPaste(e, t) {
+      if (this.ro) return;
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
+      const clean = text.replace(/\r/g, '').replace(/\n+$/, '');
+      if (!clean.includes('\t') && !clean.includes('\n')) return;   // one value: normal paste into the cell
+      const td = e.target.closest('td[data-col]');
+      if (!td) return;
+      e.preventDefault();
+      const cols = this.gridCols(t);
+      const c0 = Math.max(0, cols.findIndex(c => c.key === td.dataset.col));
+      this.pasteRows(t, clean, +td.closest('tr').dataset.row, c0);
+    },
+    /** rows of tab-separated cells -> lines, from line `start` (null = after the last filled line) and editable column c0. */
+    async pasteRows(t, text, start, c0 = 0) {
+      const cols = this.gridCols(t);
+      const rows = text.replace(/\r/g, '').replace(/\n+$/, '').split('\n').map(r => r.split('\t'));
+      if (start === null) {
+        start = this.data[t].length;
+        while (start > 0 && this.isBlank(t, this.data[t][start - 1], cols)) start--;
+      }
+      // drop-downs: match every distinct pasted value once
+      const want = {};
+      rows.forEach(r => r.forEach((v, k) => { const c = cols[c0 + k]; if (c && c.type === 'lookup' && v.trim()) (want[c.source] = want[c.source] || new Set()).add(v.trim()); }));
+      const found = {};
+      await Promise.all(Object.entries(want).map(async ([src, set]) => {
+        try { found[src] = await api(`${window.VF.base}/lookup/${src}/resolve`, { method: 'POST', body: JSON.stringify({ values: [...set] }) }); }
+        catch (err) { found[src] = {}; }
+      }));
+      let missing = 0;
+      rows.forEach((r, k) => {
+        const i = start + k;
+        while (this.data[t].length <= i) this.addLine(t, false);
+        const row = this.data[t][i];
+        r.forEach((raw, j) => {
+          const c = cols[c0 + j];
+          if (!c) return;
+          const v = raw.trim();
+          const lk = `${t}.${i}.${c.key}`;
+          if (c.type === 'lookup') {
+            const hit = v ? (found[c.source] || {})[v] : null;
+            if (v && !hit) missing++;
+            row[c.key] = hit ? hit.id : null;
+            if (hit) this.labels[lk] = hit.text; else delete this.labels[lk];
+          } else if (c.type === 'checkbox') {
+            row[c.key] = /^(1|y|yes|true|x|✓|نعم)$/i.test(v);
+          } else if (c.type === 'number' || c.type === 'money') {
+            row[c.key] = v.replace(/[\s,]/g, '').replace(/^\((.*)\)$/, '-$1');
+          } else if (c.type === 'date') {
+            const m = v.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+            row[c.key] = m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : v;
+          } else if (c.options) {
+            const o = c.options.find(o => String(o[0]).toLowerCase() === v.toLowerCase() || String(o[1]).toLowerCase() === v.toLowerCase());
+            row[c.key] = o ? o[0] : (v ? row[c.key] : (c.def ?? ''));
+          } else {
+            row[c.key] = v;
+          }
+        });
+      });
+      this.changed();
+      Alpine.store('toasts').push(rows.length + (rows.length === 1 ? ' line' : ' lines') + ' pasted' + (missing ? ` · ${missing} drop-down value(s) not found, choose them` : ''));
+    },
+    isBlank(t, row, cols) {
+      return cols.every(c => { const v = row[c.key]; return v === null || v === undefined || v === '' || v === false || (c.def !== undefined && String(v) === String(c.def)); });
     },
     changed() {
       this.dirty = true;

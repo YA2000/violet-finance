@@ -38,6 +38,12 @@
         <div class="field" style="grid-column:span 7"><label>Payments</label>
           <label class="check" style="height:38px"><span class="switch"><input type="checkbox" name="pay_through_remittance" value="1" @checked(\App\Models\Setting::get('pay_through_remittance') !== '0')><span></span></span> Pay only through Remittance Statements</label>
           <span class="hint">Off: the treasury pays each transaction from its own page, as before.</span></div>
+        <div class="field" style="grid-column:span 12"><label>Sections of the menu</label>
+          <div class="btn-row" style="gap:22px">
+            <label class="check"><span class="switch"><input type="checkbox" name="module_advances" value="1" @checked(\App\Support\Modules::on('advances'))><span></span></span> Advances</label>
+            <label class="check"><span class="switch"><input type="checkbox" name="module_payroll" value="1" @checked(\App\Support\Modules::on('payroll'))><span></span></span> Payroll &amp; allocation</label>
+          </div>
+          <span class="hint">Off: the section leaves the menu and its pages close. Its data stays.</span></div>
         <div class="field" style="grid-column:span 12"><label for="s_to">Send uploader files to</label><input id="s_to" type="email" class="input" name="uploader_email_to" value="{{ old('uploader_email_to', \App\Models\Setting::get('uploader_email_to')) }}"></div>
         <div class="field" style="grid-column:span 12"><label for="s_cc">Copy to</label><input id="s_cc" class="input" name="uploader_email_cc" value="{{ old('uploader_email_cc', \App\Models\Setting::get('uploader_email_cc')) }}" placeholder="Separate addresses with commas"></div>
       </div>

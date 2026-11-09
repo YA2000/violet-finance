@@ -57,25 +57,6 @@
                         "fmt": "text"
                     },
                     {
-                        "key": "recipient_type",
-                        "label": "Recipient Type",
-                        "type": "radio",
-                        "required": true,
-                        "width": 6,
-                        "help": "Multi Same: amounts of the same recipient are summed on the printout",
-                        "default": "same",
-                        "options": [
-                            {
-                                "value": "same",
-                                "label": "Multi Same"
-                            },
-                            {
-                                "value": "diff",
-                                "label": "Multi Diff"
-                            }
-                        ]
-                    },
-                    {
                         "key": "cost_center_location",
                         "label": "Cost Center Location",
                         "type": "formula",
@@ -354,7 +335,7 @@
                 "title": "Payment Receipts Information",
                 "source": "lines",
                 "where": "expected_amount<>0",
-                "group": "IF(AND(recipient_type=\"same\",NOT(ISBLANK(recipient_id))),recipient_id,\"l\"&ROWNUM())",
+                "group": "IF(NOT(ISBLANK(recipient_id)),recipient_id,\"l\"&ROWNUM())",
                 "columns": [
                     {
                         "label": "Amount",
@@ -502,7 +483,6 @@
             "orientation": "portrait",
             "in_final": true,
             "hidden": [
-                "recipient_type",
                 "factor",
                 "home_currency",
                 "home_rate",

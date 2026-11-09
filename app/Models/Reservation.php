@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
+use Illuminate\Validation\ValidationException;
 
-/** Transaction number reservation: T + 2-digit year of the transaction date + 5-digit yearly serial. */
+/**
+ * Transaction number reservation: T + 2-digit year of the transaction date + yearly serial of at least 5 digits (T2600001).
+ * A number is never given twice, even after it is deleted. Record date = the day it was reserved (created_at).
+ */
 class Reservation extends Model
 {
     protected $guarded = ['id'];
@@ -36,15 +39,40 @@ class Reservation extends Model
             }
             $n = $counter->next_number;
             do {
-                if ($n > 99999) {
-                    throw new RuntimeException("No more numbers available for $year.");
-                }
                 $number = sprintf('T%02d%05d', $year % 100, $n);
                 $n++;
             } while (static::where('number', $number)->exists() || Document::where('number', $number)->exists());
             $counter->update(['next_number' => $n]);
             return $number;
         });
+    }
+
+    /** Validation of the details of a number: the type decides whether project, cost center and PR number are required. */
+    public static function check(array $in): array
+    {
+        $v = validator($in, [
+            'date' => 'required|date', 'txn_type_id' => 'required|exists:txn_types,id',
+            'project_id' => 'nullable|exists:projects,id', 'cost_center_id' => 'nullable|exists:cost_centers,id',
+            'description' => 'required|string|max:250', 'pr_number' => 'nullable|string|max:60',
+        ], [], ['txn_type_id' => 'transaction type', 'project_id' => 'project', 'cost_center_id' => 'cost center',
+            'date' => 'transaction date', 'pr_number' => 'PR number'])->validate();
+        $t = TxnType::find($v['txn_type_id']);
+        $err = [];
+        if ($t->need_project && empty($v['project_id'])) {
+            $err['project_id'] = 'The project is required for ' . $t->name . '.';
+        }
+        if ($t->need_cost_center && empty($v['cost_center_id'])) {
+            $err['cost_center_id'] = 'The cost center is required for ' . $t->name . '.';
+        }
+        if ($t->pr_field === 'required' && trim((string) ($v['pr_number'] ?? '')) === '') {
+            $err['pr_number'] = 'The PR number is required for ' . $t->name . '.';
+        }
+        if ($err) {
+            throw ValidationException::withMessages($err);
+        }
+        $v['pr_number'] = $t->pr_field === 'off' ? null : (trim((string) ($v['pr_number'] ?? '')) ?: null);
+        $v['description'] = trim($v['description']);
+        return $v;
     }
 
     public static function reserve(array $vals, User $user): self
@@ -58,6 +86,7 @@ class Reservation extends Model
                 'project_id' => $vals['project_id'] ?? null,
                 'cost_center_id' => $vals['cost_center_id'] ?? null,
                 'description' => $vals['description'],
+                'pr_number' => $vals['pr_number'] ?? null,
                 'user_id' => $user->id,
                 'state' => 'reserved',
             ]);

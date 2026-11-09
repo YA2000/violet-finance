@@ -361,3 +361,54 @@ code { background: var(--fill); color: var(--ink); border-radius: 5px; }
   .hero h1 { color: var(--ink); background: none; }
   @view-transition { navigation: none; }
 }
+
+/* ------------------------------------------------------------------ v5: QuickBooks-style lists and lines grid */
+.nowrap { white-space: nowrap; }
+.tbl small.sub { display: block; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+.qb-tbl th { white-space: nowrap; text-transform: none; }
+.qb-tbl td { font-size: 13.5px; }
+.qb-tbl td.row-act { text-align: right; width: 1%; white-space: nowrap; }
+.split { position: relative; display: inline-flex; }
+.split > .btn:first-child { border-radius: 7px 0 0 7px; }
+.split > .btn + .btn { border-radius: 0 7px 7px 0; margin-left: -1px; width: 28px; }
+.qb-tbl tbody tr .split { opacity: .55; transition: opacity .15s var(--ease); }
+.qb-tbl tbody tr:hover .split, .qb-tbl tbody tr .split:focus-within { opacity: 1; }
+.lk-item.menu-btn { border: 0; background: none; width: 100%; text-align: left; font: inherit; cursor: pointer; }
+.lk-item.plain { text-decoration: none; color: inherit; }
+.lk-item.danger, .lk-item.danger b { color: var(--danger); }
+.lk-list .sep { height: 1px; background: var(--line-2); margin: 4px 0; }
+.btn.on { background: var(--violet-50); border-color: var(--violet-2); color: var(--violet); }
+.qb-filters .search { flex: 1 1 320px; }
+.adv-filters { flex-basis: 100%; display: grid; grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(150px, 1fr)); gap: 10px 12px;
+  padding: 14px; background: #fff; border: 1px solid var(--line-2); border-radius: var(--r); box-shadow: var(--shadow); }
+@media (max-width: 900px) { .adv-filters { grid-template-columns: 1fr 1fr; } }
+.input.ro-val { display: flex; align-items: center; background: var(--paper); color: var(--ink-2); cursor: default; }
+.meta-line { font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; padding-top: 2px; }
+.meta-line b { color: var(--ink-2); }
+.lk-btn.need { border-color: #E5C3A0; background: #FFFCF8; }
+.types-tbl .input { height: 34px; }
+.types-tbl td { padding: 7px 10px; }
+.types-tbl tr.row-del { opacity: .45; }
+.types-tbl tr.row-del input[type=text], .types-tbl tr.row-del .input { text-decoration: line-through; }
+.tag.lock-tag { background: var(--paper); color: var(--ink-2); }
+.tag.lock-tag i { color: var(--muted); }
+
+/* lines grid: spreadsheet feel */
+.grid-lines td[data-col] { padding: 3px 4px; }
+.grid-lines td[data-col] .input, .grid-lines td[data-col] .lk-btn { border-color: transparent; background: transparent; border-radius: 7px; box-shadow: none; }
+.grid-lines tbody tr:hover td[data-col] .input, .grid-lines tbody tr:hover td[data-col] .lk-btn { border-color: var(--line-2); background: #fff; }
+.grid-lines td[data-col] .input:focus, .grid-lines td[data-col] .lk-btn:focus { border-color: var(--violet-2); background: #fff; box-shadow: var(--ring); }
+.grid-lines tbody tr:focus-within { background: #FBF9FE; }
+.grid-lines tbody tr:focus-within td.sn { color: var(--violet); font-weight: 700; }
+.grid-lines thead th { position: sticky; top: 0; z-index: 2; }
+.grid-lines td.row-tools { width: 72px; white-space: nowrap; opacity: 0; transition: opacity .15s var(--ease); }
+.grid-lines tbody tr:hover td.row-tools, .grid-lines tbody tr:focus-within td.row-tools { opacity: 1; }
+.grid-lines .add { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.add-many { display: inline-flex; align-items: center; gap: 6px; }
+.add-many .input { width: 64px; height: 30px; text-align: center; }
+.add-many span { color: var(--muted); font-size: 12.5px; }
+.grid-tip { margin-left: auto; font-size: 12px; }
+.grid-tip kbd, .hint kbd { font: 600 11px var(--sans); padding: 1px 6px; border-radius: 5px; background: var(--paper); border: 1px solid var(--line); color: var(--ink-2); }
+.paste-cols { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.paste-area { min-height: 200px; font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; tab-size: 18; }
+@media (max-width: 900px) { .grid-tip { display: none; } .grid-lines td.row-tools { opacity: 1; } }

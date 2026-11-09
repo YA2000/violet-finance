@@ -50,10 +50,11 @@ class DashboardController extends Controller
         if ($u->hasPerm('receipts.record') && ($n = \App\Models\Receipt::where('status', 'record')->count())) {
             $tasks[] = ['fa-file-signature', $n . ' received ' . \Illuminate\Support\Str::plural('payment', $n) . ' to record', route('receipts.index', ['status' => 'record']), ''];
         }
-        if ($u->hasPerm('advances.manage') && ($n = \App\Models\AdvanceSettlement::where('status', 'submitted')->count())) {
+        $adv = \App\Support\Modules::on('advances');
+        if ($adv && $u->hasPerm('advances.manage') && ($n = \App\Models\AdvanceSettlement::where('status', 'submitted')->count())) {
             $tasks[] = ['fa-inbox', $n . ' advance ' . \Illuminate\Support\Str::plural('settlement', $n) . ' to turn into JAR', route('advances.index'), ''];
         }
-        if ($h = \App\Models\AdvanceHolder::where('user_id', $u->id)->first()) {
+        if ($adv && ($h = \App\Models\AdvanceHolder::where('user_id', $u->id)->first())) {
             $open = $h->advances()->where('status', 'open')->get();
             $due = $open->filter(fn ($a) => $a->isOverdue() || $a->isDueSoon())->count();
             $pay = \App\Models\AdvancePayment::whereIn('advance_id', $open->pluck('id'))->where('status', 'pending')->count();

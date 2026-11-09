@@ -43,6 +43,8 @@ class SettingsController extends Controller
             Setting::put($k, $v[$k] ?? null);
         }
         Setting::put('pay_through_remittance', $r->boolean('pay_through_remittance') ? '1' : '0');
+        Setting::put('module_advances', $r->boolean('module_advances') ? '1' : '0');
+        Setting::put('module_payroll', $r->boolean('module_payroll') ? '1' : '0');
         if ($r->hasFile('logo_file')) {
             $f = $r->file('logo_file');
             Setting::put('org_logo', 'data:' . $f->getMimeType() . ';base64,' . base64_encode(file_get_contents($f->getRealPath())));
@@ -50,7 +52,9 @@ class SettingsController extends Controller
             Setting::put('org_logo', null);
         }
         foreach ($v['counters'] ?? [] as $year => $next) {
-            if ($next) {
+            // a number is never given twice: the counter only moves forward
+            $cur = (int) TxnCounter::where('year', (int) $year)->value('next_number');
+            if ($next && (int) $next > $cur) {
                 TxnCounter::updateOrCreate(['year' => (int) $year], ['next_number' => (int) $next]);
             }
         }

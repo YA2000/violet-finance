@@ -12,4 +12,11 @@ class LookupController extends Controller
         abort_unless($source === 'payees' || str_starts_with($source, 'list:') || isset(Lookup::SOURCES[$source]), 404);
         return response()->json(Lookup::search($source, trim((string) $r->query('q', ''))));
     }
+
+    /** Pasted cells -> records of a drop-down. */
+    public function resolve(Request $r, string $source)
+    {
+        abort_unless($source === 'payees' || str_starts_with($source, 'list:') || isset(Lookup::SOURCES[$source]), 404);
+        return response()->json(Lookup::resolve($source, (array) $r->input('values', [])));
+    }
 }

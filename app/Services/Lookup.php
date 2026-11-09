@@ -159,6 +159,35 @@ class Lookup
         return static::$cache[$key] = $m;
     }
 
+    /**
+     * Pasted text -> records (lines pasted from Excel): exact code or name first, "code - name" next, else the only match.
+     * @return array value => {id, text} | null
+     */
+    public static function resolve(string $source, array $values): array
+    {
+        $out = [];
+        foreach (array_slice(array_unique(array_map(fn ($v) => trim((string) $v), $values)), 0, 400) as $v) {
+            if ($v === '') {
+                continue;
+            }
+            $lv = mb_strtolower($v);
+            $hits = static::search($source, $v, 15);
+            $pick = null;
+            foreach ($hits as $h) {
+                $t = mb_strtolower($h['text']);
+                if ($t === $lv || str_starts_with($t, $lv . ' - ') || str_ends_with($t, ' - ' . $lv)) {
+                    $pick = $h;
+                    break;
+                }
+            }
+            if (!$pick && count($hits) === 1) {
+                $pick = $hits[0];
+            }
+            $out[$v] = $pick ? ['id' => $pick['id'], 'text' => $pick['text']] : null;
+        }
+        return $out;
+    }
+
     public static function label(string $source, $id): string
     {
         return static::text($source, static::get($source, $id));

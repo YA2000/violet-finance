@@ -14,7 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['admin' => \App\Http\Middleware\AdminOnly::class,
                             'active' => \App\Http\Middleware\EnsureActive::class,
-                            'idle' => \App\Http\Middleware\IdleTimeout::class]);
+                            'idle' => \App\Http\Middleware\IdleTimeout::class,
+                            'modules' => \App\Http\Middleware\ModulesOn::class]);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/');
     })

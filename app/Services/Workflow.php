@@ -130,11 +130,12 @@ class Workflow
             static::fail($err);
         }
         if ($doc->state === 'done') {
-            static::log($doc, 'Changes saved.', 'note', $u);
+            $doc->update(['edit_open' => false]);
+            static::log($doc, 'Changes saved - locked again.', 'note', $u);
             return;
         }
-        $doc->update(['state' => 'done', 'current_signer_id' => null, 'submitted_at' => $doc->submitted_at ?? now(), 'done_at' => now()]);
-        static::log($doc, 'Saved - final.', 'done', $u);
+        $doc->update(['state' => 'done', 'edit_open' => false, 'current_signer_id' => null, 'submitted_at' => $doc->submitted_at ?? now(), 'done_at' => now()]);
+        static::log($doc, 'Saved - final and locked.', 'done', $u);
         Advances::onDocumentDone($doc->refresh());
     }
 

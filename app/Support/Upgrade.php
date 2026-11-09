@@ -32,6 +32,7 @@ class Upgrade
         FormType::flush();
         V3::run();
         V4::run();
+        V5::run();
     }
 
     public static function formFiles(): array

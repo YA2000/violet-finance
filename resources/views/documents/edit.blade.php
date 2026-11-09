@@ -29,6 +29,8 @@
           <span class="doc-number empty">No transaction number yet</span>
         @endif
         <span class="stamp st-{{ $stateKey }}">{{ \App\Models\Document::STATES[$stateKey] }}</span>
+        @if(!$new && $doc->isLocked())<span class="tag lock-tag" title="Saved forms are locked. Only an administrator can allow changes."><i class="fa-solid fa-lock"></i> Locked</span>@endif
+        @if(!$new && $doc->state === 'done' && $doc->edit_open)<span class="tag warn"><i class="fa-solid fa-lock-open"></i> Open for changes</span>@endif
         @if(!$new && $doc->uploaded)<span class="tag"><i class="fa-solid fa-cloud-arrow-up"></i> Uploaded {{ $doc->uploaded_at?->format('d M') }}</span>@endif
       </div>
       @if($canEdit && !$doc->number && !empty($form->settings()['open_to_all']) && !$u->hasPerm('numbers.reserve'))
@@ -50,38 +52,46 @@
     </div>
     <div class="actions-bar">
       @if($canEdit)
-        <button class="btn btn-primary" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> Save</button>
+        <button class="btn btn-primary" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> {{ !$new && $doc->state === 'done' ? 'Save and lock' : 'Save' }}</button>
       @endif
       @if(!$new)
-        <div x-data="{ o: false }" style="position:relative" @click.outside="o = false">
-          <button type="button" class="btn" @click="o = !o"><i class="fa-solid fa-print"></i> Print <i class="fa-solid fa-angle-down" style="font-size:11px"></i></button>
-          <div class="lk-pop" x-show="o" x-cloak x-transition style="width:260px; right:0; left:auto">
-            <div class="lk-list">
-              @foreach($form->reports as $rk => $rl)
-                <a class="lk-item" href="{{ route('documents.print', [$doc, $rk]) }}" target="_blank" style="text-decoration:none;color:inherit"><b><i class="fa-regular fa-file-pdf"></i> {{ $rl }}</b><small>PDF printout</small></a>
-              @endforeach
-              <a class="lk-item" href="{{ route('documents.final', $doc) }}" style="text-decoration:none;color:inherit"><b><i class="fa-solid fa-layer-group"></i> Final file</b><small>Printout + all attachments in one PDF</small></a>
-              @if($doc->state !== 'draft' && $u->hasPerm('form.' . $form->code . '.uploader'))
-                @foreach($form->exports() as $x)
-                  <a class="lk-item" href="{{ route('documents.uploader', [$doc, 'x' => $x['key'] ?? null]) }}" style="text-decoration:none;color:inherit"><b><i class="fa-regular fa-file-excel"></i> {{ $x['name'] }}</b><small>Excel file for Transaction Pro</small></a>
-                @endforeach
-                @if($doc->canManage($u) && count($form->exports()))
-                  <a class="lk-item" href="{{ route('documents.uploader', [$doc, 'mark' => 1]) }}" style="text-decoration:none;color:inherit"><b><i class="fa-solid fa-cloud-arrow-up"></i> Uploader + mark uploaded</b><small>Marks the document as uploaded</small></a>
-                @endif
-              @endif
-            </div>
-          </div>
-        </div>
+        @php($exports = $form->exports())
+        @php($canUpl = $doc->state !== 'draft' && count($exports) && $u->hasPerm('form.' . $form->code . '.uploader'))
+        @if(count($form->reports))
+          <a class="btn" href="{{ route('documents.print-all', $doc) }}" target="_blank" title="{{ count($form->reports) > 1 ? implode(' + ', $form->reports) . ' in one PDF' : 'PDF printout' }}"><i class="fa-solid fa-print"></i> Print</a>
+        @endif
+        @if($canUpl)
+          <a class="btn" href="{{ route('documents.uploader', [$doc, 'mark' => 1]) }}" title="Downloads the QuickBooks uploader and marks the form as uploaded"><i class="fa-solid fa-cloud-arrow-up"></i> Uploader</a>
+        @endif
+        @if($doc->canManage($u) && $doc->state === 'done')
+          @if($doc->edit_open)
+            <button type="submit" class="btn" form="f-lock"><i class="fa-solid fa-lock"></i> Lock</button>
+          @else
+            <button type="submit" class="btn" form="f-unlock" onclick="return confirm('Allow changes to this saved form? Saving it locks it again.')"><i class="fa-solid fa-lock-open"></i> Allow editing</button>
+          @endif
+        @endif
         <div x-data="{ o: false }" style="position:relative" @click.outside="o = false">
           <button type="button" class="btn btn-icon" @click="o = !o" aria-label="More actions"><i class="fa-solid fa-ellipsis"></i></button>
-          <div class="lk-pop" x-show="o" x-cloak x-transition style="width:220px; right:0; left:auto">
+          <div class="lk-pop" x-show="o" x-cloak x-transition style="width:270px; right:0; left:auto">
             <div class="lk-list">
-              <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit" form="f-duplicate"><b><i class="fa-regular fa-copy"></i> Duplicate</b></button>
+              @if(count($form->reports) > 1)
+                @foreach($form->reports as $rk => $rl)
+                  <a class="lk-item plain" href="{{ route('documents.print', [$doc, $rk]) }}" target="_blank"><b><i class="fa-regular fa-file-pdf"></i> {{ $rl }}</b><small>This printout only</small></a>
+                @endforeach
+              @endif
+              <a class="lk-item plain" href="{{ route('documents.final', $doc) }}"><b><i class="fa-solid fa-layer-group"></i> Final file</b><small>Printout + all attachments in one PDF</small></a>
+              @if($canUpl)
+                @foreach($exports as $x)
+                  <a class="lk-item plain" href="{{ route('documents.uploader', [$doc, 'x' => $x['key'] ?? null]) }}"><b><i class="fa-regular fa-file-excel"></i> {{ $x['name'] }}</b><small>Excel file only, not marked uploaded</small></a>
+                @endforeach
+              @endif
+              <div class="sep"></div>
+              <button class="lk-item menu-btn" form="f-duplicate"><b><i class="fa-regular fa-copy"></i> Duplicate</b></button>
               @if($doc->canEdit($u) || ($doc->canManage($u) && $doc->state === 'done'))
-                <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit" form="f-cancel" onclick="return confirm('Cancel this form? Its amounts leave the budget line report.')"><b><i class="fa-solid fa-ban"></i> Cancel</b></button>
+                <button class="lk-item menu-btn" form="f-cancel" onclick="return confirm('Cancel this form? Its amounts leave the budget line report.')"><b><i class="fa-solid fa-ban"></i> Cancel</b></button>
               @endif
               @if(in_array($doc->state, ['draft', 'cancel']) && ($doc->isOwner($u) || $doc->canManage($u)))
-                <button class="lk-item" style="border:0;background:none;width:100%;text-align:left;font:inherit;color:var(--danger)" form="f-delete" onclick="return confirm('Delete this document? Its number goes back to the free numbers.')"><b><i class="fa-regular fa-trash-can"></i> Delete</b></button>
+                <button class="lk-item menu-btn danger" form="f-delete" onclick="return confirm('Delete this document? Its number goes back to the free numbers.')"><b><i class="fa-regular fa-trash-can"></i> Delete</b></button>
               @endif
             </div>
           </div>
@@ -105,7 +115,7 @@
     </div>
 
     <div x-show="t2 === 'files'">
-      @php($canAttach = $doc->canManage($u) || $doc->canEdit($u))
+      @php($canAttach = $doc->canAttach($u))
       @if($canAttach)
         <div x-data="uploader('{{ route('documents.attach', $doc) }}')">
           <label class="drop" :class="over && 'over'" @dragover.prevent="over = true" @dragleave="over = false" @drop.prevent="drop($event)">
@@ -153,6 +163,8 @@
 <form id="f-cancel" method="post" action="{{ route('documents.cancel', $doc) }}">@csrf</form>
 <form id="f-duplicate" method="post" action="{{ route('documents.duplicate', $doc) }}">@csrf</form>
 <form id="f-delete" method="post" action="{{ route('documents.destroy', $doc) }}">@csrf @method('DELETE')</form>
+<form id="f-unlock" method="post" action="{{ route('documents.unlock', $doc) }}">@csrf</form>
+<form id="f-lock" method="post" action="{{ route('documents.lock', $doc) }}">@csrf</form>
 
 @endunless
 

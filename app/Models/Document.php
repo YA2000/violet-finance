@@ -11,7 +11,7 @@ class Document extends Model
 {
     protected $guarded = ['id'];
     protected $casts = [
-        'data' => 'array', 'extra' => 'array', 'date' => 'date', 'paid_date' => 'date', 'uploaded' => 'boolean',
+        'edit_open' => 'boolean', 'data' => 'array', 'extra' => 'array', 'date' => 'date', 'paid_date' => 'date', 'uploaded' => 'boolean',
         'uploaded_at' => 'datetime', 'submitted_at' => 'datetime', 'done_at' => 'datetime',
         'amount' => 'float', 'paid_amount' => 'float', 'paid_rate' => 'float',
     ];
@@ -116,12 +116,33 @@ class Document extends Model
         return $u->individual_id && $this->signatures->contains(fn ($s) => $s->individual_id === $u->individual_id);
     }
 
+    /**
+     * A draft is changed by its preparer (or "edit" permission). Once saved it is final and locked: it opens again only when
+     * someone with documents.manage allows it (edit_open), and locks again at the next save.
+     */
     public function canEdit(User $u): bool
     {
-        // a saved form stays correctable, unless it already opened an advance on someone
-        return in_array($this->state, ['draft', 'done'], true) && $this->form_code !== \App\Services\Remittances::FORM
-            && ($this->isOwner($u) || $u->hasPerm('form.' . $this->form_code . '.edit'))
-            && !($this->state === 'done' && Advance::where('document_id', $this->id)->exists());
+        if ($this->form_code === \App\Services\Remittances::FORM) {
+            return false;
+        }
+        $who = $this->isOwner($u) || $u->hasPerm('form.' . $this->form_code . '.edit');
+        return match ($this->state) {
+            'draft' => $who,
+            'done' => $this->edit_open && ($who || $this->canManage($u)),
+            default => false,
+        };
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->state === 'done' && !$this->edit_open;
+    }
+
+    /** Files can still be added to a final form by the people who prepare it. */
+    public function canAttach(User $u): bool
+    {
+        return $this->canManage($u) || $this->canEdit($u)
+            || ($this->state === 'done' && ($this->isOwner($u) || $u->hasPerm('form.' . $this->form_code . '.edit')));
     }
 
     public function canManage(User $u): bool

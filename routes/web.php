@@ -28,10 +28,11 @@ Route::get('/login', [AuthController::class, 'show'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::middleware(['auth', 'active', 'idle'])->group(function () {
+Route::middleware(['auth', 'active', 'idle', 'modules'])->group(function () {
     Route::get('/ping', fn () => response()->noContent())->name('ping');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/lookup/{source}', [LookupController::class, 'search'])->where('source', '[a-z_:]+')->name('lookup');
+    Route::post('/lookup/{source}/resolve', [LookupController::class, 'resolve'])->where('source', '[a-z_:]+')->name('lookup.resolve');
 
     // notifications
     Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
@@ -41,13 +42,18 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     // transaction numbers
     Route::get('/numbers', [ReservationController::class, 'index'])->name('reservations.index');
     Route::post('/numbers', [ReservationController::class, 'store'])->name('reservations.store')->middleware('can:numbers.reserve');
-    Route::post('/numbers/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('reservations.cancel');
-    Route::put('/numbers/{reservation}', [ReservationController::class, 'update'])->name('reservations.update');
+    Route::post('/numbers/{reservation}/cancel', [ReservationController::class, 'cancel'])->whereNumber('reservation')->name('reservations.cancel');
+    Route::put('/numbers/{reservation}', [ReservationController::class, 'update'])->whereNumber('reservation')->name('reservations.update');
     Route::get('/numbers/template', [ReservationController::class, 'template'])->name('reservations.template');
     Route::post('/numbers/import', [ReservationController::class, 'import'])->name('reservations.import')->middleware('can:numbers.reserve');
     Route::get('/numbers/old-template', [ReservationController::class, 'oldTemplate'])->name('reservations.old-template')->middleware('can:numbers.manage');
     Route::post('/numbers/import-old', [ReservationController::class, 'importOld'])->name('reservations.import-old')->middleware('can:numbers.manage');
     Route::get('/numbers/mine', [ReservationController::class, 'mine'])->name('reservations.mine');
+    Route::get('/numbers/{reservation}/edit', [ReservationController::class, 'edit'])->whereNumber('reservation')->name('reservations.edit');
+    Route::get('/numbers/export', [ReservationController::class, 'export'])->name('reservations.export');
+    Route::get('/numbers/types', [ReservationController::class, 'types'])->name('reservations.types')->middleware('can:numbers.manage');
+    Route::put('/numbers/types', [ReservationController::class, 'saveTypes'])->name('reservations.types.save')->middleware('can:numbers.manage');
+    Route::delete('/numbers/{reservation}', [ReservationController::class, 'destroy'])->whereNumber('reservation')->name('reservations.destroy')->middleware('can:numbers.manage');
 
     // forms / documents
     Route::get('/inbox', [DocumentController::class, 'inbox'])->name('documents.inbox');
@@ -67,7 +73,10 @@ Route::middleware(['auth', 'active', 'idle'])->group(function () {
     Route::delete('/documents/{doc}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     Route::post('/documents/{doc}/payment', [DocumentController::class, 'payment'])->name('documents.payment');
     Route::post('/documents/{doc}/payment-number', [DocumentController::class, 'paymentNumber'])->name('documents.payment-number');
+    Route::get('/documents/{doc}/print', [DocumentController::class, 'printAll'])->name('documents.print-all');
     Route::get('/documents/{doc}/print/{report}', [DocumentController::class, 'print'])->name('documents.print');
+    Route::post('/documents/{doc}/unlock', [DocumentController::class, 'unlock'])->name('documents.unlock');
+    Route::post('/documents/{doc}/lock', [DocumentController::class, 'lock'])->name('documents.lock');
     Route::get('/documents/{doc}/final', [DocumentController::class, 'finalFile'])->name('documents.final');
     Route::get('/documents/{doc}/uploader', [DocumentController::class, 'uploader'])->name('documents.uploader');
     Route::post('/documents/{doc}/attachments', [DocumentController::class, 'attach'])->name('documents.attach');

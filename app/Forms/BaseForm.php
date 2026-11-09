@@ -130,7 +130,8 @@ abstract class BaseForm
                 foreach ($t['columns'] as $c) {
                     $v = $this->cast($c, $row[$c['key']] ?? null);
                     $r[$c['key']] = $v;
-                    if ($c['type'] !== 'computed' && $v !== null && $v !== '' && !($c['type'] === 'select' && isset($c['default']) && $v === $c['default'])) {
+                    // a value equal to the column default (allocation 1, a default choice) does not make a line: blank lines are dropped
+                    if ($c['type'] !== 'computed' && $v !== null && $v !== '' && !(isset($c['default']) && (string) $v === (string) $c['default'])) {
                         $empty = false;
                     }
                 }

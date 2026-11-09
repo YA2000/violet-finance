@@ -22,7 +22,7 @@
 @php($viaRem = \App\Services\Remittances::enabled())
 @php($unread = \App\Models\Alert::where('user_id', $u->id)->whereNull('read_at')->count())
 @php($recCount = ($u->hasPerm('receipts.assign') ? \App\Models\Receipt::where('status', 'project')->count() : 0) + ($u->hasPerm('receipts.record') ? \App\Models\Receipt::where('status', 'record')->count() : 0))
-@php($setCount = $u->hasPerm('advances.manage') ? \App\Models\AdvanceSettlement::where('status', 'submitted')->count() : 0)
+@php($setCount = $u->hasPerm('advances.manage') && \App\Support\Modules::on('advances') ? \App\Models\AdvanceSettlement::where('status', 'submitted')->count() : 0)
 @php($canReceipts = $u->hasPerm('receipts.inform') || $u->hasPerm('receipts.view') || $u->hasPerm('receipts.assign') || $u->hasPerm('receipts.record'))
 <div class="app">
   <div class="scrim" x-show="menu" x-cloak x-transition.opacity @click="menu = false"></div>
@@ -67,7 +67,7 @@
         <a class="nav {{ request()->routeIs('receipts.*') ? 'active' : '' }}" href="{{ route('receipts.index') }}"><i class="fa-solid fa-hand-holding-dollar"></i>Received payments</a>
       @endif
 
-      @if($u->hasPerm('advances.hold') || $u->holder || $u->hasPerm('advances.view') || $u->hasPerm('advances.manage'))
+      @if(\App\Support\Modules::on('advances') && ($u->hasPerm('advances.hold') || $u->holder || $u->hasPerm('advances.view') || $u->hasPerm('advances.manage')))
         <div class="side-sec" data-sec="advances">
           <button type="button" class="side-group" @click="toggle($el)">Advances<i class="fa-solid fa-chevron-down chev"></i></button>
           <div class="side-items"><div>
@@ -84,7 +84,7 @@
 
       @php($canCosts = $u->hasPerm('costs.view') || $u->hasPerm('costs.manage'))
       @php($canPayroll = $u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
-      @if($canCosts || $canPayroll)
+      @if(\App\Support\Modules::on('payroll') && ($canCosts || $canPayroll))
         <div class="side-sec" data-sec="payroll">
           <button type="button" class="side-group" @click="toggle($el)">Payroll &amp; allocation<i class="fa-solid fa-chevron-down chev"></i></button>
           <div class="side-items"><div>

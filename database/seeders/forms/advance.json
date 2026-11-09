@@ -178,28 +178,6 @@
                 ]
             },
             {
-                "id": "adv",
-                "type": "section",
-                "title": "Operating advance",
-                "fields": [
-                    {
-                        "key": "holder_id",
-                        "label": "Advance holder",
-                        "type": "lookup",
-                        "source": "advance_holders",
-                        "width": 6,
-                        "help": "When the form is final, the advance opens on this holder's account."
-                    },
-                    {
-                        "key": "settlement_due",
-                        "label": "Settlement due date",
-                        "type": "date",
-                        "width": 3,
-                        "help": "Last day to clear the advance with invoices."
-                    }
-                ]
-            },
-            {
                 "id": "sig",
                 "type": "signatures",
                 "title": "Approvals"
@@ -209,19 +187,8 @@
             "amount": "amount",
             "currency": "LOOKUP(currency_id,\"code\")",
             "description": "description",
-            "advance": {
-                "holder": "holder_id",
-                "amount": "amount",
-                "currency": "currency_id",
-                "due": "settlement_due"
-            },
             "has_payment": true,
-            "rules": [
-                {
-                    "formula": "OR(ISBLANK(holder_id),NOT(ISBLANK(settlement_due)))",
-                    "message": "Give the settlement due date of the advance."
-                }
-            ],
+            "rules": [],
             "exports": []
         }
     },
