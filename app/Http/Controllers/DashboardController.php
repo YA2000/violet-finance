@@ -75,7 +75,7 @@ class DashboardController extends Controller
         $ended = $all->where('status', 'Ended');
         $figs = $ended->isEmpty() ? [] : \App\Services\LineBudget::projectFigures($ended);
         // ended but not closed: money left with us or due from the donor (balance unknown: only the recently ended ones)
-        $attention = $ended->map(function ($p) use ($figs) {
+        $attention = $ended->toBase()->map(function ($p) use ($figs) {
             $f = $figs[(string) $p->code] ?? null;
             $bal = $f && $f['received'] !== null && $f['spent'] !== null ? (float) $f['received'] - (float) $f['spent'] - (float) $f['overhead'] : null;
             if ($bal === null) {

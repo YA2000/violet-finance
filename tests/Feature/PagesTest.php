@@ -25,4 +25,16 @@ class PagesTest extends TestCase
         $this->get('/')->assertRedirect('/login');
         $this->get('/login')->assertOk();
     }
+
+    /** The live 500 of 16-11-2026: no ended project + an open project without agreement amount. */
+    public function test_dashboard_without_ended_projects(): void
+    {
+        \App\Models\Project::query()->update(['status' => 'Ongoing', 'status_mode' => 'manual', 'end_date' => now()->addYear()]);
+        \App\Models\Project::query()->limit(1)->update(['budget_total' => null, 'finance_officer_id' => null]);
+        $this->actingAs($this->admin())->get('/')->assertOk();
+        // the page hides a broken tile (try/catch): check the tile itself
+        $m = new \ReflectionMethod(\App\Http\Controllers\DashboardController::class, 'projects');
+        $out = $m->invoke(app(\App\Http\Controllers\DashboardController::class));
+        $this->assertGreaterThan(0, $out['attentionCount']);
+    }
 }
