@@ -86,8 +86,8 @@ class DocumentFlowTest extends TestCase
 
     public function test_print_gives_a_pdf_when_chrome_is_installed(): void
     {
-        if (!\App\Support\Print\Pdf::chrome()) {
-            $this->markTestSkipped('No Chrome on this machine.');
+        if (!\App\Support\Print\Pdf::chrome() || !trim((string) shell_exec('command -v qpdf pdfunite gs 2>/dev/null'))) {
+            $this->markTestSkipped('No Chrome or no PDF merge tool (qpdf) on this machine.');
         }
         $doc = $this->savePtr();
         $r = $this->get('/documents/' . $doc->id . '/print');

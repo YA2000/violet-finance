@@ -25,6 +25,8 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, intl, pdo_sqlite, sqlite3, zip, gd, bcmath
           coverage: pcov
+      - name: PDF tools (merging, like the server)
+        run: sudo apt-get install -y -q qpdf
       - name: Libraries
         run: composer install --no-interaction --no-progress --prefer-dist
       # the test tools live in tests/tools (the server never installs them)
@@ -72,6 +74,7 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, intl, pdo_mysql, zip, gd, bcmath
           coverage: none
+      - run: sudo apt-get install -y -q qpdf
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: composer --working-dir=tests/tools install --no-interaction --no-progress
       - run: |
