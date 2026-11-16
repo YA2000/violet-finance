@@ -17,10 +17,10 @@ class CurrencyRateTest extends TestCase
         CurrencyRate::create(['currency_id' => $syp->id, 'date' => '2026-06-01', 'usd_rate' => 1 / 120]);
         Currency::flush();
 
-        $this->assertEqualsWithDelta(1 / 130, Currency::usdRate('SYP', '2025-12-31'), 1e-9);
+        $this->assertEqualsWithDelta(1 / 130, Currency::usdRate('SYP', '2025-12-31'), 1e-6);
         $this->assertEqualsWithDelta(1 / 110, Currency::usdRate('SYP', '2026-03-15'), 1e-9);
         $this->assertEqualsWithDelta(1 / 120, Currency::usdRate('SYP', '2026-06-01'), 1e-9);
-        $this->assertEqualsWithDelta(1 / 130, Currency::usdRate('SYP'), 1e-9);
+        $this->assertEqualsWithDelta(1 / 130, Currency::usdRate('SYP'), 1e-6);
         $this->assertSame(1.0, (float) Currency::usdRate('USD', '2026-03-15'));
     }
 

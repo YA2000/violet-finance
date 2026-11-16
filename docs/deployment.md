@@ -58,12 +58,18 @@ Laravel writes errors to `storage/logs/laravel-YYYY-MM-DD.log` (daily files). `v
 For alerts by e-mail or a service (Sentry, Flare, Better Stack), set `MAIL_*` first, then add the service's Laravel
 package and DSN in `.env` — nothing else in the code needs to change.
 
+## Server tools
+
+`sudo bash deploy/install-server-tools.sh` — Google Chrome (PDF engine), qpdf and poppler (merging attachments). Run it once
+after this update; the system uses Chrome as soon as it is there (see printing.md).
+
 ## Useful artisan commands
 
 | Command | Use |
 |---|---|
 | `php artisan violet:2fa-reset user@x` | Turn off two-factor of a user who lost the phone. |
 | `php artisan violet:audit-verify` | Check the audit chain. |
+| `php artisan violet:pdf-check` | Which PDF engine is used, and a test page. |
 | `php artisan violet:expenses-rebuild` | Rebuild `spend_lines` from every final form. |
 | `php artisan migrate --force` | Apply database changes (the update does it). |
 | `php artisan down` / `up` | Maintenance mode by hand. |

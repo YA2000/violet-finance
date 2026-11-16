@@ -12,7 +12,9 @@ Read in this order:
 7. [security.md](security.md) — permissions, two-factor sign-in, the audit trail.
 8. [deployment.md](deployment.md) — server, the `violet` command, backups, rollback, what to do on an error 500.
 9. [testing.md](testing.md) — running the tests, writing new ones, CI on GitHub.
-10. [removed-modules.md](removed-modules.md) — what was deleted (advances module, payroll, shared costs...) and what was kept.
+10. [reconciliation.md](reconciliation.md) — the QuickBooks check: matching the system with a QuickBooks export.
+11. [printing.md](printing.md) — the PDF engine (Chrome headless) and how to install or switch it.
+12. [removed-modules.md](removed-modules.md) — what was deleted (advances module, payroll, shared costs...) and what was kept.
 
 Arabic summary for the finance team: [دليل-عربي.md](دليل-عربي.md).
 

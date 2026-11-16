@@ -192,13 +192,16 @@ class LineBudget
         $docs = static::documentSpending();
         $alloc = static::allocations($lines->pluck('id')->all());
         $rec = \App\Models\Receipt::whereIn('project_id', $projects->pluck('id'))->get(['project_id', 'date', 'amount', 'currency', 'project_amount', 'project_currency']);
+        // grouped once (same figures): looking the lines up project by project was the slow part of the projects page
+        $linesOf = $lines->groupBy(fn ($b) => (string) $b->project_code);
+        $recOf = $rec->groupBy('project_id');
         $out = [];
         foreach ($projects as $p) {
             $cur = strtoupper($p->currency?->code ?? 'USD');
             $rate = static::rateOf($p);
             $from = $p->balance_date?->format('Y-m-d');
             $sys = 0.0;
-            foreach ($lines->where('project_code', (string) $p->code) as $b) {
+            foreach ($linesOf[(string) $p->code] ?? [] as $b) {
                 foreach ($docs[$b->id] ?? [] as $x) {
                     if ($from === null || $x[0] > $from) {
                         $sys += $rate > 0 ? $x[7] / $rate : 0;
@@ -211,7 +214,7 @@ class LineBudget
                 }
             }
             $receipts = 0.0;
-            foreach ($rec->where('project_id', $p->id) as $x) {
+            foreach ($recOf[$p->id] ?? [] as $x) {
                 if ($from === null || $x->date->format('Y-m-d') > $from) {
                     $receipts += $x->project_amount !== null && strtoupper((string) $x->project_currency) === $cur ? $x->project_amount
                         : (strtoupper($x->currency) === $cur ? $x->amount : ($rate > 0 ? $x->amount * \App\Models\Currency::usdRate($x->currency) / $rate : 0));

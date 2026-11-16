@@ -119,6 +119,12 @@ Route::middleware(['auth', 'active', 'idle', 'twofactor'])->group(function () {
     Route::post('/projects/{id}/import', [ProjectController::class, 'import'])->name('projects.import');
     // reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('can:reports.view');
+    Route::middleware('can:reports.view')->group(function () {
+        Route::get('/reconcile', [\App\Http\Controllers\ReconcileController::class, 'index'])->name('reconcile.index');
+        Route::post('/reconcile', [\App\Http\Controllers\ReconcileController::class, 'store'])->name('reconcile.store');
+        Route::get('/reconcile/{run}', [\App\Http\Controllers\ReconcileController::class, 'show'])->name('reconcile.show');
+        Route::get('/reconcile/{run}/excel', [\App\Http\Controllers\ReconcileController::class, 'export'])->name('reconcile.export');
+    });
     Route::get('/reports/budget-lines', [ReportController::class, 'lines'])->name('reports.lines')->middleware('can:reports.view');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show')->middleware('can:reports.view');
 

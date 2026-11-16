@@ -626,3 +626,13 @@ a.stat:hover { box-shadow: var(--shadow-2); opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .done-card, .done-ic, .app-ic { animation: none; transition: none; } }
 .home-grid.solo { grid-template-columns: minmax(0, 880px); }
 @media (max-width: 700px) { .today-head h1 { font-size: 28px; } .today-head > div[x-data] { display: none; } }
+/* QuickBooks check */
+.rec-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.rec-grid .disclosure { margin: 0; }
+@media (max-width: 1000px) { .rec-grid { grid-template-columns: minmax(0, 1fr); } }
+.stat.is-on { box-shadow: 0 0 0 2px var(--violet), var(--shadow); }
+.tone-green-t { color: #1E8E3E !important; }
+.seg-links { display: inline-flex; background: var(--fill); border-radius: 10px; padding: 2px; }
+.seg-links a { padding: 6px 14px; border-radius: 8px; color: var(--ink); font-size: 13px; font-weight: 500; text-decoration: none; }
+.seg-links a.on { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg-links a b { color: var(--label-2); font-weight: 600; margin-left: 4px; }

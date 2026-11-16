@@ -8,7 +8,7 @@
 | Database | MySQL 8 / MariaDB 10.6+ in production; SQLite in memory for tests |
 | Pages | Blade templates + Alpine.js (no build step: plain files in `public/`) |
 | Excel | OpenSpout (`openspout/openspout`) — import and export of `.xlsx` |
-| PDF | wkhtmltopdf (HTML → PDF) + qpdf (merging) — see "Known limits" |
+| PDF | Chrome headless (HTML → PDF; wkhtmltopdf as fallback) + qpdf (merging) — see printing.md |
 | Icons / fonts | Font Awesome, served from `public/vendor` |
 | QR codes (two-factor) | `public/vendor/qrcode.js` (qrcode-generator, MIT) |
 
@@ -60,6 +60,7 @@ tests/              PHPUnit (Unit = pure functions, Feature = with database)
 | `Support\TreasuryRate` | Which rate the treasury changes when the paid amount differs from the expected one. |
 | `Support\Numbering` | Yearly numbers of other records (received payments...). Transaction numbers: `Reservation::takeNumber`. |
 | `Support\Audit` | Append-only, hash-chained audit trail. |
+| `Services\QbReconcile` | QuickBooks check: reads a QuickBooks export and matches it with the final forms by number. |
 | `Support\Perms` | The permission catalogue (groups → abilities) and the default roles. |
 | `Support\Upgrade` | Brings any database to the current version (see upgrades.md). |
 
@@ -70,8 +71,7 @@ There is no cron entry. Daily jobs run lazily on the first page view of the day:
 
 ## Known limits (accepted for now)
 
-- **wkhtmltopdf is no longer maintained.** It works and is pinned on the server. The replacement path is
-  Chromium headless (`spatie/browsershot`) or Gotenberg; only `app/Support/Print` would change.
+- **PDF engine:** Chrome headless since November 2026 (wkhtmltopdf kept as a fallback) — see printing.md.
 - **Form data is JSON** (`documents.data`). Reports that need lines read `spend_lines` (a flat table) instead —
   add more flat tables the same way rather than querying JSON.
 - **Some controllers are long** (`DocumentController`, `ProjectController`). New logic goes to a Service class.

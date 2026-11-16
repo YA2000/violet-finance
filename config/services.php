@@ -38,5 +38,7 @@ return [
 
     // PDF engine (patched Qt build, same as Odoo uses)
     'wkhtmltopdf' => env('WKHTMLTOPDF_BIN', '/usr/local/bin/wkhtmltopdf'),
+    'pdf_engine' => env('PDF_ENGINE', 'auto'),      // auto = Chrome when installed, else wkhtmltopdf
+    'chrome' => env('CHROME_BIN'),                    // empty = look for google-chrome / chromium
 
 ];

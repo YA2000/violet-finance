@@ -76,6 +76,7 @@
               <a class="nav {{ request()->routeIs('review.*') ? 'active' : '' }}" href="{{ route('review.index') }}"><i class="fa-solid fa-magnifying-glass-chart"></i>Internal review</a>
             @endcan
             @can('reports.view')
+              <a class="nav {{ request()->routeIs('reconcile.*') ? 'active' : '' }}" href="{{ route('reconcile.index') }}"><i class="fa-solid fa-scale-balanced"></i>QuickBooks check</a>
               <a class="nav {{ request()->routeIs('reports.index', 'reports.show') ? 'active' : '' }}" href="{{ route('reports.index') }}"><i class="fa-solid fa-chart-column"></i>Reports</a>
             @endcan
           </div></div>

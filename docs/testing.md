@@ -31,6 +31,23 @@ then all tests. A green tick next to the commit = safe to deploy; a red cross = 
 | `Feature/AuditTest` | The chain verifies; a row changed in the database is found; the model refuses edits and deletes. |
 | `Feature/TwoFactorTest` | Password alone is not enough; wrong code refused; recovery code works once; required roles are sent to set it up. |
 | `Feature/PagesTest` | Every main page opens for the administrator (catches errors 500 before the server does). |
+| `Feature/DocumentFlowTest` | A PTR through the real pages: number, save = final, spend lines, treasury, unlock/lock, cancel, PDF print, uploader carries the number. |
+| `Feature/ReceiptFlowTest` | Received payments: inform → project → record, same-currency shortcut, Dekont rule, audited delete. |
+| `Feature/PermissionsTest` | A clerk cannot open admin, audit, rates, reports, reconciliation; cannot change money, unlock or delete; disabled users are signed out. |
+| `Feature/SecurityTest` | Login lock after 6 wrong passwords, uploads checked by content (a script named .pdf is refused), password length, no error details shown. |
+| `Feature/QbReconcileTest` | QuickBooks check: every status, CSV and Excel exports, detail reports, money and date formats. |
+| `Feature/PerformanceTest` | **Volume** (not in the normal run): 400 projects, 6,000 forms, 12,000 lines; time of the busiest pages. |
+
+## Three runs
+
+| Run | Command | Where |
+|---|---|---|
+| Normal (SQLite in memory) | `tests/run.sh` | your machine, GitHub (with a coverage summary) |
+| MySQL, like the server | `DB_CONNECTION=mysql DB_DATABASE=violet_test DB_USERNAME=... DB_PASSWORD=... tests/run.sh` (empty database, it is wiped) | GitHub job `mysql` |
+| Volume | `tests/run.sh --group performance` | GitHub job `mysql`, after the tests |
+
+The first volume run found the projects page took **17 s** with 400 projects (the budget lines were searched once per project);
+grouping them once brought it to **1 s** with the same figures (checked number by number against the old code).
 
 ## Write a new test
 

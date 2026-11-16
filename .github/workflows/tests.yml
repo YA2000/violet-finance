@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  phpunit:
+  # fast: SQLite in memory, plus syntax and the compiled routes/views; coverage report
+  sqlite:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -19,33 +20,64 @@ jobs:
       SESSION_DRIVER: array
     steps:
       - uses: actions/checkout@v4
-
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, intl, pdo_sqlite, sqlite3, zip, gd, bcmath
-          coverage: none
-
+          coverage: pcov
       - name: Libraries
         run: composer install --no-interaction --no-progress --prefer-dist
-
       # the test tools live in tests/tools (the server never installs them)
       - name: Test tools (PHPUnit, Mockery)
         run: composer --working-dir=tests/tools install --no-interaction --no-progress
-
       - name: Prepare
         run: |
           cp .env.example .env
           php artisan key:generate --force
-
       - name: Syntax of every PHP file
         run: find app config database routes tests -path tests/tools -prune -o -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
-
       - name: Routes and views compile
         run: |
           php artisan route:cache
           php artisan view:cache
           php artisan optimize:clear
+      - name: Tests (with coverage)
+        run: php tests/tools/vendor/bin/phpunit --coverage-text --only-summary-for-coverage-text --coverage-filter app
 
-      - name: Tests
+  # same tests on MySQL 8, like the server (catches what SQLite forgives)
+  mysql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: violet_test
+          MYSQL_ROOT_PASSWORD: root
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -proot" --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: violet_test
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_mysql, zip, gd, bcmath
+          coverage: none
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer --working-dir=tests/tools install --no-interaction --no-progress
+      - run: |
+          cp .env.example .env
+          php artisan key:generate --force
+      - name: Tests on MySQL
         run: php tests/tools/vendor/bin/phpunit
+      - name: Volume test (400 projects, 6,000 forms) on MySQL
+        run: php tests/tools/vendor/bin/phpunit --group performance

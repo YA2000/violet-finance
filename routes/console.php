@@ -28,3 +28,13 @@ Artisan::command('violet:expenses-rebuild', function () {
     $n = \App\Services\Expenses::rebuild();
     $this->info("$n expense lines written.");
 })->purpose('Rebuild expense_lines from the saved forms');
+
+// Which PDF engine the server uses, and a test page (sudo -u USER php artisan violet:pdf-check)
+Artisan::command('violet:pdf-check', function () {
+    $this->line('Engine: ' . \App\Support\Print\Pdf::engine() . (\App\Support\Print\Pdf::chrome() ? ' (Chrome: ' . \App\Support\Print\Pdf::chrome() . ')' : ''));
+    $t = microtime(true);
+    $pdf = \App\Support\Print\Pdf::engine() === 'chrome'
+        ? \App\Support\Print\Pdf::chromePdf('<html><head><meta charset="utf-8"><style>@page{size:A4;margin:10mm}</style></head><body><h1>Violet Finance</h1><p>اختبار الطباعة</p></body></html>')
+        : null;
+    $this->info($pdf ? 'Test page OK: ' . strlen($pdf) . ' bytes in ' . round(microtime(true) - $t, 2) . 's' : 'wkhtmltopdf: print a saved form to check.');
+})->purpose('Show the PDF engine and print a test page');
