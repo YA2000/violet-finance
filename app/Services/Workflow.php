@@ -10,8 +10,6 @@ use App\Models\Individual;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 /** Document life cycle: draft -> signing -> (to_pay) -> done, signatures and payment. */
@@ -132,165 +130,12 @@ class Workflow
         if ($doc->state === 'done') {
             $doc->update(['edit_open' => false]);
             static::log($doc, 'Changes saved - locked again.', 'note', $u);
+            \App\Services\Expenses::sync($doc->refresh());
             return;
         }
         $doc->update(['state' => 'done', 'edit_open' => false, 'current_signer_id' => null, 'submitted_at' => $doc->submitted_at ?? now(), 'done_at' => now()]);
         static::log($doc, 'Saved - final and locked.', 'done', $u);
-        Advances::onDocumentDone($doc->refresh());
-    }
-
-    public static function submit(Document $doc, User $u): void
-    {
-        if ($doc->state !== 'draft') {
-            return;
-        }
-        if (!$doc->isOwner($u) && !$u->hasPerm('form.' . $doc->form_code . '.edit')) {
-            static::fail('Only the preparer can submit this form.');
-        }
-        $err = [];
-        if (!$doc->number && !empty($doc->form()->settings()['open_to_all'])) {
-            static::autoNumber($doc, $u);    // forms open to every user get their number by themselves
-        }
-        if (!$doc->number) {
-            $err[] = 'Reserve a transaction number first.';
-        }
-        $err = array_merge($err, $doc->form()->checkSubmit($doc));
-        $doc->load('signatures.individual');
-        $prep = $doc->signatures->firstWhere('is_preparer', true);
-        if ($prep && !$prep->individual_id) {
-            $err[] = 'Your login is not linked to an employee code - ask the administrator to link you (Users), so your signature can be added.';
-        } elseif ($prep && !($prep->signerUser() ?? $u)->signature) {
-            $err[] = 'Add your signature first (My signature): it is placed on the form automatically when you submit.';
-        }
-        $missing = $doc->signatures->filter(fn ($s) => $s->required && !$s->individual_id)->pluck('role')->all();
-        if ($missing) {
-            $err[] = 'Choose the signer of: ' . implode(', ', $missing) . '.';
-        }
-        foreach ($doc->activeSignatures() as $s) {
-            if (!$s->signerUser()) {
-                $err[] = $s->individual->label . ' (' . $s->role . ') has no login - ask the administrator to create a user for this employee.';
-            }
-        }
-        if ($err) {
-            static::fail($err);
-        }
-        DB::transaction(function () use ($doc, $u) {
-            $doc->update(['state' => 'signing', 'submitted_at' => now()]);
-            static::log($doc, 'Sent for signature.', 'submit', $u);
-            foreach (\App\Models\ReviewComment::where('document_id', $doc->id)->where('status', '!=', 'closed')->get() as $n) {
-                \App\Models\Alert::send($n->user_id, $doc->number . ' was corrected and sent again', $n->body,
-                    route('documents.show', [$doc, 'tab' => 'review']) . '#lower', 'fa-paper-plane', $u->id);
-            }
-            // the preparer's signature goes on by itself, wherever the preparer step sits in the chain
-            $doc->refresh()->load('signatures.individual');
-            foreach ($doc->activeSignatures()->filter(fn ($s) => $s->is_preparer && $s->state !== 'signed') as $p) {
-                static::doSign($p, $p->signerUser() ?? $u);
-                static::log($doc, 'Signed automatically by ' . ($p->individual->name ?? $u->name) . ' as ' . $p->role . ' (preparer).', 'sign', $u);
-            }
-            // the person who submits also signs right away when they hold the next step
-            $first = $doc->refresh()->nextSignature();
-            if ($first && !$first->is_payer && $first->signerUser()?->id === $u->id && $u->signature) {
-                static::doSign($first, $u);
-                static::log($doc, 'Signed by ' . ($first->individual->name ?? $u->name) . ' as ' . $first->role . '.', 'sign', $u);
-            }
-            static::advance($doc->refresh());
-        });
-    }
-
-    public static function signAs(DocumentSignature $s, User $signer): void
-    {
-        static::doSign($s, $signer);
-    }
-
-    protected static function doSign(DocumentSignature $s, User $signer): void
-    {
-        $s->update([
-            'state' => 'signed', 'signature' => $signer->signature, 'signed_by' => $signer->id, 'signed_at' => now(),
-            'date' => $s->has_date ? now()->toDateString() : null,
-        ]);
-    }
-
-    /** Next signer / payment / final. */
-    public static function advance(Document $doc): void
-    {
-        $doc->load('signatures.individual');
-        $next = $doc->nextSignature();
-        if (!$next) {
-            // a Remittance Statement waits for the treasury while items are unpaid, even with no Payment (Treasury) signer
-            if ($doc->form_code === Remittances::FORM && $doc->remittanceLines()->where('status', 'waiting')->exists()) {
-                if ($doc->state !== 'to_pay') {
-                    $doc->update(['state' => 'to_pay', 'current_signer_id' => null]);
-                    static::log($doc, 'Fully signed - waiting for payment by the treasury.', 'to_pay');
-                    Remittances::onReadyToPay($doc);
-                }
-                return;
-            }
-            $doc->update(['state' => 'done', 'current_signer_id' => null, 'done_at' => now()]);
-            static::log($doc, 'All signatures complete - transaction final.', 'done');
-            static::notify($doc->user, $doc, 'is final');
-            \App\Services\Advances::onDocumentDone($doc->refresh());
-            return;
-        }
-        $user = $next->signerUser();
-        $vals = ['current_signer_id' => $user?->id];
-        $toPay = $next->is_payer && $doc->state !== 'to_pay';
-        if ($toPay) {
-            $vals['state'] = 'to_pay';
-            static::log($doc, 'Fully signed - complete to accruals, waiting for payment by ' . ($next->individual->name ?? '') . '.', 'to_pay');
-        }
-        $doc->update($vals);
-        if ($toPay) {
-            Remittances::onReadyToPay($doc);
-        }
-        if ($user) {
-            static::notify($user, $doc, $next->is_payer ? 'is waiting for your payment' : 'is waiting for your signature');
-        }
-    }
-
-    public static function sign(Document $doc, User $u): void
-    {
-        $doc->load('signatures.individual');
-        $next = $doc->nextSignature();
-        if (!in_array($doc->state, ['signing', 'to_pay'], true) || !$next || $doc->current_signer_id !== $u->id) {
-            static::fail('It is not your turn to sign this document.');
-        }
-        if ($next->is_payer && Remittances::enabled() && in_array($doc->form_code, Remittances::payableForms(), true)) {
-            static::fail('This transaction is paid from a Remittance Statement: the treasury pays it on the Payments page.');
-        }
-        if ($next->is_payer && (!$doc->paid_reservation_id || !$doc->paid_amount)) {
-            static::fail('Fill the payment details first: reserve the payment number and enter the paid amount.');
-        }
-        if (!$u->signature) {
-            static::fail('Add your signature image first (My Signature).');
-        }
-        DB::transaction(function () use ($doc, $u, $next) {
-            static::doSign($next, $u);
-            static::log($doc, 'Signed by ' . $u->name . ' as ' . $next->role . '.', 'sign', $u);
-            static::advance($doc->refresh());
-        });
-    }
-
-    public static function returnToPreparer(Document $doc, User $u, string $reason): void
-    {
-        if (!$doc->canSign($u) && !($u->hasPerm('documents.manage') && in_array($doc->state, ['signing', 'to_pay'], true))
-            && !($u->hasPerm('review.access') && in_array($doc->state, ['signing', 'to_pay', 'done'], true))) {
-            static::fail('Only the current signer can return the document.');
-        }
-        DB::transaction(function () use ($doc, $u, $reason) {
-            $doc->update(['state' => 'draft', 'current_signer_id' => null, 'done_at' => null]);
-            static::log($doc, 'Returned to the preparer by ' . $u->name . ': ' . $reason, 'return', $u);
-        });
-        static::notify($doc->user, $doc, 'was returned to you: ' . $reason);
-    }
-
-    public static function resetDraft(Document $doc, User $u): void
-    {
-        if (!$u->hasPerm('documents.manage')) {
-            static::fail('You cannot reset documents to draft.');
-        }
-        $doc->signatures()->update(['state' => 'pending', 'signature' => null, 'signed_at' => null, 'signed_by' => null, 'date' => null]);
-        $doc->update(['state' => 'draft', 'current_signer_id' => null, 'done_at' => null]);
-        static::log($doc, 'Reset to draft.', 'reset', $u);
+        \App\Services\Expenses::sync($doc->refresh());
     }
 
     public static function cancel(Document $doc, User $u): void
@@ -299,53 +144,9 @@ class Workflow
             static::fail('Only the preparer (in draft) or a document manager can cancel.');
         }
         $doc->update(['state' => 'cancel', 'current_signer_id' => null]);
+        \App\Support\Audit::log('cancel', $doc, 'Document cancelled', ['amount' => $doc->amount]);
+        \App\Services\Expenses::sync($doc->refresh());
         static::log($doc, 'Cancelled.', 'cancel', $u);
-        Advances::onJarDropped($doc, $u);
-    }
-
-    /** Payment step: link the reserved payment number + amounts. */
-    public static function savePayment(Document $doc, User $u, array $in): void
-    {
-        if (!$doc->isPayStep($u)) {
-            static::fail('Only the treasury / cashier of this document can fill the payment.');
-        }
-        $resId = $in['paid_reservation_id'] ?? null;
-        DB::transaction(function () use ($doc, $u, $in, $resId) {
-            if ($resId && (int) $resId !== (int) $doc->paid_reservation_id) {
-                $res = Reservation::findOrFail($resId);
-                if ($res->state !== 'reserved' || ($res->user_id !== $u->id && !$u->hasPerm('numbers.manage'))) {
-                    static::fail('Pick one of your free reserved numbers.');
-                }
-                $doc->paidReservation?->release();
-                $res->markUsed($doc, 'Payment of ' . $doc->number);
-                $doc->paid_reservation_id = $res->id;
-                $doc->paid_ref = $res->number;
-                static::log($doc, 'Payment number ' . $res->number . ' linked.', 'payment', $u);
-            }
-            $doc->paid_amount = $in['paid_amount'] !== null && $in['paid_amount'] !== '' ? (float) $in['paid_amount'] : null;
-            $doc->paid_rate = $in['paid_rate'] !== null && $in['paid_rate'] !== '' ? (float) $in['paid_rate'] : null;
-            $doc->paid_date = $in['paid_date'] ?: null;
-            $doc->save();
-        });
-    }
-
-    public static function notify(?User $to, Document $doc, string $what): void
-    {
-        if (!$to) {
-            return;
-        }
-        $icon = str_contains($what, 'returned') ? 'fa-rotate-left' : (str_contains($what, 'final') ? 'fa-flag-checkered' : (str_contains($what, 'payment') ? 'fa-money-bill-wave' : 'fa-signature'));
-        \App\Models\Alert::send($to, ($doc->number ?: $doc->form()->short) . ' ' . $what, $doc->description, route('documents.show', $doc), $icon);
-        if (!$to->email || config('mail.default') === 'log') {
-            return;
-        }
-        try {
-            Mail::raw(sprintf("%s %s.\n\n%s", $doc->title, $what, route('documents.show', $doc)), function ($m) use ($to, $doc, $what) {
-                $m->to($to->email)->subject($doc->title . ' ' . $what);
-            });
-        } catch (\Throwable $e) {
-            Log::warning('notify failed: ' . $e->getMessage());
-        }
     }
 
 }

@@ -12,8 +12,6 @@ class Attachment extends Model
 
     public function document() { return $this->belongsTo(Document::class); }
     public function user() { return $this->belongsTo(User::class); }
-    public function expense() { return $this->belongsTo(AdvanceExpense::class); }
-    public function advancePayment() { return $this->belongsTo(AdvancePayment::class); }
     public function receipt() { return $this->belongsTo(Receipt::class); }
 
     /** Store an uploaded file (private disk) and create the record. */

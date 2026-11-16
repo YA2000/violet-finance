@@ -35,8 +35,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $stats = ['docs' => Document::where('user_id', $user->id)->count(),
-                  'waiting' => Document::where('current_signer_id', $user->id)->whereIn('state', ['signing', 'to_pay'])->count()];
+        $stats = ['docs' => Document::where('user_id', $user->id)->count()];
         $roles = \App\Models\Role::orderBy('name')->get();
         return view('admin.users.edit', compact('user', 'stats', 'roles'));
     }
@@ -68,6 +67,7 @@ class UserController extends Controller
         $v['role'] = $v['is_super'] ? 'admin' : 'employee';
         $user = User::create($v);
         $user->roles()->sync($roles);
+        \App\Support\Audit::log('access', $user, 'User created', null, ['roles' => $roles, 'super' => $v['is_super'], 'active' => $v['active']]);
         return redirect()->route('admin.users.edit', $user)->with('ok', 'User ' . $user->name . ' created.');
     }
 
@@ -90,30 +90,20 @@ class UserController extends Controller
         if (empty($v['password'])) {
             unset($v['password']);
         }
+        $before = ['roles' => $user->roles()->pluck('roles.id')->all(), 'super' => (bool) $user->is_super, 'active' => (bool) $user->active];
         $user->update($v);
         $user->roles()->sync($roles);
+        \App\Support\Audit::log('access', $user, 'User changed' . (isset($v['password']) ? ' (new password)' : ''), $before, ['roles' => $roles, 'super' => (bool) $user->is_super, 'active' => (bool) $user->active]);
         return back()->with('ok', 'User saved.');
     }
 
-    public function signature(Request $r, User $user)
+    /** Lost phone: the administrator turns two-factor sign-in off; the person turns it on again at the next sign-in. */
+    public function resetTwoFactor(Request $r, User $user)
     {
-        abort_if($user->isAdmin() && !$r->user()->isAdmin() && $user->id !== $r->user()->id, 403);
-        if ($r->boolean('remove')) {
-            $user->update(['signature' => null]);
-            return back()->with('ok', 'Signature removed.');
-        }
-        $r->validate(['drawn' => 'nullable|string', 'upload' => 'nullable|image|mimes:png,jpg,jpeg|max:2048']);
-        $data = null;
-        if ($r->hasFile('upload')) {
-            $f = $r->file('upload');
-            $data = 'data:' . $f->getMimeType() . ';base64,' . base64_encode(file_get_contents($f->getRealPath()));
-        } elseif (str_starts_with((string) $r->input('drawn'), 'data:image/png;base64,')) {
-            $data = $r->input('drawn');
-        }
-        if (!$data) {
-            return back()->withErrors(['drawn' => 'Draw the signature or upload an image first.']);
-        }
-        $user->update(['signature' => $data]);
-        return back()->with('ok', 'Signature saved for ' . $user->name . '.');
+        abort_if($user->isAdmin() && !$r->user()->isAdmin(), 403);
+        $user->forceFill(['two_factor_secret' => null, 'two_factor_recovery' => null, 'two_factor_confirmed_at' => null])->save();
+        \App\Support\Audit::log('2fa', $user, 'Two-factor sign-in reset by an administrator');
+        return back()->with('ok', 'Two-factor sign-in reset for ' . $user->name . '.');
     }
+
 }

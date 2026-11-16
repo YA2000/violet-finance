@@ -32,7 +32,7 @@ class LineBudget
         if (!$r && $p->agreement_rate > 0) {
             $r = $p->currency?->in_usd ? (float) $p->agreement_rate : 1 / (float) $p->agreement_rate;
         }
-        return static::$rates[$p->id] = $r ?: CostRecovery::usdRate($cur);
+        return static::$rates[$p->id] = $r ?: \App\Models\Currency::usdRate($cur);
     }
 
     /** Where the rate comes from: received payments, agreement, or the rate table. */
@@ -52,11 +52,11 @@ class LineBudget
         }
         $usd = $prj = [];
         $curOf = Project::with('currency')->get(['id', 'currency_id'])->mapWithKeys(fn ($p) => [$p->id => strtoupper($p->currency?->code ?? 'USD')]);
-        foreach (\App\Models\Receipt::whereNotNull('project_id')->get(['project_id', 'amount', 'currency', 'project_amount', 'project_currency']) as $x) {
+        foreach (\App\Models\Receipt::whereNotNull('project_id')->get(['project_id', 'date', 'amount', 'currency', 'project_amount', 'project_currency']) as $x) {
             $pc = $curOf[$x->project_id] ?? 'USD';
             $inPrj = $x->project_amount !== null && strtoupper((string) ($x->project_currency ?: $pc)) === $pc ? (float) $x->project_amount
                 : (strtoupper($x->currency) === $pc ? (float) $x->amount : null);
-            $r = CostRecovery::usdRate($x->currency);
+            $r = \App\Models\Currency::usdRate($x->currency, $x->date);   // rate of the day the money arrived
             if (!$inPrj || $r <= 0) {
                 continue;
             }
@@ -75,31 +75,22 @@ class LineBudget
     // ---------------------------------------------------------------- spending recorded by the system
     protected static ?array $docs = null;
 
-    /** Paid / final PTR, JAR… lines by budget line: [bl_id => [[date, amount, currency, doc_id, number]]] (forms with analytics). */
+    /**
+     * Final PTR, JAR… lines by budget line: [bl_id => [[date, amount, currency, doc_id, number, form, note, usd]]].
+     * Read from spend_lines (written when a form is saved).
+     */
     public static function documentSpending(): array
     {
         if (static::$docs !== null) {
             return static::$docs;
         }
         $out = [];
-        $forms = [];
-        foreach (\App\Models\Document::where('state', 'done')->get(['id', 'form_code', 'number', 'date', 'paid_date', 'done_at', 'currency', 'description', 'data']) as $d) {
-            $f = $forms[$d->form_code] ??= \App\Forms\FormRegistry::has($d->form_code) ? \App\Forms\FormRegistry::get($d->form_code) : false;
-            $an = $f ? ($f->settings()['analytics'] ?? null) : null;
-            if (!$an || empty($an['table']) || empty($an['amount']) || empty($an['budget_line'])) {
-                continue;
-            }
-            $date = ($d->paid_date ?? $d->date ?? $d->done_at)?->format('Y-m-d');
-            foreach ($d->data[$an['table']] ?? [] as $l) {
-                $bl = (int) ($l[$an['budget_line']] ?? 0);
-                $amt = (float) ($l[$an['amount']] ?? 0);
-                $cur = strtoupper((string) $d->currency ?: 'USD');
-                // value in US dollars at the rate of the transaction itself (home amount), else at the rate table
-                $usd = isset($l['home_amount']) && $l['home_amount'] !== '' && $l['home_amount'] !== null ? (float) $l['home_amount'] : $amt * CostRecovery::usdRate($cur);
-                if ($bl && $amt) {
-                    $out[$bl][] = [$date, $amt, $cur, $d->id, $d->number, $d->form_code, $l['special_note'] ?? $d->description, $usd];
-                }
-            }
+        if (!Expenses::ready()) {
+            return static::$docs = $out;
+        }
+        foreach (\Illuminate\Support\Facades\DB::table('spend_lines')->orderBy('date')->orderBy('id')
+            ->get(['budget_line_id', 'date', 'amount', 'currency', 'document_id', 'number', 'form_code', 'note', 'usd']) as $x) {
+            $out[$x->budget_line_id][] = [$x->date, (float) $x->amount, $x->currency, $x->document_id, $x->number, $x->form_code, $x->note, (float) $x->usd];
         }
         return static::$docs = $out;
     }
@@ -111,8 +102,12 @@ class LineBudget
         if (!$ids) {
             return $out;
         }
-        foreach ([[\App\Models\PayrollAllocation::class, 'payroll_runs', 'payroll_run_id'], [\App\Models\ExpenseAllocation::class, 'expense_runs', 'expense_run_id']] as [$m, $t, $fk]) {
-            $rows = $m::query()->join($t, "$t.id", '=', $fk)->where("$t.status", 'approved')->whereIn('budget_line_id', $ids)
+        // history of the former payroll and shared-cost allocation (approved months), kept in the totals
+        foreach ([['payroll_allocations', 'payroll_runs', 'payroll_run_id'], ['expense_allocations', 'expense_runs', 'expense_run_id']] as [$m, $t, $fk]) {
+            if (!\Illuminate\Support\Facades\Schema::hasTable($m)) {
+                continue;
+            }
+            $rows = \Illuminate\Support\Facades\DB::table($m)->join($t, "$t.id", '=', $fk)->where("$t.status", 'approved')->whereIn('budget_line_id', $ids)
                 ->selectRaw("budget_line_id, $t.period as period, SUM(amount_usd) as usd")->groupBy('budget_line_id', "$t.period")->get();
             foreach ($rows as $r) {
                 $out[$r->budget_line_id][] = [\Illuminate\Support\Carbon::parse($r->period)->endOfMonth()->format('Y-m-d'), (float) $r->usd];
@@ -219,7 +214,7 @@ class LineBudget
             foreach ($rec->where('project_id', $p->id) as $x) {
                 if ($from === null || $x->date->format('Y-m-d') > $from) {
                     $receipts += $x->project_amount !== null && strtoupper((string) $x->project_currency) === $cur ? $x->project_amount
-                        : (strtoupper($x->currency) === $cur ? $x->amount : ($rate > 0 ? $x->amount * CostRecovery::usdRate($x->currency) / $rate : 0));
+                        : (strtoupper($x->currency) === $cur ? $x->amount : ($rate > 0 ? $x->amount * \App\Models\Currency::usdRate($x->currency) / $rate : 0));
                 }
             }
             $spent = $p->spent_total === null && !$sys ? null : (float) $p->spent_total + $sys;

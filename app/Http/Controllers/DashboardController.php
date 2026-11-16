@@ -50,22 +50,12 @@ class DashboardController extends Controller
         if ($u->hasPerm('receipts.record') && ($n = \App\Models\Receipt::where('status', 'record')->count())) {
             $tasks[] = ['fa-file-signature', $n . ' received ' . \Illuminate\Support\Str::plural('payment', $n) . ' to record', route('receipts.index', ['status' => 'record']), ''];
         }
-        $adv = \App\Support\Modules::on('advances');
-        if ($adv && $u->hasPerm('advances.manage') && ($n = \App\Models\AdvanceSettlement::where('status', 'submitted')->count())) {
-            $tasks[] = ['fa-inbox', $n . ' advance ' . \Illuminate\Support\Str::plural('settlement', $n) . ' to turn into JAR', route('advances.index'), ''];
+        try {
+            $projects = ProjectController::canSee($u) ? $this->projects() : null;
+        } catch (\Throwable $e) {
+            report($e);
+            $projects = null;
         }
-        if ($adv && ($h = \App\Models\AdvanceHolder::where('user_id', $u->id)->first())) {
-            $open = $h->advances()->where('status', 'open')->get();
-            $due = $open->filter(fn ($a) => $a->isOverdue() || $a->isDueSoon())->count();
-            $pay = \App\Models\AdvancePayment::whereIn('advance_id', $open->pluck('id'))->where('status', 'pending')->count();
-            if ($due) {
-                $tasks[] = ['fa-hourglass-end', $due . ' ' . \Illuminate\Support\Str::plural('advance', $due) . ' to clear soon', route('advances.mine'), 'warn'];
-            }
-            if ($pay) {
-                $tasks[] = ['fa-receipt', $pay . ' ' . \Illuminate\Support\Str::plural('payment', $pay) . ' waiting for your proof', route('advances.mine'), ''];
-            }
-        }
-        $projects = ProjectController::canSee($u) ? $this->projects() : null;
         $forms = array_values(array_filter(FormRegistry::all(), fn ($f) => $u->hasPerm('form.' . $f->code . '.create') || $u->hasPerm('form.' . $f->code . '.view')));
         return view('dashboard', [
             'tasks' => $tasks, 'creatable' => array_values(array_filter($forms, fn ($f) => $u->hasPerm('form.' . $f->code . '.create'))),

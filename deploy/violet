@@ -7,6 +7,8 @@
 #   violet rollback live   put back the code + database from before the last update (also: test)
 #   violet sync-test       copy the live database and uploaded files into the test site
 #   violet status          show what version each site runs and the last backups (default)
+#   violet log live        the last errors of a site (what is behind an "error 500")   (also: test)
+#   violet backup live     a backup now (database + .env + code + uploaded files); copied off the server if OFFSITE is set
 #
 # Settings live in /etc/violet-deploy.conf (written by deploy/server-setup.sh).
 set -euo pipefail
@@ -16,7 +18,7 @@ if [ -z "${VIOLET_COPY:-}" ]; then
   t=$(mktemp /tmp/violet.XXXXXX); cp "$0" "$t"
   VIOLET_COPY=1 exec bash "$t" "$@"
 fi
-USAGE=$(sed -n '3,10p' "$0"); SELF_SUM=$(sha1sum < "$0"); rm -f "$0"   # bash keeps the open copy; the file itself can go
+USAGE=$(sed -n '3,12p' "$0"); SELF_SUM=$(sha1sum < "$0"); rm -f "$0"   # bash keeps the open copy; the file itself can go
 
 CONF=/etc/violet-deploy.conf
 [ -f "$CONF" ] || { echo "Missing $CONF - run deploy/server-setup.sh first."; exit 1; }
@@ -55,7 +57,26 @@ backup() {   # $1 = live|test ; prints the backup folder
   tar czf "$bk/storage-app.tgz" -C "$SITE" storage/app
   cat "$STATE/$1.commit" > "$bk/commit" 2>/dev/null || echo unknown > "$bk/commit"
   ls -1dt "$BACKUPS/$1-"* | tail -n +$((KEEP + 1)) | xargs -r rm -rf
+  # OFFSITE=user@host:/path (or a mounted folder) in the conf: keep a copy away from this server
+  if [ -n "${OFFSITE:-}" ]; then
+    rsync -a "$bk" "$OFFSITE/" >&2 || echo "WARNING: the off-site copy failed (backup kept here: $bk)" >&2
+  fi
   echo "$bk"
+}
+
+lasterrors() {   # last error entries of the site log
+  local f; f=$(ls -1t "$SITE"/storage/logs/laravel*.log 2>/dev/null | head -1)
+  [ -n "$f" ] || { echo "(no log file)"; return; }
+  echo "Log: $f"
+  grep -n -E '\.(ERROR|CRITICAL|EMERGENCY):' "$f" | tail -n "${1:-5}" | cut -c1-600
+}
+
+smoke() {   # the login page must answer (not 500) after an update
+  local url host code; url=$(envval APP_URL); host=${url#*://}; host=${host%%/*}
+  [ -n "$host" ] || return 0
+  code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 25 --resolve "$host:443:127.0.0.1" "https://$host/login" || echo 000)
+  echo "Login page answers: $code"
+  [ "$code" != 500 ]
 }
 
 fetch() {    # update the source checkout; $1 = commit to check out (optional)
@@ -99,6 +120,13 @@ install_code() {   # $1 = live|test ; code already checked out in $SRC
   echo "$commit" > "$STATE/$name.commit"
   date '+%F %T' > "$STATE/$name.date"
   artisan up >/dev/null 2>&1 || true; trap - EXIT
+
+  say "Check"
+  if ! smoke; then
+    lasterrors 3
+    echo "The site answers with error 500 - putting back the backup."; restore "$name" "$bk"
+    die "Update stopped. The site is back as it was. Send the lines above to the developer."
+  fi
   say "Done: $name now runs $(git -C "$SRC" log -1 --format='%h - %s (%cd)' --date=short)"
 }
 
@@ -164,5 +192,9 @@ case "$cmd" in
       printf '%-17s: %s - %s  [installed %s]\n' "$n" "${c:0:7}" "$(git -C "$SRC" log -1 --format='%s' "$c" 2>/dev/null || echo '?')" "$(cat "$STATE/$n.date" 2>/dev/null)"
     done
     echo "Backups:"; ls -1dt "$BACKUPS"/* 2>/dev/null | head -6 | sed 's/^/  /' ;;
+  log)
+    target "${1:-live}"; lasterrors "${2:-10}" ;;
+  backup)
+    target "${1:-live}"; say "Backup (${1:-live})"; backup "${1:-live}" ;;
   *) echo "$USAGE" ;;
 esac

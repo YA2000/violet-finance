@@ -1,0 +1,8 @@
+{
+    "description": "Test tools only (never installed on the server). Installed by tests/run.sh into tests/tools/vendor.",
+    "require": {
+        "phpunit/phpunit": "^12.4",
+        "mockery/mockery": "^1.6"
+    },
+    "config": { "sort-packages": true }
+}

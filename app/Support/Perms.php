@@ -26,18 +26,11 @@ class Perms
                 'numbers.manage' => 'Cancel or change anyone\'s numbers',
             ],
             'Documents' => [
-                'documents.manage' => 'Reset to draft, cancel or delete any document, mark uploaded',
+                'documents.manage' => 'Allow editing of saved forms, cancel or delete any document',
                 'review.access' => 'Internal review page: see every document, comment and return for correction',
             ],
-            'Advances' => [
-                'advances.hold' => 'Advance holder: own advances, expenses, settlements, payment proofs',
-                'advances.view' => 'See the advances tracker',
-                'advances.manage' => 'Manage advances: holders, grant, settlements to JAR, linked payments',
-            ],
-            'Payments' => [
-                'remittance.prepare' => 'Prepare Remittance Statements from the transactions you approved (internal viewer)',
-                'remittance.all' => 'See every transaction ready to pay, not only the ones you approved',
-                'payments.pay' => 'Pay Remittance Statements and record each payment (treasury)',
+            'Treasury' => [
+                'payments.pay' => 'Change the value to pay of a saved PTR (rate or total actually paid)',
             ],
             'Received payments' => [
                 'receipts.inform' => 'Inform a new received payment (treasury)',
@@ -46,20 +39,10 @@ class Perms
                 'receipts.view' => 'See all received payments',
                 'receipts.manage' => 'Correct or delete any received payment (admin)',
             ],
-            'Payroll' => [
-                'payroll.manage' => 'Contracts, LOE of every employee, monthly payroll runs and allocation (HR)',
-                'payroll.approve' => 'Approve or reopen a payroll run (finance)',
-                'payroll.view' => 'See payroll runs, allocations and payroll sheets',
-            ],
-            'Shared costs' => [
-                'costs.manage' => 'Upload the QuickBooks report of the shared costs, categories and their budget lines, allocate',
-                'costs.approve' => 'Approve or reopen the shared costs of a month',
-                'costs.view' => 'See the shared costs allocation and its files',
-            ],
             'Reports' => ['reports.view' => 'Reports'],
             'Master data' => $master,
             'Administration' => [
-                'forms.design' => 'Form builder, signature chains, printouts, form numbers',
+                'forms.design' => 'Form builder, printout signature blocks, printouts, form numbers',
                 'users.manage' => 'Users',
                 'roles.manage' => 'Roles & permissions',
                 'settings.manage' => 'Settings',
@@ -97,22 +80,22 @@ class Perms
         $tr = array_map(fn ($c) => "form.$c.*", static::formCodes('Treasury'));
         return [
             'Finance Manager' => ['Full access to finance work, master data and reports.', ['*']],
-            'AP Accountant' => ['Prepares PTR, Reference Cover, JAR, Fatura, Invoice, Reconciliation and Advance forms from the requests of Logistics, Programs and HR; turns JAR Clearances into JARs.',
-                array_merge($ap, ['numbers.reserve', 'advances.manage', 'advances.view', 'reports.view'])],
+            'AP Accountant' => ['Prepares PTR, Reference Cover, JAR, Reconciliation and Advance forms from the requests of Logistics, Programs and HR.',
+                array_merge($ap, ['numbers.reserve', 'reports.view'])],
             'AR Accountant' => ['Records received payments; expense reports of every project to match QuickBooks.', ['receipts.record', 'receipts.view', 'numbers.reserve', 'reports.view']],
             'Budgeting Officer' => ['Agreements (projects), partners, budget lines, accounts, accounting and cost centers, individuals and suppliers.',
-                ['payroll.view', 'costs.manage', 'costs.view', 'master.projects.manage', 'master.partners.manage', 'master.budget_lines.manage', 'master.accounts.manage', 'master.cost_centers.manage',
+                ['master.projects.manage', 'master.partners.manage', 'master.budget_lines.manage', 'master.accounts.manage', 'master.cost_centers.manage',
                  'master.accounting_centers.manage', 'master.individuals.manage', 'master.suppliers.manage', 'reports.view']],
-            'Internal Viewer' => ['Audits every transaction, comments and returns them for correction; prepares Remittance Statements.',
-                ['review.access', 'form.*.view', 'form.remittance.create', 'remittance.prepare', 'receipts.view', 'advances.view', 'reports.view']],
-            'Treasury' => ['Bank Control, Journal, Refund, received payments and paying Remittance Statements.',
-                array_merge(array_values(array_diff($tr, ['form.remittance.*'])), ['form.remittance.view', 'payments.pay', 'receipts.inform', 'receipts.view', 'advances.view', 'numbers.reserve'])],
-            'Reporting Officer' => ['Chooses the project of received payments; sees every transaction and advance without editing; project expense reports.',
-                ['form.*.view', 'receipts.assign', 'receipts.view', 'advances.view', 'reports.view']],
-            'Logistics' => ['Advance holder: expenses and JAR Clearances; suppliers with the Budgeting Officer.', ['advances.hold', 'master.suppliers.manage']],
-            'HR' => ['Human resources: individuals, contracts, LOE of every employee and the monthly payroll.', ['master.individuals.manage', 'payroll.manage', 'payroll.view']],
+            'Internal Viewer' => ['Audits every transaction, comments and returns them for correction.',
+                ['review.access', 'form.*.view', 'receipts.view', 'reports.view']],
+            'Treasury' => ['Bank Control, Journal, Refund, received payments and the value actually paid on PTRs.',
+                array_merge($tr, ['payments.pay', 'receipts.inform', 'receipts.view', 'numbers.reserve'])],
+            'Reporting Officer' => ['Chooses the project of received payments; sees every transaction without editing; project expense reports.',
+                ['form.*.view', 'receipts.assign', 'receipts.view', 'reports.view']],
+            'Logistics' => ['Suppliers with the Budgeting Officer.', ['master.suppliers.manage']],
+            'HR' => ['Human resources: individuals.', ['master.individuals.manage']],
             'Programs' => ['Programs department (activity requests come later).', []],
-            'Employee' => ['Fills and signs forms (the access of the first version).', ['form.*.create', 'numbers.reserve']],
+            'Employee' => ['Fills forms.', ['form.*.create', 'numbers.reserve']],
         ];
     }
 }

@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BudgetLine;
 use App\Models\Currency;
-use App\Models\FundingLine;
 use App\Models\Project;
-use App\Services\CostRecovery;
 use App\Services\LineBudget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +24,7 @@ class ProjectController extends Controller
 
     public static function canSee($u): bool
     {
-        return collect(['master.projects.manage', 'master.budget_lines.manage', 'costs.view', 'costs.manage', 'payroll.view', 'reports.view'])->contains(fn ($p) => $u->hasPerm($p));
+        return collect(['master.projects.manage', 'master.budget_lines.manage', 'reports.view'])->contains(fn ($p) => $u->hasPerm($p));
     }
 
     protected function see(Request $r): void
@@ -325,7 +323,11 @@ class ProjectController extends Controller
         abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
         $p = Project::findOrFail($id);
         $v = $this->validated($r, $p);
+        $before = $p->only(array_keys($v));
         $p->fill($v);
+        if ($p->isDirty()) {
+            \App\Support\Audit::log('update', $p, 'Project changed', array_intersect_key($before, $p->getDirty()), $p->getDirty());
+        }
         if ($p->status_mode === 'auto') {
             $p->status = $p->statusByDates();
         }
@@ -345,6 +347,7 @@ class ProjectController extends Controller
         if (empty($v['new_end_date']) && empty((float) ($v['extra_amount'] ?? 0))) {
             return back()->withErrors(['new_end_date' => 'Give the new end date, an additional amount, or both.'])->withInput();
         }
+        \App\Support\Audit::log('update', $p, 'Extension added', ['end' => $p->end_date?->toDateString(), 'amount' => (float) $p->budget_total], $v);
         DB::transaction(function () use ($p, $v, $r) {
             \App\Models\ProjectAmendment::create(['project_id' => $p->id, 'kind' => 'extension', 'date' => $v['date'],
                 'old_end_date' => $p->end_date, 'new_end_date' => $v['new_end_date'] ?? null, 'old_amount' => $p->budget_total,
@@ -369,6 +372,7 @@ class ProjectController extends Controller
         $a = \App\Models\ProjectAmendment::where('project_id', $id)->findOrFail($amendment);
         $p = $a->project;
         abort_unless($p->amendments()->first()?->id === $a->id, 422, 'Only the last extension can be removed.');
+        \App\Support\Audit::log('delete', $p, 'Extension removed', $a->toArray());
         DB::transaction(function () use ($a, $p) {
             if ($a->new_end_date) {
                 $p->end_date = $a->old_end_date;
@@ -392,8 +396,6 @@ class ProjectController extends Controller
         $archived = $r->input('show') === 'archived';
         $lines = LineBudget::figures(BudgetLine::with('expenseAccount')->where('project_code', (string) $p->code)->where('active', !$archived)
             ->orderBy('accounting_center_code')->orderBy('id')->get(), [$p]);
-        $charged = CostRecovery::chargedBefore($lines->pluck('id')->all(), now()->addMonth()->startOfMonth());
-        $lines->each(fn ($b) => $b->charged_usd = (float) ($charged[$b->id] ?? 0));
         $counts = BudgetLine::where('project_code', (string) $p->code)->selectRaw('active, COUNT(*) n')->groupBy('active')->pluck('n', 'active');
         $p->load(['financeOfficer', 'mealOfficer', 'programOfficer']);
         return view('projects.show', [
@@ -405,7 +407,6 @@ class ProjectController extends Controller
             'isAdmin' => $r->user()->hasPerm('users.manage'),
             'p' => $p, 'lines' => $lines, 'groups' => $lines->groupBy(fn ($b) => $b->accounting_center_code . ' · ' . $b->accounting_center_name),
             'archived' => $archived, 'counts' => $counts, 'rate' => LineBudget::rateOf($p), 'cur' => strtoupper($p->currency?->code ?? 'USD'),
-            'funding' => FundingLine::with(['individual', 'budgetLine'])->where('project_code', (string) $p->code)->where('active', true)->get(),
             'canEdit' => $this->canEditLines($r), 'canEditProject' => $r->user()->hasPerm('master.projects.manage'),
             'amendments' => $p->amendments()->with('user')->get(), 'rateSource' => LineBudget::rateSource($p),
         ]);

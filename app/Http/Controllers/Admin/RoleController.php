@@ -48,6 +48,7 @@ class RoleController extends Controller
     {
         $v = $r->validate(['name' => 'required|string|max:80|unique:roles,name', 'description' => 'nullable|string|max:250']);
         $role = Role::create($v + ['permissions' => $this->perms($r)]);
+        \App\Support\Audit::log('access', $role, 'Role created', null, $role->permissions);
         return redirect()->route('admin.roles.edit', $role)->with('ok', 'Role created.');
     }
 
@@ -55,7 +56,9 @@ class RoleController extends Controller
     {
         $v = $r->validate(['name' => ['required', 'string', 'max:80', Rule::unique('roles', 'name')->ignore($role->id)],
                            'description' => 'nullable|string|max:250']);
+        $before = $role->permissions;
         $role->update($v + ['permissions' => $this->perms($r)]);
+        \App\Support\Audit::log('access', $role, 'Role permissions changed', $before, $role->permissions);
         return back()->with('ok', 'Role saved. It applies at the next page each member opens.');
     }
 
@@ -64,6 +67,7 @@ class RoleController extends Controller
         if ($role->users()->exists()) {
             return back()->withErrors(['role' => 'Remove this role from its ' . $role->users()->count() . ' user(s) first.']);
         }
+        \App\Support\Audit::log('access', $role, 'Role deleted', $role->permissions);
         $role->delete();
         return redirect()->route('admin.roles.index')->with('ok', 'Role deleted.');
     }

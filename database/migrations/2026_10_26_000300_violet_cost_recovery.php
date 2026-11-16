@@ -36,7 +36,6 @@ return new class extends Migration
             $t->decimal('amount_usd', 14, 2)->nullable()->after('percent');
             $t->string('reason', 20)->nullable()->after('amount_usd');   // plan: fair | capped | core
         });
-        \App\Support\CostRecoveryInstall::run();
     }
 
     public function down(): void

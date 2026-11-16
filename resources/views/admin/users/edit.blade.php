@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-head">
   <div class="grow"><h1>{{ $user->exists ? $user->name : 'New user' }}</h1>
-    @if($user->exists)<p>{{ $stats['docs'] }} {{ \Illuminate\Support\Str::plural('form', $stats['docs']) }} prepared · {{ $stats['waiting'] }} waiting for this person's signature · last sign-in {{ $user->last_login_at?->diffForHumans() ?? 'never' }}</p>
+    @if($user->exists)<p>{{ $stats['docs'] }} {{ \Illuminate\Support\Str::plural('form', $stats['docs']) }} prepared · last sign-in {{ $user->last_login_at?->diffForHumans() ?? 'never' }}</p>
     @else<p>The person signs in with this email and password. They can change the password later.</p>@endif
   </div>
 </div>
@@ -43,10 +43,12 @@
 </form>
 
 @if($user->exists)
-  <div class="section-title" style="margin-top:26px">Signature</div>
-  @include('account._signature', ['action' => route('admin.users.signature', $user), 'user' => $user])
-  @if($user->signature)
-    <form method="post" action="{{ route('admin.users.signature', $user) }}" style="margin-top:10px" onsubmit="return confirm('Remove this signature?')">@csrf<input type="hidden" name="remove" value="1"><button class="btn btn-ghost btn-sm"><i class="fa-regular fa-trash-can"></i> Remove signature</button></form>
-  @endif
+  <div class="panel" style="margin-top:18px"><div class="panel-body btn-row" style="justify-content:space-between">
+    <span><i class="fa-solid fa-shield-halved" style="color:var(--violet-2)"></i> Two-factor sign-in:
+      @if($user->hasTwoFactor())<b>on</b> since {{ $user->two_factor_confirmed_at->format('d M Y') }}@else<b>off</b>@if($user->needsTwoFactor()) <span class="danger-text">· required for this person's role</span>@endif @endif</span>
+    @if($user->hasTwoFactor())
+      <form method="post" action="{{ route('admin.users.2fa.reset', $user) }}" onsubmit="return confirm('Turn off two-factor sign-in for {{ $user->name }}? Use it when the phone is lost.')">@csrf<button class="btn btn-sm"><i class="fa-solid fa-rotate-left"></i> Reset (lost phone)</button></form>
+    @endif
+  </div></div>
 @endif
 @endsection

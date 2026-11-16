@@ -81,7 +81,6 @@ return new class extends Migration
             $t->timestamps();
         });
 
-        \App\Support\SharedCostInstall::run();
     }
 
     public function down(): void

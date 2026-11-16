@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['admin' => \App\Http\Middleware\AdminOnly::class,
                             'active' => \App\Http\Middleware\EnsureActive::class,
                             'idle' => \App\Http\Middleware\IdleTimeout::class,
-                            'modules' => \App\Http\Middleware\ModulesOn::class]);
+                            'twofactor' => \App\Http\Middleware\RequireTwoFactor::class]);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/');
     })

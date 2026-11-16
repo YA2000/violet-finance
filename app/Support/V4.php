@@ -28,7 +28,6 @@ class V4
         foreach (Document::whereIn('state', ['signing', 'to_pay'])->get() as $d) {
             $d->update(['state' => 'done', 'current_signer_id' => null, 'done_at' => now()]);
             \App\Services\Workflow::log($d, 'Final: signing and payment left the system.', 'done');
-            \App\Services\Advances::onDocumentDone($d->refresh());
         }
         $r = Role::where('name', 'Budgeting Officer')->first();
         if ($r && !in_array('reports.view', $r->permissions ?? [], true)) {

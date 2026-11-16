@@ -328,9 +328,6 @@ class FormsController extends Controller
                 $check($c['formula'] ?? '', 'Uploader "' . ($x['name'] ?? '') . '" column "' . ($c['header'] ?? '') . '"', $perLine ? $x['table'] : null);
             }
         }
-        if (!empty($s['advance']['holder']) && !$form->field($s['advance']['holder'])) {
-            $err[] = 'Advance: the holder field "' . $s['advance']['holder'] . '" does not exist.';
-        }
         return $err;
     }
 

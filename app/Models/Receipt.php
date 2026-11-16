@@ -30,7 +30,7 @@ class Receipt extends Model
     public static function make(array $vals): self
     {
         return DB::transaction(function () use ($vals) {
-            $vals['number'] = Advance::nextNumber('RP', static::class, (int) date('Y', strtotime($vals['date'])));
+            $vals['number'] = \App\Support\Numbering::next('RP', static::class, (int) date('Y', strtotime($vals['date'])));
             if (empty($vals['bank_ref'])) {
                 $vals['bank_ref'] = $vals['number'];
                 $vals['bank_ref_auto'] = true;

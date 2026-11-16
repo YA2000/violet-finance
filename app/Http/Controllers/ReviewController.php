@@ -14,7 +14,7 @@ class ReviewController extends Controller
 {
     public function index(Request $r)
     {
-        $q = Document::query()->with(['user', 'currentSigner'])->withCount([
+        $q = Document::query()->with(['user'])->withCount([
             'reviewComments as open_notes' => fn ($x) => $x->where('status', 'open'),
             'reviewComments as fixed_notes' => fn ($x) => $x->where('status', 'fixed'),
         ])->where('state', '!=', 'cancel');

@@ -26,12 +26,18 @@ class FormsConfigSeeder extends Seeder
                 ['release_no' => $n['release_no'], 'release_label' => $n['release_label']])->id;
         }
         foreach ($cfg['slots'] as $s) {
+            if (!isset($types[$s['form']])) {
+                continue;                       // a form that was removed from the system (e.g. remittance)
+            }
             FormSlot::updateOrCreate(['code' => $s['code']], ['form_type_id' => $types[$s['form']], 'name' => $s['name'],
                 'sequence' => $s['sequence']]);
         }
         $slots = FormSlot::pluck('id', 'code')->all();
         $haveRoles = FormRole::distinct()->pluck('form_type_id')->all();
         foreach ($cfg['roles'] as $r) {
+            if (!isset($types[$r['form']])) {
+                continue;
+            }
             $tid = $types[$r['form']];
             if (in_array($tid, $haveRoles, true)) {
                 continue;
@@ -42,6 +48,9 @@ class FormsConfigSeeder extends Seeder
             // (print_label is filled from the slot name by Upgrade::printLabels)
         }
         foreach ($cfg['prints'] as $p) {
+            if (!isset($types[$p['form']])) {
+                continue;
+            }
             FormPrint::firstOrCreate(['sheet' => $p['sheet']], [
                 'form_type_id' => $types[$p['form']], 'report' => $p['report'], 'sequence' => $p['sequence'],
                 'name' => $p['name'], 'form_number_id' => $p['number'] ? ($numbers[$p['number']] ?? null) : null,

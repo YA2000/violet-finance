@@ -30,12 +30,29 @@ class Upgrade
         static::users();
         static::printLabels();
         FormType::flush();
+        // the versioned steps need the whole schema: on a fresh install the early migrations call this before the
+        // later columns exist; they run when the last migration (or the seeder) calls it again
+        if (!static::schemaReady()) {
+            return;
+        }
         V3::run();
         V4::run();
         V5::run();
         V6::run();
         V7::run();
         V8::run();
+        V9::run();
+    }
+
+    /** Every column the versioned steps rely on exists. */
+    public static function schemaReady(): bool
+    {
+        foreach ([['txn_types', 'pr_field'], ['documents', 'edit_open'], ['currencies', 'in_usd'], ['projects', 'status_mode'], ['form_prints', 'rtl'], ['users', 'two_factor_secret']] as [$t, $c]) {
+            if (!Schema::hasColumn($t, $c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static function formFiles(): array

@@ -11,7 +11,6 @@ class Individual extends Model
     protected $casts = ['active' => 'boolean'];
 
     public function user() { return $this->hasOne(User::class); }
-    public function contracts() { return $this->hasMany(Contract::class)->orderByDesc('start_date'); }
 
     public function getLabelAttribute(): string
     {

@@ -36,7 +36,6 @@ class Lookup
         'accounting_centers' => [AccountingCenter::class, ['code', 'name'], 'code'],
         'txn_types' => [TxnType::class, ['name'], 'sequence'],
         'partners' => [\App\Models\Partner::class, ['name', 'code'], 'name'],
-        'advance_holders' => [\App\Models\AdvanceHolder::class, ['name'], 'name'],
         'bank_accounts' => [Account::class, ['code', 'name'], 'code', ['category' => 'Bank']],
         'users' => [\App\Models\User::class, ['name', 'email'], 'name'],
     ];
@@ -46,7 +45,7 @@ class Lookup
         'projects' => 'Projects', 'budget_lines' => 'Budget lines', 'accounts' => 'Chart of accounts', 'bank_accounts' => 'Bank accounts',
         'cost_centers' => 'Cost centers (units)', 'accounting_centers' => 'Accounting centers', 'currencies' => 'Currencies',
         'individuals' => 'Individuals (employees)', 'suppliers' => 'Suppliers', 'payees' => 'Suppliers + individuals',
-        'partners' => 'Partners / donors', 'advance_holders' => 'Advance holders', 'txn_types' => 'Transaction types', 'users' => 'Users',
+        'partners' => 'Partners / donors', 'txn_types' => 'Transaction types', 'users' => 'Users',
     ];
 
     public static function sourceNames(): array
@@ -68,7 +67,7 @@ class Lookup
             'budget_lines' => $m->code,
             'txn_types' => $m->name,
             'cost_centers', 'accounting_centers', 'bank_accounts' => $m->code . ' - ' . $m->name,
-            'advance_holders', 'users' => $m->name,
+            'users' => $m->name,
             default => str_starts_with($source, 'list:') ? $m->name : (($m->code ?? '') . ' - ' . $m->name),
         };
     }

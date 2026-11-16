@@ -19,10 +19,8 @@
 <div class="navbar-progress" id="navbar-progress"></div>
 @php($u = auth()->user())
 @php($myDrafts = \App\Models\Document::where('user_id', $u->id)->where('state', 'draft')->count())
-@php($viaRem = \App\Services\Remittances::enabled())
 @php($unread = \App\Models\Alert::where('user_id', $u->id)->whereNull('read_at')->count())
 @php($recCount = ($u->hasPerm('receipts.assign') ? \App\Models\Receipt::where('status', 'project')->count() : 0) + ($u->hasPerm('receipts.record') ? \App\Models\Receipt::where('status', 'record')->count() : 0))
-@php($setCount = $u->hasPerm('advances.manage') && \App\Support\Modules::on('advances') ? \App\Models\AdvanceSettlement::where('status', 'submitted')->count() : 0)
 @php($canReceipts = $u->hasPerm('receipts.inform') || $u->hasPerm('receipts.view') || $u->hasPerm('receipts.assign') || $u->hasPerm('receipts.record'))
 <div class="app">
   <div class="scrim" x-show="menu" x-cloak x-transition.opacity @click="menu = false"></div>
@@ -45,7 +43,7 @@
 
       @foreach(\App\Forms\FormRegistry::grouped() as $gname => $gforms)
         @php($visible = array_filter($gforms, fn ($f) => $u->hasPerm('form.' . $f->code . '.create') || $u->hasPerm('form.' . $f->code . '.view') || $u->hasPerm('form.' . $f->code . '.edit')))
-        @php($extraTr = $gname === 'Treasury' && ($canReceipts || ($viaRem && $u->hasPerm('payments.pay'))))
+        @php($extraTr = $gname === 'Treasury' && $canReceipts)
         @if(count($visible) || $extraTr)
           <div class="side-sec" data-sec="{{ \Illuminate\Support\Str::slug($gname) }}">
             <button type="button" class="side-group" @click="toggle($el)">{{ $gname }}<i class="fa-solid fa-chevron-down chev"></i></button>
@@ -65,41 +63,6 @@
       @endforeach
       @if((!\App\Forms\FormRegistry::grouped() || !array_key_exists('Treasury', \App\Forms\FormRegistry::grouped())) && $canReceipts)
         <a class="nav {{ request()->routeIs('receipts.*') ? 'active' : '' }}" href="{{ route('receipts.index') }}"><i class="fa-solid fa-hand-holding-dollar"></i>Received payments</a>
-      @endif
-
-      @if(\App\Support\Modules::on('advances') && ($u->hasPerm('advances.hold') || $u->holder || $u->hasPerm('advances.view') || $u->hasPerm('advances.manage')))
-        <div class="side-sec" data-sec="advances">
-          <button type="button" class="side-group" @click="toggle($el)">Advances<i class="fa-solid fa-chevron-down chev"></i></button>
-          <div class="side-items"><div>
-            @if($u->hasPerm('advances.hold') || $u->holder)
-              <a class="nav {{ request()->routeIs('advances.mine') ? 'active' : '' }}" href="{{ route('advances.mine') }}"><i class="fa-solid fa-wallet"></i>My advances</a>
-            @endif
-            @if($u->hasPerm('advances.view') || $u->hasPerm('advances.manage'))
-              <a class="nav {{ request()->routeIs('advances.index', 'advances.show', 'settlements.*') ? 'active' : '' }}" href="{{ route('advances.index') }}"><i class="fa-solid fa-chart-gantt"></i>Advances tracker
-                @if($setCount)<span class="count">{{ $setCount }}</span>@endif</a>
-            @endif
-          </div></div>
-        </div>
-      @endif
-
-      @php($canCosts = $u->hasPerm('costs.view') || $u->hasPerm('costs.manage'))
-      @php($canPayroll = $u->hasPerm('payroll.view') || $u->hasPerm('payroll.manage'))
-      @if(\App\Support\Modules::on('payroll') && ($canCosts || $canPayroll))
-        <div class="side-sec" data-sec="payroll">
-          <button type="button" class="side-group" @click="toggle($el)">Payroll &amp; allocation<i class="fa-solid fa-chevron-down chev"></i></button>
-          <div class="side-items"><div>
-            <a class="nav {{ request()->routeIs('lab.*') ? 'active' : '' }}" href="{{ route('lab.index') }}"><i class="fa-solid fa-flask"></i>Allocation (test)</a>
-            @if($canPayroll)
-              <a class="nav {{ request()->routeIs('payroll.index', 'payroll.show') ? 'active' : '' }}" href="{{ route('payroll.index') }}"><i class="fa-solid fa-money-check-dollar"></i>Payroll</a>
-              <a class="nav {{ request()->routeIs('payroll.loe', 'payroll.loe.*') ? 'active' : '' }}" href="{{ route('payroll.loe') }}"><i class="fa-solid fa-sliders"></i>LOE of the month</a>
-              <a class="nav {{ request()->routeIs('payroll.contracts*') ? 'active' : '' }}" href="{{ route('payroll.contracts') }}"><i class="fa-solid fa-file-signature"></i>Contracts</a>
-            @endif
-            <a class="nav {{ request()->routeIs('recovery.*') ? 'active' : '' }}" href="{{ route('recovery.index') }}"><i class="fa-solid fa-scale-balanced"></i>Cost recovery plan</a>
-            @if($canCosts)
-              <a class="nav {{ request()->routeIs('costs.*') ? 'active' : '' }}" href="{{ route('costs.index') }}"><i class="fa-solid fa-building-circle-arrow-right"></i>Shared costs</a>
-            @endif
-          </div></div>
-        </div>
       @endif
 
       @if($u->hasPerm('review.access') || $u->hasPerm('reports.view'))
@@ -130,11 +93,17 @@
             @if($canMaster)
               <a class="nav {{ request()->routeIs('admin.master.*', 'projects.*', 'lines.*') ? 'active' : '' }}" href="{{ route('admin.master.home') }}"><i class="fa-solid fa-database"></i>Master data</a>
             @endif
+            @can('master.currencies.manage')
+              <a class="nav {{ request()->routeIs('admin.rates.*') ? 'active' : '' }}" href="{{ route('admin.rates.index') }}"><i class="fa-solid fa-chart-line"></i>Exchange rates</a>
+            @endcan
             @can('users.manage')
               <a class="nav {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}"><i class="fa-solid fa-users"></i>Users</a>
             @endcan
             @can('roles.manage')
               <a class="nav {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}" href="{{ route('admin.roles.index') }}"><i class="fa-solid fa-user-shield"></i>Roles &amp; permissions</a>
+            @endcan
+            @can('users.manage')
+              <a class="nav {{ request()->routeIs('admin.audit.*') ? 'active' : '' }}" href="{{ route('admin.audit.index') }}"><i class="fa-solid fa-shield-halved"></i>Audit trail</a>
             @endcan
             @can('settings.manage')
               <a class="nav {{ request()->routeIs('admin.settings*') ? 'active' : '' }}" href="{{ route('admin.settings') }}"><i class="fa-solid fa-gear"></i>Settings</a>
@@ -146,7 +115,7 @@
     </nav>
     <div class="side-foot">
       <span class="avatar">{{ $u->initials() }}</span>
-      <a class="who" href="{{ route('account.signature') }}" style="text-decoration:none"><b>{{ $u->name }}</b><small>{{ \Illuminate\Support\Str::limit($u->roleNames(), 28) }}</small></a>
+      <a class="who" href="{{ route('account') }}" style="text-decoration:none"><b>{{ $u->name }}</b><small>{{ \Illuminate\Support\Str::limit($u->roleNames(), 28) }}</small></a>
       <form method="post" action="{{ route('logout') }}">@csrf<button title="Sign out" aria-label="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button></form>
     </div>
   </aside>
@@ -176,7 +145,7 @@
           <button type="button" class="me-btn" @click="open = !open" :aria-expanded="open" aria-label="Account"><span class="avatar">{{ $u->initials() }}</span></button>
           <div class="menu-pop" x-show="open" x-cloak x-transition.origin.top.right>
             <div class="menu-head"><b>{{ $u->name }}</b><small>{{ $u->email }}</small><small>{{ $u->roleNames() }}</small></div>
-            <a href="{{ route('account.signature') }}"><i class="fa-solid fa-signature"></i>My signature</a>
+            <a href="{{ route('account') }}"><i class="fa-regular fa-circle-user"></i>My account</a>
             <div class="sep"></div>
             <form method="post" action="{{ route('logout') }}">@csrf<button><i class="fa-solid fa-arrow-right-from-bracket"></i>Sign out</button></form>
           </div>

@@ -48,7 +48,6 @@
 <div class="tabs">
   <a class="{{ $tab === 'lines' ? 'on' : '' }}" href="{{ route('projects.show', $p->id) }}">Budget lines <span class="n">{{ $counts[1] ?? 0 }}</span></a>
   <a class="{{ $tab === 'payments' ? 'on' : '' }}" href="{{ route('projects.show', [$p->id, 'tab' => 'payments']) }}">Received payments <span class="n">{{ $receipts->count() }}</span></a>
-  @if($funding->count())<a class="{{ $tab === 'staff' ? 'on' : '' }}" href="{{ route('projects.show', [$p->id, 'tab' => 'staff']) }}">Staff paid by the project <span class="n">{{ $funding->count() }}</span></a>@endif
   <a class="{{ $tab === 'history' ? 'on' : '' }}" href="{{ route('projects.show', [$p->id, 'tab' => 'history']) }}">Extensions <span class="n">{{ $amendments->count() }}</span></a>
   @if($counts[0] ?? 0)<a class="{{ $tab === 'archived' ? 'on' : '' }}" href="{{ route('projects.show', [$p->id, 'show' => 'archived']) }}">Archived lines <span class="n">{{ $counts[0] }}</span></a>@endif
 </div>
@@ -83,11 +82,6 @@
     @endforeach</tbody></table></div>
   @else<div class="empty"><i class="fa-solid fa-calendar-plus"></i><b>No extension</b>@if($canEditProject)<a href="{{ route('projects.create', ['extend' => $p->id]) }}">Add an extension</a> when the agreement is extended.@endif</div>@endif
 </div>
-
-{{-- ============================== staff --}}
-@elseif($tab === 'staff')
-<div class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Employee</th><th>Line</th></tr></thead>
-  <tbody>@foreach($funding as $f)<tr><td>{{ $f->individual?->name }} <span class="hint">{{ $f->individual?->code }}</span></td><td><span class="ref">{{ $f->budgetLine?->code }}</span> <span class="hint">{{ $f->budgetLine?->description }}</span></td></tr>@endforeach</tbody></table></div></div>
 
 {{-- ============================== lines --}}
 @else

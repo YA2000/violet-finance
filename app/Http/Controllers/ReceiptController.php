@@ -128,6 +128,7 @@ class ReceiptController extends Controller
         $before = $receipt->only(array_keys($v));
         $receipt->update($v);
         $changed = collect($receipt->getChanges())->except(['updated_at'])->keys()->implode(', ');
+        \App\Support\Audit::log('update', $receipt, 'Received payment corrected' . ($changed ? ': ' . $changed : ''), $before, $receipt->only(array_keys($v)));
         $receipt->log('edit', 'Corrected by ' . $r->user()->name . ($changed ? ': ' . $changed : '') . '.', $r->user());
         return back()->with('ok', 'Payment saved.');
     }
@@ -136,6 +137,7 @@ class ReceiptController extends Controller
     public function destroy(Request $r, Receipt $receipt)
     {
         abort_unless($r->user()->hasPerm('receipts.manage'), 403);
+        \App\Support\Audit::log('delete', $receipt, 'Received payment deleted', $receipt->toArray());
         DB::transaction(function () use ($receipt, $r) {
             $receipt->reservation?->update(['state' => 'cancel', 'used_for' => 'Deleted receipt ' . $receipt->number]);
             foreach ($receipt->attachments as $a) {

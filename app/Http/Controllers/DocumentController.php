@@ -39,7 +39,7 @@ class DocumentController extends Controller
         $form = FormRegistry::get($code);
         $u = $r->user();
         $base = Document::visibleTo($u)->where('form_code', $code);
-        $q = (clone $base)->with(['user', 'currentSigner'])->orderByDesc('date')->orderByDesc('id');
+        $q = (clone $base)->with(['user'])->orderByDesc('date')->orderByDesc('id');
         $state = $r->query('state');
         if ($state) {
             $q->where('state', $state);
@@ -71,12 +71,6 @@ class DocumentController extends Controller
             $data = $form->normalize(json_decode($old, true) ?: [], true);
         }
         $data['_labels'] = $data['_labels'] ?? [];
-        // a new advance request of a registered holder: the advance goes to their own account
-        $hk = $form->settings()['advance']['holder'] ?? null;
-        if ($new && $hk && empty($data[$hk]) && ($h = \App\Models\AdvanceHolder::where('user_id', $u->id)->where('active', true)->first())) {
-            $data[$hk] = $h->id;
-            $data['_labels'][$hk] = \App\Services\Lookup::label('advance_holders', $h->id);
-        }
         // forms open to every user: the applicant is the person filling it
         if ($new && !empty($form->settings()['open_to_all']) && $form->field('applicant_id') && empty($data['applicant_id']) && $u->individual_id) {
             $data['applicant_id'] = $u->individual_id;
@@ -210,33 +204,6 @@ class DocumentController extends Controller
     }
 
     // ---------------------------------------------------------------- workflow
-    public function submit(Request $r, Document $doc)
-    {
-        abort_unless($doc->canEdit($r->user()), 403);
-        Workflow::finalize($doc, $r->user());
-        return redirect()->route('documents.show', $doc)->with('ok', 'Saved.');
-    }
-
-    public function sign(Request $r, Document $doc)
-    {
-        Workflow::sign($doc, $r->user());
-        $doc->refresh();
-        return redirect()->route('documents.show', $doc)->with('ok', $doc->state === 'done' ? 'Signed - the transaction is final.' : 'Signed.');
-    }
-
-    public function returnDoc(Request $r, Document $doc)
-    {
-        $v = $r->validate(['reason' => 'required|string|max:500']);
-        Workflow::returnToPreparer($doc, $r->user(), $v['reason']);
-        return redirect()->route('documents.inbox')->with('ok', $doc->number . ' returned to the preparer.');
-    }
-
-    public function reset(Request $r, Document $doc)
-    {
-        Workflow::resetDraft($doc, $r->user());
-        return back()->with('ok', 'Back to draft.');
-    }
-
     public function cancel(Request $r, Document $doc)
     {
         Workflow::cancel($doc, $r->user());
@@ -247,8 +214,8 @@ class DocumentController extends Controller
     {
         $u = $r->user();
         abort_unless(in_array($doc->state, ['draft', 'cancel'], true) && ($doc->canManage($u) || $doc->isOwner($u)), 403);
+        \App\Support\Audit::log('delete', $doc, 'Document deleted', ['form' => $doc->form_code, 'state' => $doc->state, 'amount' => $doc->amount, 'description' => $doc->description]);
         DB::transaction(function () use ($doc, $u) {
-            \App\Services\Advances::onJarDropped($doc, $u);
             Reservation::where('document_id', $doc->id)->get()->each->release();
             foreach ($doc->attachments as $a) {
                 Storage::disk('local')->delete($a->path);
@@ -274,26 +241,6 @@ class DocumentController extends Controller
             }
         }
         return redirect()->route('documents.show', $copy)->with('ok', 'Copy created - reserve a number for it.');
-    }
-
-    public function payment(Request $r, Document $doc)
-    {
-        $v = $r->validate(['paid_reservation_id' => 'nullable|exists:reservations,id', 'paid_amount' => 'nullable|numeric',
-            'paid_rate' => 'nullable|numeric', 'paid_date' => 'nullable|date']);
-        Workflow::savePayment($doc, $r->user(), $v + ['paid_amount' => null, 'paid_rate' => null, 'paid_date' => null]);
-        if ($r->input('then') === 'sign') {
-            return $this->sign($r, $doc->refresh());
-        }
-        return back()->with('ok', 'Payment details saved.');
-    }
-
-    public function paymentNumber(Request $r, Document $doc)
-    {
-        abort_unless($doc->isPayStep($r->user()), 403, 'Only the treasury / cashier of this document can reserve its payment number.');
-        $res = Reservation::reserve(Reservation::check($r->all()), $r->user());
-        Workflow::savePayment($doc, $r->user(), ['paid_reservation_id' => $res->id, 'paid_amount' => $doc->paid_amount,
-            'paid_rate' => $doc->paid_rate, 'paid_date' => $doc->paid_date?->toDateString() ?? $res->date->toDateString()]);
-        return back()->with('ok', 'Payment number ' . $res->number . ' reserved and linked.');
     }
 
     // ---------------------------------------------------------------- outputs
@@ -338,6 +285,7 @@ class DocumentController extends Controller
     {
         abort_unless($doc->canManage($r->user()) && $doc->state === 'done', 403);
         $doc->update(['edit_open' => true]);
+        \App\Support\Audit::log('unlock', $doc, 'Saved form opened for changes');
         Workflow::log($doc, 'Editing allowed.', 'note', $r->user());
         return back()->with('ok', ($doc->number ?: 'The form') . ' can be changed now. Saving locks it again.');
     }
@@ -484,6 +432,8 @@ class DocumentController extends Controller
         }
         $wasUploaded = $doc->uploaded;
         $doc->forceFill(['data' => $data, 'amount' => $form->amount($data), 'uploaded' => false, 'uploaded_at' => null])->save();
+        \App\Services\Expenses::sync($doc->refresh());
+        \App\Support\Audit::log('money', $doc, 'Treasury changed the value to pay', ['rate' => $t['rate'], 'total' => $oldTotal], ['rate' => $rate, 'total' => (float) $doc->amount, 'reason' => $v['reason'] ?? null]);
         $fmt = fn ($n) => rtrim(rtrim(number_format($n, 4, '.', ','), '0'), '.');
         Workflow::log($doc, sprintf('Treasury changed the value to pay: %s %s → %s, total %s → %s %s.%s%s', strtolower(trim(strtok($t['label'], '('))),
             $fmt($t['rate']), $fmt($rate), number_format($oldTotal, 2), number_format((float) $doc->amount, 2), $doc->currency,
@@ -495,7 +445,7 @@ class DocumentController extends Controller
     public function attach(Request $r, Document $doc)
     {
         $u = $r->user();
-        abort_unless($doc->canAttach($u) || $doc->isPayStep($u), 403, 'You cannot add files to this document now.');
+        abort_unless($doc->canAttach($u), 403, 'You cannot add files to this document now.');
         $max = (int) (((float) Setting::get('max_attachment_mb')) * 1024);
         $r->validate(['files' => 'required|array|max:20', 'files.*' => "file|mimetypes:application/pdf,image/png,image/jpeg|max:$max"],
             ['files.*.mimetypes' => 'Only PDF, PNG or JPG files can be attached.', 'files.*.max' => "Each file must be at most " . Setting::get('max_attachment_mb') . ' MB.']);
@@ -519,7 +469,7 @@ class DocumentController extends Controller
     {
         $u = $r->user();
         $doc = $attachment->document;
-        abort_unless($doc && ($doc->canManage($u) || ($attachment->user_id === $u->id && ($doc->canAttach($u) || $doc->isPayStep($u)))), 403);
+        abort_unless($doc && ($doc->canManage($u) || ($attachment->user_id === $u->id && $doc->canAttach($u))), 403);
         Storage::disk('local')->delete($attachment->path);
         $attachment->delete();
         Workflow::log($doc, 'File ' . $attachment->name . ' removed.', 'attach', $u);

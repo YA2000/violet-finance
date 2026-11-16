@@ -106,7 +106,6 @@ return new class extends Migration
             $t->timestamps();
         });
 
-        \App\Support\PayrollInstall::run();
     }
 
     public function down(): void

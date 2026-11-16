@@ -29,7 +29,8 @@ class MasterDataSeeder extends Seeder
         }
         DB::transaction(function () {
             $this->insert('currencies', array_map(fn ($r) => ['code' => $r['name'], 'name' => $r['full_name'],
-                'sequence' => $r['sequence'] ?? 10, 'active' => $r['active']], $this->load('currencies')));
+                'sequence' => $r['sequence'] ?? 10, 'active' => $r['active'],
+                'in_usd' => in_array(strtoupper($r['name']), \App\Support\V7::IN_USD, true)], $this->load('currencies')));
             $cur = DB::table('currencies')->pluck('id', 'code')->all();
             $this->insert('list_items', array_map(fn ($r) => ['category' => $r['category'], 'name' => $r['name'],
                 'sequence' => $r['sequence'] ?? 10, 'active' => $r['active']], $this->load('list_items')));

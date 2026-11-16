@@ -44,7 +44,7 @@
       <td class="num"><b>{{ array_sum($st) }}</b></td></tr>@endforeach</tbody>
   </table></div></div></div>
 @endif
-@foreach(['byPerson' => 'Waiting per person', 'byProject' => 'Top projects', 'byMonth' => 'Received per month', 'byUser' => 'Unused numbers per person'] as $var => $lbl)
+@foreach(['byMonth' => 'Received per month', 'byUser' => 'Unused numbers per person'] as $var => $lbl)
   @if(!empty($$var) && count($$var))
     @php($max = max(1, (float) collect($$var)->max()))
     <div class="panel" style="margin-bottom:18px"><div class="panel-head"><h2>{{ $lbl }}</h2></div><div class="panel-body hbars">
@@ -52,10 +52,7 @@
     </div></div>
   @endif
 @endforeach
-@if(!empty($overdue) && $overdue->count())
-  <div class="alert alert-warn"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Overdue advances:</b>
-    @foreach($overdue as $a)<a href="{{ route('advances.show', $a) }}" class="tag">{{ $a->number }} · {{ $a->holder->name }} · {{ $a->dueLabel() }}</a> @endforeach</div></div>
-@endif
+
 
 <div class="panel">
   <div class="panel-head"><h2>{{ count($rows) }} {{ \Illuminate\Support\Str::plural('row', count($rows)) }}</h2></div>

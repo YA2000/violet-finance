@@ -99,7 +99,9 @@ class ReservationController extends Controller
         if ($manage && ($st = $r->input('state')) && array_key_exists($st, Reservation::STATES)) {
             $v['state'] = $st;
         }
+        $before = $reservation->only(array_keys($v));
         $reservation->update($v);
+        \App\Support\Audit::log('update', $reservation, 'Number details changed', $before, $reservation->only(array_keys($v)));
         return back()->with('ok', $reservation->number . ' updated.');
     }
 
@@ -108,6 +110,7 @@ class ReservationController extends Controller
         $u = $r->user();
         abort_unless($u->hasPerm('numbers.manage') || ($reservation->user_id === $u->id && $reservation->state === 'reserved'), 403, 'Only free numbers you reserved can be cancelled.');
         $reservation->update(['state' => 'cancel']);
+        \App\Support\Audit::log('cancel', $reservation, 'Number cancelled');
         return back()->with('ok', $reservation->number . ' cancelled.');
     }
 
@@ -115,6 +118,7 @@ class ReservationController extends Controller
     public function destroy(Request $r, Reservation $reservation)
     {
         abort_unless($r->user()->hasPerm('numbers.manage'), 403);
+        \App\Support\Audit::log('delete', $reservation, 'Number deleted', $reservation->toArray());
         DB::transaction(function () use ($reservation) {
             \App\Models\Document::where('reservation_id', $reservation->id)->update(['reservation_id' => null]);
             \App\Models\Document::where('paid_reservation_id', $reservation->id)->update(['paid_reservation_id' => null]);
@@ -197,6 +201,7 @@ class ReservationController extends Controller
                 $t ? $t->update($vals) : TxnType::create($vals);
             }
         });
+        \App\Support\Audit::log('update', null, 'Transaction types saved', null, TxnType::orderBy('sequence')->get(['id', 'name', 'active', 'need_project', 'need_cost_center', 'pr_field'])->toArray());
         return redirect()->route('reservations.types')->with('ok', 'Transaction types saved.' . ($skipped ? ' In use, switched off instead of deleted: ' . implode(', ', $skipped) . '.' : ''));
     }
 

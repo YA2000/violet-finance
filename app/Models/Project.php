@@ -63,6 +63,16 @@ class Project extends Model
             return 0;
         }
         Setting::put('projects_refreshed_on', today()->toDateString());
+        try {
+            return static::doRefresh();
+        } catch (\Throwable $e) {
+            report($e);   // the follow-up must never break a page: logged, tried again tomorrow
+            return 0;
+        }
+    }
+
+    protected static function doRefresh(): int
+    {
         $n = 0;
         $auto = static::with('currency')->where('status_mode', 'auto')->get();
         $ended = $auto->filter(fn ($p) => $p->statusByDates() === 'Ended');

@@ -268,7 +268,7 @@
           </template>
         </div>
       </template>
-      <label class="check" style="margin-top:8px"><input type="checkbox" x-model="schema.settings.settlement_target" @change="touch()"> Advance settlements become this form (JAR)</label>
+
       <div class="props-sep">Spending report</div>
       <p class="hint">Which lines count as spending by budget line (Reports → Spending).</p>
       <div class="fgrid">

@@ -28,9 +28,7 @@ class Document extends Model
     public function signatures() { return $this->hasMany(DocumentSignature::class)->orderBy('sequence')->orderBy('id'); }
     public function attachments() { return $this->hasMany(Attachment::class)->orderBy('id'); }
     /** as a paid transaction: its places on Remittance Statements */
-    public function remittanceItems() { return $this->hasMany(RemittanceItem::class, 'document_id'); }
     /** as a Remittance Statement: the transactions it pays */
-    public function remittanceLines() { return $this->hasMany(RemittanceItem::class, 'remittance_id'); }
     public function events() { return $this->hasMany(DocumentEvent::class)->latest('id'); }
     public function reservation() { return $this->belongsTo(Reservation::class); }
     public function paidReservation() { return $this->belongsTo(Reservation::class, 'paid_reservation_id'); }
@@ -93,11 +91,6 @@ class Document extends Model
         return $this->signatures->filter(fn ($s) => $s->individual_id)->values();
     }
 
-    public function nextSignature(): ?DocumentSignature
-    {
-        return $this->activeSignatures()->first(fn ($s) => $s->state !== 'signed');
-    }
-
     // ---------------------------------------------------------------- access
     public function isOwner(User $u): bool
     {
@@ -122,9 +115,6 @@ class Document extends Model
      */
     public function canEdit(User $u): bool
     {
-        if ($this->form_code === \App\Services\Remittances::FORM) {
-            return false;
-        }
         $who = $this->isOwner($u) || $u->hasPerm('form.' . $this->form_code . '.edit');
         return match ($this->state) {
             'draft' => $who,
@@ -148,17 +138,6 @@ class Document extends Model
     public function canManage(User $u): bool
     {
         return $u->hasPerm('documents.manage');
-    }
-
-    public function canSign(User $u): bool
-    {
-        return in_array($this->state, ['signing', 'to_pay'], true) && $this->current_signer_id === $u->id;
-    }
-
-    public function isPayStep(User $u): bool
-    {
-        $n = $this->nextSignature();
-        return $this->state === 'to_pay' && $n && $n->is_payer && ($this->current_signer_id === $u->id || $u->hasPerm('documents.manage'));
     }
 
     public function reviewComments() { return $this->hasMany(ReviewComment::class)->latest('id'); }

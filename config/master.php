@@ -66,18 +66,6 @@ return [
             ['active', 'Active', 'switch', 'col' => 12],
         ],
     ],
-    'currencies' => [
-        'model' => Models\Currency::class, 'title' => 'Currencies', 'one' => 'currency', 'icon' => 'fa-money-bill-wave',
-        'group' => 'Budget', 'search' => ['code', 'name'], 'order' => ['sequence', 'asc'],
-        'list' => ['code' => 'Code', 'name' => 'Name', 'in_usd' => 'Rate typed in USD', 'active' => 'Active'],
-        'fields' => [
-            ['code', 'Code', 'text', 'required' => true, 'unique' => true, 'col' => 3],
-            ['name', 'Name', 'text', 'col' => 6],
-            ['sequence', 'Order', 'number', 'col' => 3],
-            ['in_usd', 'Rate typed as US dollars for 1 unit', 'switch', 'col' => 12, 'help' => 'On for euro, pound, Kuwaiti dinar... (1 EUR = 1.16 USD). Off for the others (1 USD = 122 SYP).'],
-            ['active', 'Active', 'switch', 'col' => 12],
-        ],
-    ],
     'accounting_centers' => [
         'model' => Models\AccountingCenter::class, 'title' => 'Accounting centers', 'one' => 'accounting center', 'icon' => 'fa-building-columns',
         'group' => 'Budget', 'search' => ['code', 'name', 'master_name'], 'order' => ['code', 'asc'],
@@ -156,12 +144,13 @@ return [
     'currencies' => [
         'model' => Models\Currency::class, 'title' => 'Currencies', 'one' => 'currency', 'icon' => 'fa-money-bill-1',
         'group' => 'Lists', 'search' => ['code', 'name'], 'order' => ['sequence', 'asc'],
-        'list' => ['code' => 'Code', 'name' => 'Name', 'usd_rate' => 'USD for 1', 'sequence' => 'Order', 'active' => 'Active'],
+        'list' => ['code' => 'Code', 'name' => 'Name', 'usd_rate' => 'USD for 1 (today)', 'in_usd' => 'Typed in USD', 'sequence' => 'Order', 'active' => 'Active'],
         'fields' => [
             ['code', 'Code', 'text', 'required' => true, 'unique' => true, 'col' => 3],
             ['name', 'Name', 'text', 'col' => 6],
             ['sequence', 'Order', 'int', 'col' => 3],
-            ['usd_rate', 'US dollars for 1 unit', 'number', 'col' => 6, 'help' => 'QuickBooks rate, used to compare project budgets in this currency (capacity and key of the cost recovery plan).'],
+            ['usd_rate', 'US dollars for 1 unit (today)', 'number', 'col' => 6, 'help' => 'Rate used when no dated rate exists (Currency rates page keeps the history).'],
+            ['in_usd', 'Rate typed as US dollars for 1 unit', 'switch', 'col' => 6, 'help' => 'On for euro, pound, Kuwaiti dinar... (1 EUR = 1.16 USD). Off for the others (1 USD = 122 SYP).'],
             ['active', 'Active', 'switch', 'col' => 12],
         ],
     ],

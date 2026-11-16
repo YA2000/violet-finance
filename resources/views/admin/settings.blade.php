@@ -33,40 +33,18 @@
         <div class="field" style="grid-column:span 7"><label for="s_idle">Sign out after inactivity</label>
           <div class="input-unit"><input id="s_idle" type="number" min="5" max="720" class="input num" name="idle_minutes" value="{{ old('idle_minutes', \App\Models\Setting::get('idle_minutes')) }}"><span>minutes</span></div>
           <span class="hint">Closing the browser does not keep anyone signed in past this time.</span></div>
-        <div class="field" style="grid-column:span 5"><label for="s_due">Advance "due soon" warning</label>
-          <div class="input-unit"><input id="s_due" type="number" min="1" max="60" class="input num" name="due_soon_days" value="{{ old('due_soon_days', \App\Models\Setting::get('due_soon_days')) }}"><span>days</span></div></div>
-        <div class="field" style="grid-column:span 7"><label>Payments</label>
-          <label class="check" style="height:38px"><span class="switch"><input type="checkbox" name="pay_through_remittance" value="1" @checked(\App\Models\Setting::get('pay_through_remittance') !== '0')><span></span></span> Pay only through Remittance Statements</label>
-          <span class="hint">Off: the treasury pays each transaction from its own page, as before.</span></div>
-        <div class="field" style="grid-column:span 12"><label>Sections of the menu</label>
-          <div class="btn-row" style="gap:22px">
-            <label class="check"><span class="switch"><input type="checkbox" name="module_advances" value="1" @checked(\App\Support\Modules::on('advances'))><span></span></span> Advances</label>
-            <label class="check"><span class="switch"><input type="checkbox" name="module_payroll" value="1" @checked(\App\Support\Modules::on('payroll'))><span></span></span> Payroll &amp; allocation</label>
-          </div>
-          <span class="hint">Off: the section leaves the menu and its pages close. Its data stays.</span></div>
+        <div class="field" style="grid-column:span 12"><label>Security</label>
+          <label class="check"><span class="switch"><input type="checkbox" name="two_factor_required" value="1" @checked(\App\Models\Setting::get('two_factor_required', '1') !== '0')><span></span></span> Two-factor sign-in required for administrators and for roles that change money or access</label>
+          <span class="hint">Users, roles, settings, saved forms, numbers, received payments, value to pay, form builder.</span></div>
         <div class="field" style="grid-column:span 12"><label for="s_to">Send uploader files to</label><input id="s_to" type="email" class="input" name="uploader_email_to" value="{{ old('uploader_email_to', \App\Models\Setting::get('uploader_email_to')) }}"></div>
         <div class="field" style="grid-column:span 12"><label for="s_cc">Copy to</label><input id="s_cc" class="input" name="uploader_email_cc" value="{{ old('uploader_email_cc', \App\Models\Setting::get('uploader_email_cc')) }}" placeholder="Separate addresses with commas"></div>
       </div>
     </div>
   </div>
-  <div class="panel" style="margin-top:18px">
-    <div class="panel-head"><h2>Payroll &amp; cost recovery</h2></div>
-    <div class="panel-body fgrid">
-      @php($S = fn ($k) => old($k, \App\Models\Setting::get($k)))
-      <div class="field" style="grid-column:span 6"><label>Key to share the support costs</label>
-        <select class="input" name="cost_key">@foreach(['auto' => 'Automatic: direct FTE of the payroll, else direct budget', 'direct_fte' => 'Direct FTE (programme staff in the payroll, from their LOE)', 'direct_budget' => 'Direct budget per month ((direct lines − spent) ÷ months left)'] as $k => $l)<option value="{{ $k }}" @selected($S('cost_key') === $k)>{{ $l }}</option>@endforeach</select></div>
-      <div class="field" style="grid-column:span 3"><label>Core fund target</label><div class="input-unit"><input class="input num" name="core_target_percent" value="{{ $S('core_target_percent') }}"><span>%</span></div></div>
-      <div class="field" style="grid-column:span 3"><label>Core fund project code</label><input class="input" name="payroll_core_project" value="{{ $S('payroll_core_project') }}"></div>
-      <div class="field" style="grid-column:span 4"><label>Core line for Syria support staff</label><input class="input mono" name="core_staff_bl_syria" value="{{ $S('core_staff_bl_syria') }}"></div>
-      <div class="field" style="grid-column:span 4"><label>Core line for Turkey support staff</label><input class="input mono" name="core_staff_bl_turkey" value="{{ $S('core_staff_bl_turkey') }}"></div>
-      <div class="field" style="grid-column:span 2"><label>Days in a month</label><input class="input num" name="payroll_days_basis" value="{{ $S('payroll_days_basis') }}"></div>
-      <div class="field" style="grid-column:span 2"><label>Months, no end date</label><input class="input num" name="months_without_end_date" value="{{ $S('months_without_end_date') }}"></div>
-    </div>
-  </div>
   <div class="panel" style="margin-top:18px;max-width:720px">
     <div class="panel-head"><h2>Transaction number counters</h2><span class="right hint">Last reserved: <span class="ref">{{ $last ?: '—' }}</span></span></div>
     <div class="panel-body">
-      <p class="hint" style="margin-bottom:12px">The next serial handed out for each year. Numbers already used are always skipped, so raising the counter is safe; lowering it only fills gaps.</p>
+      <p class="hint" style="margin-bottom:12px">The next serial handed out for each year. The counter only moves forward: a number is never given twice, even after it is deleted.</p>
       <table class="tbl"><thead><tr><th>Year</th><th>Next number</th><th>Will be</th></tr></thead><tbody>
       @foreach($counters as $c)
         <tr x-data="{ n: @js($c->next_number) }">
