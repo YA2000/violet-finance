@@ -5,7 +5,8 @@
 <div class="ledger" style="grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom:20px">
   <div class="lg"><b class="slab" x-data="countUp({{ $kpi['docs_month'] }})" x-text="n"></b><span>Forms this month</span></div>
   <div class="lg"><b class="slab" x-data="countUp({{ $kpi['final_month'] }})" x-text="n"></b><span>Final this month</span></div>
-  <div class="lg"><b class="slab" x-data="countUp({{ $kpi['open_adv'] }})" x-text="n"></b><span>Open advances</span></div>
+  @if($kpi['open_adv'] !== null)<div class="lg"><b class="slab" x-data="countUp({{ $kpi['open_adv'] }})" x-text="n"></b><span>Open advances</span></div>
+  @else<div class="lg"><b class="slab" x-data="countUp({{ $kpi['running'] }})" x-text="n"></b><span>Open projects</span></div>@endif
   <div class="lg"><b class="slab" x-data="countUp({{ $kpi['rec_pending'] }})" x-text="n"></b><span>Payments not recorded</span></div>
   <div class="lg"><b class="slab" x-data="countUp({{ $kpi['free_numbers'] }})" x-text="n"></b><span>Reserved, unused numbers</span></div>
 </div>

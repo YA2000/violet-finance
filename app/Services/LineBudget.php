@@ -5,12 +5,71 @@ namespace App\Services;
 use App\Models\BudgetLine;
 use App\Models\Project;
 
-/** Total / spent / remaining of budget lines in the project currency (spent is stored in USD for the allocation). */
+/**
+ * Total / spent / remaining of budget lines. Every expense is valued in US dollars (the functional currency) at the rate
+ * of its own transaction; the budget, written in the project currency, is turned into dollars at the project rate:
+ * the rate of the payments received from the donor, or the agreement rate before the first payment.
+ */
 class LineBudget
 {
+    protected static array $rates = [];
+    protected static ?array $received = null;
+
+    /** US dollars for 1 unit of the project currency. */
     public static function rateOf(?Project $p): float
     {
-        return CostRecovery::usdRate($p?->currency?->code);
+        if (!$p) {
+            return 0.0;
+        }
+        $cur = strtoupper($p->currency?->code ?? 'USD');
+        if ($cur === 'USD') {
+            return 1.0;
+        }
+        if (isset(static::$rates[$p->id])) {
+            return static::$rates[$p->id];
+        }
+        $r = static::receivedRates()[$p->id] ?? null;
+        if (!$r && $p->agreement_rate > 0) {
+            $r = $p->currency?->in_usd ? (float) $p->agreement_rate : 1 / (float) $p->agreement_rate;
+        }
+        return static::$rates[$p->id] = $r ?: CostRecovery::usdRate($cur);
+    }
+
+    /** Where the rate comes from: received payments, agreement, or the rate table. */
+    public static function rateSource(?Project $p): string
+    {
+        if (!$p || strtoupper($p->currency?->code ?? 'USD') === 'USD') {
+            return 'usd';
+        }
+        return isset(static::receivedRates()[$p->id]) ? 'received' : ($p->agreement_rate > 0 ? 'agreement' : 'table');
+    }
+
+    /** Weighted rate of the payments received per project: USD received / project currency received. */
+    protected static function receivedRates(): array
+    {
+        if (static::$received !== null) {
+            return static::$received;
+        }
+        $usd = $prj = [];
+        $curOf = Project::with('currency')->get(['id', 'currency_id'])->mapWithKeys(fn ($p) => [$p->id => strtoupper($p->currency?->code ?? 'USD')]);
+        foreach (\App\Models\Receipt::whereNotNull('project_id')->get(['project_id', 'amount', 'currency', 'project_amount', 'project_currency']) as $x) {
+            $pc = $curOf[$x->project_id] ?? 'USD';
+            $inPrj = $x->project_amount !== null && strtoupper((string) ($x->project_currency ?: $pc)) === $pc ? (float) $x->project_amount
+                : (strtoupper($x->currency) === $pc ? (float) $x->amount : null);
+            $r = CostRecovery::usdRate($x->currency);
+            if (!$inPrj || $r <= 0) {
+                continue;
+            }
+            $usd[$x->project_id] = ($usd[$x->project_id] ?? 0) + (float) $x->amount * $r;
+            $prj[$x->project_id] = ($prj[$x->project_id] ?? 0) + $inPrj;
+        }
+        $out = [];
+        foreach ($usd as $id => $u) {
+            if ($prj[$id] > 0) {
+                $out[$id] = $u / $prj[$id];
+            }
+        }
+        return static::$received = $out;
     }
 
     // ---------------------------------------------------------------- spending recorded by the system
@@ -34,8 +93,11 @@ class LineBudget
             foreach ($d->data[$an['table']] ?? [] as $l) {
                 $bl = (int) ($l[$an['budget_line']] ?? 0);
                 $amt = (float) ($l[$an['amount']] ?? 0);
+                $cur = strtoupper((string) $d->currency ?: 'USD');
+                // value in US dollars at the rate of the transaction itself (home amount), else at the rate table
+                $usd = isset($l['home_amount']) && $l['home_amount'] !== '' && $l['home_amount'] !== null ? (float) $l['home_amount'] : $amt * CostRecovery::usdRate($cur);
                 if ($bl && $amt) {
-                    $out[$bl][] = [$date, $amt, strtoupper((string) $d->currency ?: 'USD'), $d->id, $d->number, $d->form_code, $l['special_note'] ?? $d->description];
+                    $out[$bl][] = [$date, $amt, $cur, $d->id, $d->number, $d->form_code, $l['special_note'] ?? $d->description, $usd];
                 }
             }
         }
@@ -81,21 +143,23 @@ class LineBudget
             $list = [];
             $noRate = false;
             $own = $p?->currency?->code ? strtoupper($p->currency->code) : 'USD';
-            foreach ($docs[$b->id] ?? [] as [$date, $amt, $cur, $id, $num, $form, $note]) {
+            $du = 0.0;
+            foreach ($docs[$b->id] ?? [] as [$date, $amt, $cur, $id, $num, $form, $note, $usd]) {
                 if ($from === null || $date > $from) {
-                    $r = CostRecovery::usdRate($cur);
-                    $noRate = $noRate || ($cur !== $own && !($rate > 0 && $r > 0));
-                    $v = $cur === $own ? $amt : ($rate > 0 && $r > 0 ? $amt * $r / $rate : 0);
+                    $noRate = $noRate || !($rate > 0) || ($usd == 0 && $amt != 0);
+                    $v = $rate > 0 ? $usd / $rate : 0;
                     $d += $v;
-                    $list[] = ['id' => $id, 'number' => $num, 'date' => $date, 'amount' => $v, 'paid' => $amt, 'paid_cur' => $cur, 'form' => $form, 'note' => $note];
+                    $du += $usd;
+                    $list[] = ['id' => $id, 'number' => $num, 'date' => $date, 'amount' => $v, 'usd' => $usd, 'paid' => $amt, 'paid_cur' => $cur, 'form' => $form, 'note' => $note];
                 }
             }
             $b->doc_list = $list;
             $b->no_rate = $noRate;
-            $a = 0.0;
+            $a = $au = 0.0;
             foreach ($alloc[$b->id] ?? [] as [$date, $usd]) {
-                if (($from === null || $date > $from) && $rate > 0) {
-                    $a += $usd / $rate;
+                if ($from === null || $date > $from) {
+                    $au += $usd;
+                    $a += $rate > 0 ? $usd / $rate : 0;
                 }
             }
             $opening = $b->spent_before !== null && $rate > 0 ? (float) $b->spent_before / $rate : null;
@@ -108,8 +172,14 @@ class LineBudget
             $b->spent_cur = $opening === null && !$d && !$a ? null : round(($opening ?? 0) + $d + $a, 2);
             $b->remaining_cur = $b->spent_cur === null ? null : round($total - $b->spent_cur, 2);
             $b->used = $total > 0 && $b->spent_cur !== null ? $b->spent_cur / $total : null;
-            $b->total_usd = $rate > 0 ? $total * $rate : null;
-            $b->remaining_usd = $rate > 0 ? ($b->remaining_cur ?? $total) * $rate : null;
+            // US dollars: expenses at their own rate, the budget at the project rate
+            $b->total_usd = $rate > 0 ? round($total * $rate, 2) : null;
+            $b->opening_usd = $b->spent_before !== null ? (float) $b->spent_before : null;
+            $b->docs_usd = round($du, 2);
+            $b->alloc_usd = round($au, 2);
+            $b->spent_usd = $b->opening_usd === null && !$du && !$au ? null : round(($b->opening_usd ?? 0) + $du + $au, 2);
+            $b->remaining_usd = $b->total_usd === null ? null : round($b->total_usd - ($b->spent_usd ?? 0), 2);
+            $b->used_usd = $b->total_usd > 0 && $b->spent_usd !== null ? $b->spent_usd / $b->total_usd : null;
             return $b;
         });
     }
@@ -134,9 +204,9 @@ class LineBudget
             $from = $p->balance_date?->format('Y-m-d');
             $sys = 0.0;
             foreach ($lines->where('project_code', (string) $p->code) as $b) {
-                foreach ($docs[$b->id] ?? [] as [$date, $amt, $c]) {
-                    if ($from === null || $date > $from) {
-                        $sys += $c === $cur ? $amt : ($rate > 0 ? $amt * CostRecovery::usdRate($c) / $rate : 0);
+                foreach ($docs[$b->id] ?? [] as $x) {
+                    if ($from === null || $x[0] > $from) {
+                        $sys += $rate > 0 ? $x[7] / $rate : 0;
                     }
                 }
                 foreach ($alloc[$b->id] ?? [] as [$date, $usd]) {

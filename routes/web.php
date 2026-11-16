@@ -127,6 +127,8 @@ Route::middleware(['auth', 'active', 'idle', 'modules'])->group(function () {
     Route::post('/receipts/{receipt}/record', [ReceiptController::class, 'record'])->name('receipts.record')->middleware('can:receipts.record');
     Route::post('/receipts/{receipt}/back', [ReceiptController::class, 'back'])->name('receipts.back');
     Route::post('/receipts/{receipt}/files', [ReceiptController::class, 'files'])->name('receipts.files');
+    Route::put('/receipts/{receipt}/manage', [ReceiptController::class, 'manage'])->name('receipts.manage')->middleware('can:receipts.manage');
+    Route::delete('/receipts/{receipt}', [ReceiptController::class, 'destroy'])->name('receipts.destroy')->middleware('can:receipts.manage');
 
     // payroll: every employee enters the LOE of the month
     Route::get('/my-loe', fn () => redirect()->route('dashboard'))->name('loe.mine');   // off for now: everybody is counted as present
@@ -168,6 +170,8 @@ Route::middleware(['auth', 'active', 'idle', 'modules'])->group(function () {
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{id}/edit', [ProjectController::class, 'edit'])->whereNumber('id')->name('projects.edit');
     Route::put('/projects/{id}', [ProjectController::class, 'update'])->whereNumber('id')->name('projects.update');
+    Route::post('/projects/{id}/extend', [ProjectController::class, 'extend'])->whereNumber('id')->name('projects.extend');
+    Route::delete('/projects/{id}/amendments/{amendment}', [ProjectController::class, 'destroyAmendment'])->whereNumber('id')->name('projects.amendments.destroy');
     Route::post('/projects/{id}/lines', [ProjectController::class, 'addLines'])->whereNumber('id')->name('projects.lines.add');
     Route::get('/projects/{id}/quickbooks', [ProjectController::class, 'quickbooks'])->whereNumber('id')->name('projects.qb');
     Route::post('/projects/{id}/quickbooks', [ProjectController::class, 'confirmQuickbooks'])->whereNumber('id')->name('projects.qb.confirm');

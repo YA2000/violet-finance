@@ -426,3 +426,41 @@ code { background: var(--fill); color: var(--ink); border-radius: 5px; }
 .mail-preview { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--paper); display: flex; flex-direction: column; gap: 2px; }
 .mail-preview small { color: var(--muted); }
 .panel.treasury { border-color: #E6D8F4; }
+
+/* v8: projects */
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--paper); border: 1px solid var(--line-2); border-radius: 12px; }
+.seg button { border: 0; background: none; font: inherit; padding: 8px 14px; border-radius: 9px; cursor: pointer; color: var(--ink-2); display: inline-flex; gap: 8px; align-items: center; transition: background .15s var(--ease), box-shadow .15s; }
+.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(36,16,47,.12); font-weight: 600; }
+.seg-lg { display: flex; } .seg-lg button { flex: 1; justify-content: center; padding: 11px 14px; }
+.code-preview { padding: 10px 14px; background: var(--violet-50); border: 1px dashed var(--violet-2); border-radius: 10px; }
+.code-preview .ref { font-size: 20px; letter-spacing: .3px; }
+.pill.pst-pipeline { background: #EEF2FF; color: #3949AB; }
+.pill.pst-ongoing { background: #E7F6EC; color: #1E7B3A; }
+.pill.pst-ended { background: #FFF4E5; color: #A15C00; }
+.pill.pst-closed, .pill.pst-cancelled { background: var(--paper); color: var(--muted); }
+.pill.pst-suspended { background: #FDECEC; color: #B3261E; }
+.usd-note { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin: 0 0 12px; font-size: 13px; color: var(--ink-2); }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--violet); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(108,63,160,.3); text-underline-offset: 3px; }
+.link-btn:hover { text-decoration-color: currentColor; }
+.use-bar { width: 64px; height: 5px; border-radius: 3px; background: var(--line-2); overflow: hidden; display: inline-block; vertical-align: middle; margin-inline-end: 6px; }
+.use-bar i { display: block; height: 100%; background: var(--violet-2); border-radius: 3px; }
+.use-bar i.warn { background: #E8A33D; } .use-bar i.over { background: var(--danger); }
+.bl-tbl td.num { white-space: nowrap; }
+.proj-dash .pd-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 12px; margin-top: 12px; }
+.pd-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 14px; background: var(--paper); text-decoration: none; color: inherit; transition: transform .15s var(--ease); }
+a.pd-tile:hover { transform: translateY(-1px); }
+.pd-tile b { font: 700 30px/1.1 var(--sans); letter-spacing: -.5px; }
+.pd-tile span { color: var(--ink-2); font-size: 13px; } .pd-tile small { color: var(--muted); font-size: 12px; }
+.pd-tile.warn b { color: #A15C00; }
+.pd-curs { display: flex; flex-wrap: wrap; gap: 4px 22px; margin-top: 4px; } .pd-curs b { font-size: 20px; }
+.pd-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin-top: 18px; }
+.pd-cols h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.pd-bar { display: grid; grid-template-columns: 110px 1fr 28px; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 6px; }
+.pd-bar .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.pd-bar .track { height: 8px; border-radius: 4px; background: var(--line-2); overflow: hidden; }
+.pd-bar .track i { display: block; height: 100%; background: var(--violet-2); border-radius: 4px; animation: grow-x .6s var(--ease) both; transform-origin: left; }
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.pd-bar b { text-align: right; }
+.pd-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line-2); text-decoration: none; color: inherit; font-size: 13px; }
+.pd-row .ref { font-size: 12.5px; } .pd-row .hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1000px) { .proj-dash .pd-grid, .pd-cols { grid-template-columns: 1fr; } }

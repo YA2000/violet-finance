@@ -94,6 +94,33 @@
 </div>
 @endif
 
+@if($projects)
+<section class="panel proj-dash" style="margin-bottom:20px">
+  <div class="panel-head"><h2>Projects</h2><a class="right btn btn-ghost btn-sm" href="{{ route('projects.index') }}">All projects <i class="fa-solid fa-arrow-right"></i></a></div>
+  <div class="pd-grid">
+    <a class="pd-tile" href="{{ route('projects.index') }}"><b x-data="countUp({{ $projects['running'] }}, 200)" x-text="n">{{ $projects['running'] }}</b><span>Running</span>@if($projects['pipeline'])<small>+ {{ $projects['pipeline'] }} starting later</small>@endif</a>
+    <a class="pd-tile {{ $projects['soon']->count() ? 'warn' : '' }}" href="{{ route('projects.index', ['soon' => 1]) }}"><b x-data="countUp({{ $projects['soon']->count() }}, 260)" x-text="n">{{ $projects['soon']->count() }}</b><span>End within 30 days</span></a>
+    <div class="pd-tile wide"><span>Agreements {{ $projects['year'] }}</span>
+      <div class="pd-curs">@forelse($projects['agreements'] as $c => $a)<div><b>{{ money($a['sum']) }}</b> <small>{{ $c }} · {{ $a['n'] }} {{ \Illuminate\Support\Str::plural('project', $a['n']) }}</small></div>@empty<small class="hint">No agreement this year yet</small>@endforelse</div></div>
+  </div>
+  <div class="pd-cols">
+    <div><h3>By sector</h3>
+      @php($max = max(1, $projects['sectors']->max() ?? 1))
+      @foreach($projects['sectors'] as $sec => $n)
+        <div class="pd-bar"><span class="lbl">{{ $sec }}</span><span class="track"><i style="width: {{ 100 * $n / $max }}%; animation-delay: {{ $loop->index * 40 }}ms"></i></span><b>{{ $n }}</b></div>
+      @endforeach</div>
+    <div><h3>Ending soon</h3>
+      @forelse($projects['soon']->take(6) as $p)
+        <a class="pd-row" href="{{ route('projects.show', $p->id) }}"><span class="ref">{{ $p->year_no ? $p->full_code : $p->code }}</span><span class="hint">{{ \Illuminate\Support\Str::limit($p->partner?->name ?? $p->name, 26) }}</span><b class="{{ today()->diffInDays($p->end_date) <= 7 ? 'danger-text' : '' }}">{{ (int) today()->diffInDays($p->end_date) }} d</b></a>
+      @empty<p class="hint">Nothing ends in the next 30 days.</p>@endforelse</div>
+    <div><h3>Needs attention @if($projects['attentionCount'])<span class="tag">{{ $projects['attentionCount'] }}</span>@endif</h3>
+      @forelse($projects['attention'] as $x)
+        <a class="pd-row" href="{{ route('projects.show', $x['p']->id) }}"><span class="ref">{{ $x['p']->year_no ? $x['p']->full_code : $x['p']->code }}</span><span class="hint">{{ $x['why'] }}</span></a>
+      @empty<p class="hint">All clear.</p>@endforelse</div>
+  </div>
+</section>
+@endif
+
 <div class="dash">
   <div class="grid" style="gap:20px">
     <section class="panel" id="forms">
@@ -106,7 +133,7 @@
             <div class="fc-top"><span class="ic" style="background: {{ $f->color }}"><i class="fa-solid {{ $f->icon }}"></i></span>
               <a class="name" href="{{ route('documents.index', $f->code) }}">{{ $f->short }}</a>
               @if(auth()->user()->hasPerm('form.' . $f->code . '.create'))<a class="btn btn-sm btn-icon" style="margin-left:auto" href="{{ route('documents.create', $f->code) }}" title="New {{ $f->short }}" aria-label="New {{ $f->short }}"><i class="fa-solid fa-plus"></i></a>@endif</div>
-            <div class="bar" title="Draft / In signature / To pay / Final">
+            <div class="bar" title="Draft / Final">
               @foreach($stateColors as $sk => $col)
                 @if(($c[$sk] ?? 0) > 0)<span style="width: {{ 100 * $c[$sk] / max(1, $t) }}%; background: {{ $col }}; animation-delay: {{ 0.1 + $i * 0.04 }}s"></span>@endif
               @endforeach

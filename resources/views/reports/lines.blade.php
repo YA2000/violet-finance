@@ -32,7 +32,7 @@
 <div class="panel">
   @if($items->count())
   <div class="tbl-wrap"><table class="tbl">
-    <thead><tr><th></th><th>Project</th><th>Line</th><th class="num">Total</th><th class="num">Spent</th><th class="num">Remaining</th><th style="width:130px">Used</th></tr></thead>
+    <thead><tr><th></th><th>Project</th><th>Line</th><th class="num">Budget</th><th class="num">Budget USD</th><th class="num">Spent USD</th><th class="num">Remaining USD</th><th style="width:130px">Used</th></tr></thead>
     @foreach($items as $b)
       <tbody x-data="{ o: false }">
         <tr class="clickable" @click="o = !o">
@@ -40,25 +40,26 @@
           <td>{{ \Illuminate\Support\Str::limit($b->project_name ?: $b->project_code, 34) }}</td>
           <td><span class="ref">{{ $b->code }}</span><div class="hint">{{ \Illuminate\Support\Str::limit($b->description, 70) }}</div></td>
           <td class="num">{{ money($b->total_amount) }} <small>{{ $b->cur }}</small></td>
-          <td class="num">{{ $b->spent_cur !== null ? money($b->spent_cur) : '—' }}</td>
-          <td class="num"><b class="{{ $b->remaining_cur !== null && $b->remaining_cur < 0 ? 'danger-text' : '' }}">{{ $b->remaining_cur !== null ? money($b->remaining_cur) : money($b->total_amount) }}</b></td>
-          <td>@if($b->used !== null)<span class="lr-bar"><span class="{{ $b->used > 1 ? 'over' : '' }}" style="width: {{ min(100, round($b->used * 100)) }}%"></span></span><small>{{ number_format($b->used * 100, 0) }} %</small>@endif</td>
+          <td class="num">{{ $b->total_usd !== null ? money($b->total_usd) : '—' }}</td>
+          <td class="num">{{ $b->spent_usd !== null ? money($b->spent_usd) : '—' }}</td>
+          <td class="num"><b class="{{ $b->remaining_usd !== null && $b->remaining_usd < 0 ? 'danger-text' : '' }}">{{ $b->remaining_usd !== null ? money($b->remaining_usd) : '—' }}</b></td>
+          <td>@if($b->used_usd !== null)<span class="lr-bar"><span class="{{ $b->used_usd > 1 ? 'over' : '' }}" style="width: {{ min(100, round($b->used_usd * 100)) }}%"></span></span><small>{{ number_format($b->used_usd * 100, 0) }} %</small>@endif</td>
         </tr>
         <tr x-show="o" x-cloak class="lr-detail">
           <td></td>
-          <td colspan="6">
+          <td colspan="7">
             <table class="tbl">
-              <thead><tr><th>Date</th><th>Number</th><th>Form</th><th>Note</th><th class="num">Paid</th><th class="num">On the line</th></tr></thead>
+              <thead><tr><th>Date</th><th>Number</th><th>Form</th><th>Note</th><th class="num">Paid</th><th class="num">USD</th></tr></thead>
               <tbody>
-                @if($b->opening_known && (float) $b->opening_cur != 0)<tr><td colspan="5" class="muted">Spent before the system</td><td class="num">{{ money($b->opening_cur) }}</td></tr>@endif
+                @if($b->opening_known && (float) $b->opening_usd != 0)<tr><td colspan="5" class="muted">Spent before the system</td><td class="num">{{ money($b->opening_usd) }}</td></tr>@endif
                 @foreach($b->shown as $d)
                   <tr><td style="white-space:nowrap">{{ \Illuminate\Support\Carbon::parse($d['date'])->format('d M Y') }}</td>
                     <td><a class="ref" href="{{ route('documents.show', $d['id']) }}">{{ $d['number'] }}</a></td>
                     <td>{{ $forms[$d['form']] ?? $d['form'] }}</td><td>{{ \Illuminate\Support\Str::limit($d['note'], 70) }}</td>
-                    <td class="num">{{ money($d['paid']) }} <small>{{ $d['paid_cur'] }}</small></td><td class="num">{{ money($d['amount']) }}</td></tr>
+                    <td class="num">{{ money($d['paid']) }} <small>{{ $d['paid_cur'] }}</small></td><td class="num">{{ money($d['usd']) }}</td></tr>
                 @endforeach
-                @if((float) $b->alloc_cur != 0)<tr><td colspan="5" class="muted">Payroll and shared costs</td><td class="num">{{ money($b->alloc_cur) }}</td></tr>@endif
-                @if(!$b->shown->count() && !(float) $b->alloc_cur && !$b->opening_known)<tr><td colspan="6" class="muted">Nothing recorded on this line.</td></tr>@endif
+                @if((float) $b->alloc_usd != 0)<tr><td colspan="5" class="muted">Payroll and shared costs</td><td class="num">{{ money($b->alloc_usd) }}</td></tr>@endif
+                @if(!$b->shown->count() && !(float) $b->alloc_usd && !$b->opening_known)<tr><td colspan="6" class="muted">Nothing recorded on this line.</td></tr>@endif
               </tbody>
             </table>
           </td>

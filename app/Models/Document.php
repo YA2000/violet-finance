@@ -18,7 +18,7 @@ class Document extends Model
 
     public const STATES = [
         'draft' => 'Draft',
-        'signing' => 'In Signature',
+        'signing' => 'In Signature',          // old signature flow: no form goes there any more
         'to_pay' => 'Complete to Accruals',
         'done' => 'Final',
         'cancel' => 'Cancelled',

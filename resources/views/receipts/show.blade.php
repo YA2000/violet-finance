@@ -3,13 +3,20 @@
 @section('content')
 @php($u = auth()->user())
 @php($step = ['project' => 1, 'record' => 2, 'recorded' => 3][$rc->status])
-<div x-data="{ back: false }">
+<div x-data="{ back: false, edit: {{ $errors->any() && old('_method') === 'PUT' && old('record_description') !== null ? 'true' : 'false' }} }">
 <div class="page-head">
   <div class="grow"><h1><span class="slab">{{ $rc->number }}</span> <span class="pill st-{{ ['project' => 'to_pay', 'record' => 'signing', 'recorded' => 'done'][$rc->status] }}">{{ \App\Models\Receipt::STATES[$rc->status] }}</span></h1>
     <p>{{ money($rc->amount) }} {{ $rc->currency }} · {{ $rc->date->format('d M Y') }} · informed by {{ $rc->creator?->name }}</p></div>
+  <div class="btn-row">
   @if(($rc->status === 'record' && ($u->hasPerm('receipts.record') || $u->hasPerm('receipts.assign'))) || ($rc->status === 'recorded' && $u->hasPerm('receipts.record')))
     <button class="btn" @click="back = true"><i class="fa-solid fa-rotate-left"></i> Send back</button>
   @endif
+  @if($u->hasPerm('receipts.manage'))
+    <button class="btn" @click="edit = true"><i class="fa-solid fa-pen"></i> Correct</button>
+    <form method="post" action="{{ route('receipts.destroy', $rc) }}" onsubmit="return confirm('Delete payment {{ $rc->number }}?{{ $rc->reservation ? ' Its transaction number ' . $rc->reservation->number . ' is cancelled.' : '' }}')">@csrf @method('DELETE')
+      <button class="btn btn-ghost danger-text"><i class="fa-regular fa-trash-can"></i> Delete</button></form>
+  @endif
+  </div>
 </div>
 <div class="trail">
   <div class="step done"><div class="dot"><i class="fa-solid fa-check"></i></div><b>Informed</b><span>{{ $rc->creator?->name }}</span><small>{{ $rc->created_at->format('d M H:i') }}</small></div>
@@ -24,11 +31,11 @@
       <div class="panel-body">
         <dl class="dl">
           <dt>Bank account</dt><dd>{{ $rc->bankAccount ? $rc->bankAccount->code . ' - ' . $rc->bankAccount->name : '' }}</dd>
-          <dt>Bank notice</dt><dd>{{ $rc->bank_ref }} @if($rc->bank_ref_auto)<span class="tag">given by the system</span>@endif</dd>
+          <dt>Dekont</dt><dd>{{ $rc->bank_ref }} @if($rc->bank_ref_auto)<span class="tag">given by the system</span>@endif</dd>
           <dt>Amount</dt><dd><b class="slab" style="font-size:18px">{{ money($rc->amount) }}</b> {{ $rc->currency }}</dd>
           <dt>From</dt><dd>{{ $rc->payer ?: '—' }}</dd>
           <dt>Notes</dt><dd>{{ $rc->description ?: '—' }}</dd>
-          @if($rc->project)<dt>Project</dt><dd>{{ $rc->project->code }} - {{ $rc->project->name }} @if($rc->project_currency && strtoupper($rc->project_currency) !== strtoupper($rc->currency)) · <b>{{ money($rc->project_amount) }} {{ $rc->project_currency }}</b> in project currency @endif</dd>@endif
+          @if($rc->project)<dt>Project</dt><dd><a href="{{ route('projects.show', $rc->project_id) }}">{{ $rc->project->year_no ? $rc->project->full_code : $rc->project->code . ' - ' . $rc->project->name }}</a> @if($rc->project_currency && strtoupper($rc->project_currency) !== strtoupper($rc->currency)) · <b>{{ money($rc->project_amount) }} {{ $rc->project_currency }}</b> in project currency @endif</dd>@endif
           @if($rc->reservation)<dt>Transaction</dt><dd><span class="ref">{{ $rc->reservation->number }}</span> — {{ $rc->record_description }}</dd>@endif
         </dl>
       </div>
@@ -107,5 +114,28 @@
     <div class="modal-foot"><button type="button" class="btn" @click="back = false">Close</button><button class="btn btn-danger"><i class="fa-solid fa-rotate-left"></i> Send back</button></div>
   </form>
 </div>
+@if($u->hasPerm('receipts.manage'))
+<div class="modal-bg" x-show="edit" x-cloak @keydown.escape.window="edit = false">
+  <form class="modal modal-lg" method="post" action="{{ route('receipts.manage', $rc) }}" @click.outside="edit = false">
+    @csrf @method('PUT')
+    <div class="modal-head"><h2>Correct {{ $rc->number }}</h2><button type="button" class="x" @click="edit = false">&times;</button></div>
+    <div class="modal-body fgrid">
+      <div class="field" style="grid-column: span 4"><label>Payment date</label><input class="input" type="date" name="date" value="{{ old('date', $rc->date->format('Y-m-d')) }}" required></div>
+      <div class="field" style="grid-column: span 8"><label>Bank account / cash box</label>
+        @include('partials.pick', ['name' => 'bank_account_id', 'source' => 'bank_accounts', 'value' => old('bank_account_id', $rc->bank_account_id), 'text' => \App\Services\Lookup::label('bank_accounts', old('bank_account_id', $rc->bank_account_id)), 'placeholder' => 'Account…'])</div>
+      <div class="field" style="grid-column: span 4"><label>Dekont number</label><input class="input" name="bank_ref" value="{{ old('bank_ref', $rc->bank_ref_auto ? '' : $rc->bank_ref) }}" placeholder="Empty = system number"></div>
+      <div class="field" style="grid-column: span 5"><label>Amount</label><input class="input num" name="amount" value="{{ old('amount', $rc->amount) }}" required></div>
+      <div class="field" style="grid-column: span 3"><label>Currency</label><select class="input" name="currency">@foreach(\App\Models\Currency::where('active', true)->orderBy('sequence')->pluck('code') as $c)<option @selected(old('currency', $rc->currency) === $c)>{{ $c }}</option>@endforeach</select></div>
+      <div class="field" style="grid-column: span 8"><label>Project</label>
+        @include('partials.pick', ['name' => 'project_id', 'source' => 'projects', 'value' => old('project_id', $rc->project_id), 'text' => $rc->project_id ? \App\Services\Lookup::label('projects', old('project_id', $rc->project_id)) : '', 'placeholder' => 'Project…'])</div>
+      <div class="field" style="grid-column: span 4"><label>Amount in project currency</label><input class="input num" name="project_amount" value="{{ old('project_amount', $rc->project_amount) }}"></div>
+      <div class="field" style="grid-column: span 6"><label>Donor / payer</label><input class="input" name="payer" value="{{ old('payer', $rc->payer) }}"></div>
+      <div class="field" style="grid-column: span 6"><label>Notes</label><input class="input" name="description" value="{{ old('description', $rc->description) }}"></div>
+      <div class="field" style="grid-column: span 12"><label>Description in the system</label><input class="input" name="record_description" value="{{ old('record_description', $rc->record_description) }}"></div>
+    </div>
+    <div class="modal-foot"><span class="hint" style="margin-inline-end:auto">Every correction is written in the history.</span><button type="button" class="btn" @click="edit = false">Close</button><button class="btn btn-primary"><i class="fa-solid fa-check"></i> Save</button></div>
+  </form>
+</div>
+@endif
 </div>
 @endsection

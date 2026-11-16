@@ -31,13 +31,14 @@ class ReportController extends Controller
     {
         $kpi = [
             'docs_month' => Document::whereMonth('date', now()->month)->whereYear('date', now()->year)->where('state', '!=', 'cancel')->count(),
-            'waiting' => Document::whereIn('state', ['signing', 'to_pay'])->count(),
             'final_month' => Document::where('state', 'done')->where('done_at', '>=', now()->startOfMonth())->count(),
-            'open_adv' => Advance::where('status', 'open')->count(),
+            'open_adv' => \App\Support\Modules::on('advances') ? Advance::where('status', 'open')->count() : null,
+            'running' => \App\Models\Project::running()->count(),
             'rec_pending' => Receipt::where('status', '!=', 'recorded')->count(),
             'free_numbers' => Reservation::where('state', 'reserved')->count(),
         ];
-        return view('reports.index', ['reports' => static::REPORTS, 'kpi' => $kpi]);
+        $reports = array_filter(static::REPORTS, fn ($k) => $k !== 'advances' || \App\Support\Modules::on('advances'), ARRAY_FILTER_USE_KEY);
+        return view('reports.index', ['reports' => $reports, 'kpi' => $kpi]);
     }
 
     /** Budget line report: every line with its total, spent and remaining, and every expense recorded on it. */
@@ -73,7 +74,7 @@ class ReportController extends Controller
             ['path' => $r->url(), 'query' => $r->query()]);
         $forms = collect(FormRegistry::all(true))->mapWithKeys(fn ($f) => [$f->code => $f->short]);
         return view('reports.lines', ['items' => $items, 'projects' => $projects, 'forms' => $forms, 'show' => $show,
-            'count' => $lines->count(), 'over' => $lines->filter(fn ($b) => $b->remaining_cur !== null && $b->remaining_cur < 0)->count(),
+            'count' => $lines->count(), 'over' => $lines->filter(fn ($b) => $b->remaining_usd !== null && $b->remaining_usd < 0)->count(),
             'expenses' => $lines->sum(fn ($b) => $b->shown->count()), 'noRate' => $lines->where('no_rate', true)->count()]);
     }
 
@@ -85,16 +86,17 @@ class ReportController extends Controller
         $w->openToFile($path);
         $bold = (new Style())->setFontBold();
         $w->getCurrentSheet()->setName('Budget lines');
-        $w->addRow(Row::fromValues(['Project', 'Budget line', 'Description', 'Accounting center', 'Currency', 'Total', 'Spent before the system', 'Forms', 'Payroll & shared costs', 'Spent', 'Remaining', 'Used %'], $bold));
+        $w->addRow(Row::fromValues(['Project', 'Budget line', 'Description', 'Accounting center', 'Currency', 'Budget', 'Rate (USD for 1)', 'Budget USD',
+            'Spent before the system USD', 'Forms USD', 'Payroll & shared costs USD', 'Spent USD', 'Remaining USD', 'Used %'], $bold));
         foreach ($lines as $b) {
-            $w->addRow(Row::fromValues([$b->project_name, $b->code, $b->description, $b->accounting_center_name, $b->cur, (float) $b->total_amount, $b->opening_cur, $b->docs_cur, $b->alloc_cur,
-                $b->spent_cur, $b->remaining_cur, $b->used !== null ? round($b->used * 100, 1) : null]));
+            $w->addRow(Row::fromValues([$b->project_name, $b->code, $b->description, $b->accounting_center_name, $b->cur, (float) $b->total_amount, $b->rate ?: null, $b->total_usd,
+                $b->opening_usd, $b->docs_usd, $b->alloc_usd, $b->spent_usd, $b->remaining_usd, $b->used_usd !== null ? round($b->used_usd * 100, 1) : null]));
         }
         $w->addNewSheetAndMakeItCurrent()->setName('Expenses');
-        $w->addRow(Row::fromValues(['Project', 'Budget line', 'Date', 'Number', 'Form', 'Note', 'Amount paid', 'Paid in', 'Amount on the line', 'Line currency'], $bold));
+        $w->addRow(Row::fromValues(['Project', 'Budget line', 'Date', 'Number', 'Form', 'Note', 'Amount paid', 'Paid in', 'USD'], $bold));
         foreach ($lines as $b) {
             foreach ($b->shown as $d) {
-                $w->addRow(Row::fromValues([$b->project_name, $b->code, $d['date'], $d['number'], $d['form'], $d['note'], $d['paid'], $d['paid_cur'], round($d['amount'], 2), $b->cur]));
+                $w->addRow(Row::fromValues([$b->project_name, $b->code, $d['date'], $d['number'], $d['form'], $d['note'], $d['paid'], $d['paid_cur'], round($d['usd'], 2)]));
             }
         }
         $w->close();
@@ -103,7 +105,7 @@ class ReportController extends Controller
 
     public function show(Request $r, string $report)
     {
-        abort_unless(isset(static::REPORTS[$report]), 404);
+        abort_unless(isset(static::REPORTS[$report]) && ($report !== 'advances' || \App\Support\Modules::on('advances')), 404);
         $data = $this->{'r_' . $report}($r);
         $data += ['key' => $report, 'title' => static::REPORTS[$report][0], 'icon' => static::REPORTS[$report][1], 'desc' => static::REPORTS[$report][2]];
         if ($r->input('export')) {

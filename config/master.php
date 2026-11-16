@@ -146,9 +146,10 @@ return [
     'partners' => [
         'model' => Models\Partner::class, 'title' => 'Partners', 'one' => 'partner', 'icon' => 'fa-handshake',
         'group' => 'People', 'search' => ['code', 'name'], 'order' => ['name', 'asc'],
-        'list' => ['code' => 'Code', 'name' => 'Name'],
+        'list' => ['code' => 'Code', 'name' => 'Name', 'short' => 'Short name'],
         'fields' => [
             ['code', 'Code', 'text', 'col' => 4],
+            ['short', 'Short name (in project codes, e.g. ALRAHMA)', 'text', 'col' => 4],
             ['name', 'Name', 'text', 'required' => true, 'col' => 8],
         ],
     ],

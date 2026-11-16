@@ -65,11 +65,43 @@ class DashboardController extends Controller
                 $tasks[] = ['fa-receipt', $pay . ' ' . \Illuminate\Support\Str::plural('payment', $pay) . ' waiting for your proof', route('advances.mine'), ''];
             }
         }
+        $projects = ProjectController::canSee($u) ? $this->projects() : null;
         $forms = array_values(array_filter(FormRegistry::all(), fn ($f) => $u->hasPerm('form.' . $f->code . '.create') || $u->hasPerm('form.' . $f->code . '.view')));
         return view('dashboard', [
             'tasks' => $tasks, 'creatable' => array_values(array_filter($forms, fn ($f) => $u->hasPerm('form.' . $f->code . '.create'))),
             'kpi' => $kpi, 'states' => $states, 'months' => $months, 'recent' => $recent,
-            'free' => $free, 'forms' => $forms, 'byForm' => $byForm, 'monthByForm' => $monthByForm,
+            'free' => $free, 'forms' => $forms, 'byForm' => $byForm, 'monthByForm' => $monthByForm, 'projects' => $projects,
         ]);
+    }
+
+    /** Project follow-up: running, ending within 30 days, agreements of the year by currency, projects per sector, attention. */
+    protected function projects(): array
+    {
+        \App\Models\Project::refreshStatuses();
+        $all = \App\Models\Project::with(['currency', 'partner'])->get()->reject->isInternal();
+        $open = $all->filter->isRunning();
+        $year = (int) date('Y');
+        $thisYear = $all->filter(fn ($p) => ($p->year ?? $p->start_date?->year) === $year && !in_array($p->status, ['Cancelled'], true));
+        $ended = $all->where('status', 'Ended');
+        $figs = $ended->isEmpty() ? [] : \App\Services\LineBudget::projectFigures($ended);
+        // ended but not closed: money left with us or due from the donor (balance unknown: only the recently ended ones)
+        $attention = $ended->map(function ($p) use ($figs) {
+            $f = $figs[(string) $p->code] ?? null;
+            $bal = $f && $f['received'] !== null && $f['spent'] !== null ? (float) $f['received'] - (float) $f['spent'] - (float) $f['overhead'] : null;
+            if ($bal === null) {
+                return $p->end_date && $p->end_date->gte(today()->subDays(90)) ? ['p' => $p, 'why' => 'Ended - donor balance unknown'] : null;
+            }
+            return ['p' => $p, 'why' => $bal > 0 ? 'Ended - ' . money($bal) . ' ' . $f['cur'] . ' not spent' : 'Ended - ' . money(-$bal) . ' ' . $f['cur'] . ' due from the donor'];
+        })->filter()->merge($open->filter(fn ($p) => !$p->finance_officer_id || !$p->budget_total)->map(fn ($p) => ['p' => $p, 'why' => !$p->budget_total ? 'No agreement amount' : 'No finance focal point']))
+            ->sortBy(fn ($x) => $x['p']->end_date)->values();
+        return [
+            'running' => $open->where('status', 'Ongoing')->count(),
+            'pipeline' => $open->where('status', 'Pipeline')->count(),
+            'soon' => $open->filter->endingSoon()->sortBy('end_date')->values(),
+            'year' => $year,
+            'agreements' => $thisYear->groupBy(fn ($p) => $p->currency?->code ?? '?')->map(fn ($g) => ['n' => $g->count(), 'sum' => $g->sum(fn ($p) => (float) $p->budget_total)])->sortByDesc('sum'),
+            'sectors' => $open->groupBy(fn ($p) => $p->sector ?: 'No sector')->map->count()->sortDesc(),
+            'attention' => $attention->take(8), 'attentionCount' => $attention->count(),
+        ];
     }
 }

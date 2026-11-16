@@ -25,7 +25,7 @@
   @if($docs->count())
   <div class="tbl-wrap">
     <table class="tbl">
-      <thead><tr><th>Number</th><th>Date</th><th>Description</th><th class="num">Amount</th><th>Prepared by</th><th>Waiting for</th><th>Status</th></tr></thead>
+      <thead><tr><th>Number</th><th>Date</th><th>Description</th><th class="num">Amount</th><th>Prepared by</th><th>Status</th></tr></thead>
       <tbody>
       @foreach($docs as $d)
         <tr class="link" onclick="location.href='{{ route('documents.show', $d) }}'">
@@ -34,8 +34,7 @@
           <td style="max-width:420px"><a href="{{ route('documents.show', $d) }}" style="color:inherit">{{ \Illuminate\Support\Str::limit($d->description, 80) }}</a></td>
           <td class="num">@if($d->amount !== null){{ money($d->amount) }} <small>{{ $d->currency }}</small>@endif</td>
           <td>{{ $d->user->name }}</td>
-          <td>{{ $d->currentSigner?->name }}</td>
-          <td><span class="pill st-{{ $d->state }}">{{ $d->stateLabel() }}</span>@if($d->uploaded) <i class="fa-solid fa-cloud-arrow-up muted" title="Uploaded"></i>@endif</td>
+          <td class="nowrap"><span class="pill st-{{ $d->state }}">{{ $d->stateLabel() }}</span>@if($d->isLocked()) <i class="fa-solid fa-lock muted" title="Saved and locked"></i>@endif @if($d->uploaded) <i class="fa-solid fa-cloud-arrow-up muted" title="Uploaded to QuickBooks {{ $d->uploaded_at?->format('d M') }}"></i>@endif</td>
         </tr>
       @endforeach
       </tbody>

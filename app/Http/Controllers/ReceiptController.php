@@ -49,21 +49,35 @@ class ReceiptController extends Controller
         [$arr, $file] = Files::rules();
         $v = $r->validate(['date' => 'required|date', 'bank_account_id' => 'required|exists:accounts,id', 'bank_ref' => 'nullable|string|max:80',
             'no_ref' => 'nullable|boolean', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|max:10',
-            'payer' => 'nullable|string|max:190', 'description' => 'nullable|string|max:1000', 'files' => $arr, 'files.*' => $file], Files::messages());
+            'payer' => 'nullable|string|max:190', 'description' => 'nullable|string|max:1000', 'project_id' => 'nullable|exists:projects,id',
+            'files' => $arr, 'files.*' => $file], Files::messages(), ['bank_ref' => 'Dekont number']);
         if (!$r->boolean('no_ref') && empty($v['bank_ref'])) {
-            return back()->withErrors(['bank_ref' => 'Write the bank notice number, or tick “No notice number” so the system gives one.'])->withInput();
+            return back()->withErrors(['bank_ref' => 'Write the Dekont (bank notice) number, or tick “No Dekont number” so the system gives one.'])->withInput();
         }
-        $rec = DB::transaction(function () use ($r, $v) {
+        // project known by the treasury: same currency as the project -> straight to AR; another currency -> reporting gives
+        // the amount in the project currency. No project -> reporting chooses it.
+        $p = !empty($v['project_id']) ? Project::with(['currency', 'partner'])->find($v['project_id']) : null;
+        $pc = $p ? strtoupper($p->currency?->code ?? 'USD') : null;
+        $direct = $p && $pc === strtoupper($v['currency']);
+        $rec = DB::transaction(function () use ($r, $v, $p, $pc, $direct) {
             $rec = Receipt::make(collect($v)->except(['files', 'no_ref'])->all() + ['bank_ref' => $r->boolean('no_ref') ? null : $v['bank_ref'],
-                'status' => 'project', 'created_by' => $r->user()->id]);
+                'payer' => $v['payer'] ?? null ?: $p?->partner?->name,
+                'project_currency' => $pc, 'project_amount' => $direct ? $v['amount'] : null,
+                'status' => $direct ? 'record' : 'project', 'assigned_by' => $direct ? $r->user()->id : null, 'assigned_at' => $direct ? now() : null,
+                'created_by' => $r->user()->id]);
             foreach ($r->file('files', []) as $f) {
                 Attachment::store($f, ['receipt_id' => $rec->id, 'kind' => 'bank notice'], $r->user(), 'receipts/' . $rec->id);
             }
-            $rec->log('inform', 'Payment informed by ' . $r->user()->name . '.', $r->user());
+            $rec->log('inform', 'Payment informed by ' . $r->user()->name . ($p ? ' for project ' . $p->full_code : '') . '.', $r->user());
             return $rec;
         });
+        if ($direct) {
+            Alert::send('receipts.record', 'Payment ' . $rec->number . ' is ready to record', $p->full_code . ' · ' . number_format($rec->amount, 2) . ' ' . $rec->currency,
+                route('receipts.show', $rec), 'fa-file-signature', $r->user()->id);
+            return redirect()->route('receipts.show', $rec)->with('ok', 'Payment ' . $rec->number . ' informed for ' . $p->full_code . ' - the AR accountant is notified.');
+        }
         Alert::send('receipts.assign', 'New payment ' . $rec->number . ': ' . number_format($rec->amount, 2) . ' ' . $rec->currency,
-            'Choose the project it belongs to.', route('receipts.show', $rec), 'fa-hand-holding-dollar', $r->user()->id);
+            $p ? "Project $p->full_code is in $pc: give the amount in $pc." : 'Choose the project it belongs to.', route('receipts.show', $rec), 'fa-hand-holding-dollar', $r->user()->id);
         return redirect()->route('receipts.show', $rec)->with('ok', 'Payment ' . $rec->number . ' informed - reporting is notified.');
     }
 
@@ -91,6 +105,45 @@ class ReceiptController extends Controller
         $receipt->update($v);
         $receipt->log('edit', 'Details corrected by ' . $r->user()->name . '.', $r->user());
         return back()->with('ok', 'Saved.');
+    }
+
+    /** Admin (receipts.manage): corrects any detail at any step. */
+    public function manage(Request $r, Receipt $receipt)
+    {
+        abort_unless($r->user()->hasPerm('receipts.manage'), 403);
+        $v = $r->validate(['date' => 'required|date', 'bank_account_id' => 'required|exists:accounts,id', 'bank_ref' => 'nullable|string|max:80',
+            'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|max:10', 'payer' => 'nullable|string|max:190',
+            'description' => 'nullable|string|max:1000', 'project_id' => 'nullable|exists:projects,id', 'project_amount' => 'nullable|numeric|min:0',
+            'record_description' => 'nullable|string|max:1000'], [], ['bank_ref' => 'Dekont number']);
+        $p = !empty($v['project_id']) ? Project::with('currency')->find($v['project_id']) : null;
+        $v['project_currency'] = $p ? strtoupper($p->currency?->code ?? 'USD') : null;
+        if ($p && $v['project_currency'] === strtoupper($v['currency']) && empty($v['project_amount'])) {
+            $v['project_amount'] = $v['amount'];
+        }
+        if (empty($v['bank_ref'])) {
+            [$v['bank_ref'], $v['bank_ref_auto']] = [$receipt->number, true];
+        } else {
+            $v['bank_ref_auto'] = false;
+        }
+        $before = $receipt->only(array_keys($v));
+        $receipt->update($v);
+        $changed = collect($receipt->getChanges())->except(['updated_at'])->keys()->implode(', ');
+        $receipt->log('edit', 'Corrected by ' . $r->user()->name . ($changed ? ': ' . $changed : '') . '.', $r->user());
+        return back()->with('ok', 'Payment saved.');
+    }
+
+    /** Admin: delete. Its transaction number is cancelled, never given again. */
+    public function destroy(Request $r, Receipt $receipt)
+    {
+        abort_unless($r->user()->hasPerm('receipts.manage'), 403);
+        DB::transaction(function () use ($receipt, $r) {
+            $receipt->reservation?->update(['state' => 'cancel', 'used_for' => 'Deleted receipt ' . $receipt->number]);
+            foreach ($receipt->attachments as $a) {
+                $a->delete();
+            }
+            $receipt->delete();
+        });
+        return redirect()->route('receipts.index')->with('ok', 'Payment ' . $receipt->number . ' deleted' . ($receipt->reservation ? '; ' . $receipt->reservation->number . ' cancelled.' : '.'));
     }
 
     /** Reporting officer: the project (and, for another currency, the payment request + amount in project currency). */

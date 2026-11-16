@@ -5,8 +5,8 @@
   $keep = request()->only(['q', 'office', 'manager', 'cur', 'soon', 'show', 'sector']);
 @endphp
 <div class="page-head">
-  <div class="grow"><h1>{{ $ended ? 'Ended projects' : 'Running projects' }}</h1>
-    <p>{{ $ended ? 'Switched off: they and their budget lines are hidden everywhere. Set a project back to Ongoing to bring it back.' : 'Only the running projects and their lines appear in the system. Click a project for its budget lines.' }}</p></div>
+  <div class="grow"><h1>{{ $ended ? 'Closed projects' : 'Open projects' }}</h1>
+    <p>{{ $ended ? 'Closed, suspended or cancelled: they and their budget lines are hidden everywhere. Set the status back to Automatic to open one again.' : 'Pipeline, ongoing and ended projects (until their donor balance closes). The status follows the dates by itself. Click a project for its budget lines.' }}</p></div>
   <div class="btn-row">
     <a class="btn" href="{{ route('projects.list.export') }}"><i class="fa-solid fa-file-excel"></i> Excel</a>
     @if($canEdit)
@@ -80,10 +80,10 @@
       @else
       <tr class="clickable" onclick="location.href='{{ route('projects.show', $p->id) }}'">
         @php($f = $figs[(string) $p->code] ?? null)
-        <td><b>{{ $p->code }}</b> {{ \Illuminate\Support\Str::limit($p->name, 38) }} <span class="hint">{{ $p->currency?->code }}{{ $p->sector ? ' · ' . $p->sector : '' }}</span>@if(!$p->inQuickBooks())<span class="pill st-to_pay" style="height:18px;font-size:10.5px">not in QB</span>@endif</td>
+        <td><b>{{ $p->code }}</b> {{ \Illuminate\Support\Str::limit($p->name, 38) }} @if($p->status !== 'Ongoing')<span class="pill pst-{{ strtolower($p->status) }}" style="height:18px;font-size:10.5px">{{ $p->status }}</span>@endif @if($p->endingSoon() && $p->isRunning())<span class="pill st-cancel" style="height:18px;font-size:10.5px">{{ (int) today()->diffInDays($p->end_date) }} d left</span>@endif <span class="hint">{{ $p->currency?->code }}{{ $p->sector ? ' · ' . $p->sector : '' }}</span>@if(!$p->inQuickBooks())<span class="pill st-to_pay" style="height:18px;font-size:10.5px">not in QB</span>@endif</td>
         <td>{{ $p->office }}</td><td>{{ $p->financeOfficer?->name ?? $p->manager }}</td>
         <td>{{ $p->end_date?->format('d M Y') }}</td>
-        <td class="num">@if($m !== null)<span class="{{ $p->endsSoon(2) || $m == 0 ? 'danger-text' : '' }}">{{ number_format($m, 1) }}</span>@endif</td>
+        <td class="num">@if($m !== null)<span class="{{ $p->endingSoon() || $m == 0 ? 'danger-text' : '' }}">{{ number_format($m, 1) }}</span>@endif</td>
         <td class="num">{{ $p->budget_total !== null ? money($p->budget_total) : '' }}</td>
         <td class="num">{{ $f && $f['spent'] !== null ? money($f['spent']) : '' }}</td>
         <td class="num"><b class="{{ $f && $f['remaining'] < 0 ? 'danger-text' : '' }}">{{ $f && $f['remaining'] !== null ? money($f['remaining']) : '' }}</b></td>
@@ -96,7 +96,7 @@
 </div>
 @if($edit && $list->count())
   <div class="panel btn-row" style="position:sticky;bottom:12px;justify-content:flex-end;padding:10px 14px;margin-top:12px;box-shadow:0 6px 24px rgba(36,16,47,.12)">
-    <span class="hint" style="margin-inline-end:auto">Amounts in the project currency. A status other than Ongoing switches the project off and archives its lines.</span>
+    <span class="hint" style="margin-inline-end:auto">Amounts in the project currency. Closed, Suspended or Cancelled switch the project off and archive its lines.</span>
     <button class="btn btn-primary"><i class="fa-solid fa-check"></i> Save all</button></div>
 </form>
 @endif
@@ -111,6 +111,6 @@
 
 <p class="hint" style="margin-top:14px">
   @unless($ended)Internal, always active: @foreach($internal as $p)<a href="{{ route('projects.show', $p->id) }}">{{ $p->code }} {{ $p->name }}</a>@if(!$loop->last) · @endif @endforeach · @endunless
-  @if($ended)<a href="{{ route('projects.index') }}"><i class="fa-solid fa-arrow-left"></i> Running projects</a>@else<a href="{{ route('projects.index', ['show' => 'ended']) }}">Ended projects ({{ $endedCount }})</a>@endif
+  @if($ended)<a href="{{ route('projects.index') }}"><i class="fa-solid fa-arrow-left"></i> Running projects</a>@else<a href="{{ route('projects.index', ['show' => 'ended']) }}">Closed projects ({{ $endedCount }})</a>@endif
 </p>
 @endsection

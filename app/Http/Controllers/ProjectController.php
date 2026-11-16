@@ -43,6 +43,7 @@ class ProjectController extends Controller
     public function index(Request $r)
     {
         $this->see($r);
+        Project::refreshStatuses();
         $ended = $r->input('show') === 'ended';
         $all = Project::with(['currency', 'partner', 'financeOfficer'])->when($ended, fn ($q) => $q->where('active', false), fn ($q) => $q->running())->orderBy('end_date')->orderBy('code')->get();
         $donor = $all->reject->isInternal();
@@ -60,7 +61,7 @@ class ProjectController extends Controller
             $list = $list->filter(fn ($p) => $p->currency?->code === $r->input('cur'));
         }
         if ($r->input('soon')) {
-            $list = $list->filter->endsSoon(2);
+            $list = $list->filter->endingSoon();
         }
         $figs = LineBudget::projectFigures($donor);
         $usd = fn ($p, $f) => ($v = in_array($f, ['remaining', 'spent', 'received', 'overhead']) ? ($figs[(string) $p->code][$f] ?? null) : $p->$f) !== null
@@ -68,7 +69,7 @@ class ProjectController extends Controller
         return view('projects.index', [
             'list' => $list->values(), 'donor' => $donor, 'figs' => $figs, 'sectors' => $donor->pluck('sector')->filter()->unique()->sort()->values(),
             'qbPending' => Project::running()->where(fn ($q) => $q->whereNull('qb_added_at')->orWhereIn('code', BudgetLine::where('active', true)->whereNull('qb_added_at')->pluck('project_code')))->get(), 'internal' => $all->filter->isInternal(), 'ended' => $ended, 'lineStats' => $lineStats, 'usd' => $usd,
-            'soon' => $donor->filter->endsSoon(2)->values(), 'endedCount' => Project::where('active', false)->count(),
+            'soon' => $donor->filter->endingSoon()->values(), 'endedCount' => Project::where('active', false)->count(),
             'offices' => $donor->pluck('office')->filter()->unique()->sort()->values(), 'managers' => $donor->pluck('manager')->filter()->unique()->sort()->values(),
             'currencies' => $donor->map(fn ($p) => $p->currency?->code)->filter()->unique()->sort()->values(),
             'noRate' => $donor->filter(fn ($p) => LineBudget::rateOf($p) <= 0)->map(fn ($p) => $p->currency?->code ?? '?')->unique()->values(),
@@ -104,7 +105,7 @@ class ProjectController extends Controller
     {
         $e = [];
         if (isset($v['status']) && !isset(Project::STATUSES[$v['status']])) {
-            $e[] = "$who: unknown status \"{$v['status']}\" (Ongoing, Ended, Suspended, Cancelled).";
+            $e[] = "$who: unknown status \"{$v['status']}\" (" . implode(', ', Project::STATUSES) . ').';
         }
         if (!empty($v['office']) && !isset(Project::OFFICES[$v['office']])) {
             $e[] = "$who: the office is Turkey or Syria.";
@@ -231,20 +232,23 @@ class ProjectController extends Controller
     {
         abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
         $p = new Project(['code' => Project::nextCode(), 'status' => 'Ongoing', 'active' => true, 'start_date' => today()]);
-        return view('projects.form', $this->formData($p));
+        return view('projects.form', $this->formData($p) + ['extendId' => $r->integer('extend') ?: null]);
     }
 
     public function edit(Request $r, int $id)
     {
         abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
-        return view('projects.form', $this->formData(Project::with(['financeOfficer', 'mealOfficer', 'programOfficer'])->findOrFail($id)));
+        return view('projects.form', $this->formData(Project::with(['financeOfficer', 'mealOfficer', 'programOfficer', 'partner'])->findOrFail($id)));
     }
 
     protected function formData(Project $p): array
     {
-        return ['p' => $p, 'partners' => \App\Models\Partner::orderBy('name')->get(),
+        $partners = \App\Models\Partner::orderBy('name')->get();
+        return ['p' => $p, 'partners' => $partners,
+            'tags' => $partners->mapWithKeys(fn ($x) => [$x->id => Project::partnerTag($x)]),
             'sectors' => \App\Models\ListItem::where('category', 'program')->orderBy('sequence')->pluck('name'),
-            'currencies' => Currency::where('active', true)->orderBy('sequence')->orderBy('code')->get()];
+            'currencies' => Currency::where('active', true)->orderBy('sequence')->orderBy('code')->get(),
+            'nextNo' => collect(range((int) date('Y') - 1, (int) date('Y') + 2))->mapWithKeys(fn ($y) => [$y => Project::nextYearNo($y)])];
     }
 
     protected function validated(Request $r, ?Project $p): array
@@ -252,28 +256,57 @@ class ProjectController extends Controller
         // the imported running projects have no start date / agreement value yet: required for new projects only,
         // otherwise none of them could be saved
         $r->merge(['code' => $p ? $p->code : Project::nextCode()]);   // the number is given by the system, never typed
-        $need = $p ? 'nullable' : 'required';
+        $new = !$p;
+        $numbered = $new || $p->year_no;                                // new numbering: Code-Year-No-Partner
+        $need = $new ? 'required' : 'nullable';
         $v = $r->validate([
             'code' => ['required', 'integer', 'min:1', \Illuminate\Validation\Rule::unique('projects', 'code')->ignore($p?->id)],
-            'name' => 'required|string|max:200',
-            'partner_id' => 'nullable|integer|exists:partners,id', 'new_partner' => 'nullable|string|max:120',
-            'sector' => 'nullable|string|max:60', 'currency_id' => 'required|integer|exists:currencies,id',
+            'name' => ($numbered ? 'nullable' : 'required') . '|string|max:200',
+            'partner_id' => ($numbered ? 'required_without:new_partner' : 'nullable') . '|nullable|integer|exists:partners,id',
+            'new_partner' => 'nullable|string|max:120', 'new_partner_short' => 'nullable|string|max:30',
+            'sector' => ($new ? 'required' : 'nullable') . '|string|max:60', 'currency_id' => 'required|integer|exists:currencies,id',
             'start_date' => "$need|date", 'end_date' => array_merge([$need, 'date'], $r->filled('start_date') ? ['after_or_equal:start_date'] : []),
             'budget_total' => "$need|numeric|min:0", 'icr_rate' => 'nullable|numeric|min:0|max:100',
-            'office' => 'nullable|in:Turkey,Syria', 'status' => 'nullable|in:' . implode(',', array_keys(Project::STATUSES)),
+            'agreement_rate' => 'nullable|numeric|gt:0',
+            'office' => 'nullable|in:Turkey,Syria', 'status' => 'nullable|in:' . implode(',', array_keys(Project::STATUSES)) . ',auto',
             'finance_officer_id' => 'nullable|integer|exists:individuals,id', 'meal_officer_id' => 'nullable|integer|exists:individuals,id',
             'program_officer_id' => 'nullable|integer|exists:individuals,id',
-        ], [], ['budget_total' => 'agreement value', 'icr_rate' => 'overhead %', 'currency_id' => 'currency']);
+        ], ['partner_id.required_without' => 'Choose the partner: its short name goes into the project code.'],
+            ['budget_total' => 'agreement amount', 'icr_rate' => 'overhead %', 'currency_id' => 'currency', 'agreement_rate' => 'agreement rate']);
         if (!empty($v['new_partner'])) {
             $partner = \App\Models\Partner::firstOrCreate(['name' => trim($v['new_partner'])],
-                ['code' => (string) (((int) \App\Models\Partner::whereRaw('code REGEXP "^[0-9]+$"')->max(DB::raw('CAST(code AS UNSIGNED)'))) + 1)]);
+                ['code' => (string) (((int) \App\Models\Partner::pluck('code')->filter(fn ($c) => ctype_digit((string) $c))->max()) + 1)]);
+            if (!empty($v['new_partner_short']) && !$partner->short) {
+                $partner->update(['short' => strtoupper(trim($v['new_partner_short']))]);
+            }
             $v['partner_id'] = $partner->id;
         }
-        unset($v['new_partner']);
+        unset($v['new_partner'], $v['new_partner_short']);
         $v['icr_rate'] = isset($v['icr_rate']) && $v['icr_rate'] !== '' ? (float) $v['icr_rate'] / 100 : null;
-        $v['name'] = trim(preg_replace('/^' . preg_quote((string) $v['code'], '/') . '\s*-\s*/', '', $v['name']));   // "510-2026-…" → "2026-…"
+        if (Currency::find($v['currency_id'])?->code === 'USD') {
+            $v['agreement_rate'] = 1;
+        }
+        if ($numbered) {
+            // 298-2026-084-ALRAHMA: year of the start date, number in that year, partner short name
+            $year = (int) \Illuminate\Support\Carbon::parse($v['start_date'] ?? $p?->start_date ?? today())->format('Y');
+            $v['year'] = $year;
+            $v['year_no'] = $p && $p->year === $year ? $p->year_no : Project::nextYearNo($year);
+            $v['name'] = $year . '-' . str_pad((string) $v['year_no'], 3, '0', STR_PAD_LEFT) . '-' . Project::partnerTag(\App\Models\Partner::find($v['partner_id']));
+        } else {
+            $v['name'] = trim(preg_replace('/^' . preg_quote((string) $v['code'], '/') . '\s*-\s*/', '', $v['name']));   // "510-2026-…" → "2026-…"
+        }
         $v['qb_name'] = $v['code'] . '-' . $v['name'];
-        $v['manager'] = $v['finance_officer_id'] ? \App\Models\Individual::find($v['finance_officer_id'])?->name : ($p?->manager);
+        $v['manager'] = !empty($v['finance_officer_id']) ? \App\Models\Individual::find($v['finance_officer_id'])?->name : ($p?->manager);
+        // status: automatic (dates + donor balance) unless Closed / Suspended / Cancelled is chosen by hand
+        $st = $v['status'] ?? null;
+        unset($v['status']);
+        if ($st === 'auto' || in_array($st, Project::AUTO, true) || $new) {
+            $v['status_mode'] = 'auto';
+            $v['status'] = $p && $p->status_mode === 'auto' ? $p->status : 'Ongoing';
+        } elseif ($st) {
+            $v['status_mode'] = 'manual';
+            $v['status'] = $st;
+        }
         return $v;
     }
 
@@ -281,8 +314,10 @@ class ProjectController extends Controller
     {
         abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
         $v = $this->validated($r, null);
-        $p = DB::transaction(fn () => Project::create($v + ['status' => 'Ongoing', 'active' => true, 'qb_added_at' => null]));
-        return redirect()->route('projects.show', [$p->id, 'add' => 1])->with('ok', "Project $p->code created. Now add its budget lines.");
+        $p = DB::transaction(fn () => Project::create($v + ['qb_added_at' => null]));
+        $p->status = $p->statusByDates();
+        $p->save();
+        return redirect()->route('projects.show', [$p->id, 'add' => 1])->with('ok', "Project $p->full_code created. Now add its budget lines.");
     }
 
     public function update(Request $r, int $id)
@@ -290,14 +325,69 @@ class ProjectController extends Controller
         abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
         $p = Project::findOrFail($id);
         $v = $this->validated($r, $p);
-        $p->fill(array_filter($v, fn ($x, $k) => $k !== 'status' || $x, ARRAY_FILTER_USE_BOTH))->save();
+        $p->fill($v);
+        if ($p->status_mode === 'auto') {
+            $p->status = $p->statusByDates();
+        }
+        $p->save();
         return redirect()->route('projects.show', $p->id)->with('ok', 'Project saved.');
+    }
+
+    /** Extension of the agreement: new end date and / or more money; kept in the project history. */
+    public function extend(Request $r, int $id)
+    {
+        abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
+        $p = Project::findOrFail($id);
+        $v = $r->validate(['date' => 'required|date', 'new_end_date' => 'nullable|date' . ($p->end_date ? '|after:' . $p->end_date->toDateString() : ''),
+            'extra_amount' => 'nullable|numeric', 'reference' => 'nullable|string|max:120', 'notes' => 'nullable|string|max:2000'],
+            ['new_end_date.after' => 'The new end date must be after the current one (' . $p->end_date?->format('d M Y') . ').'],
+            ['new_end_date' => 'new end date', 'extra_amount' => 'additional amount']);
+        if (empty($v['new_end_date']) && empty((float) ($v['extra_amount'] ?? 0))) {
+            return back()->withErrors(['new_end_date' => 'Give the new end date, an additional amount, or both.'])->withInput();
+        }
+        DB::transaction(function () use ($p, $v, $r) {
+            \App\Models\ProjectAmendment::create(['project_id' => $p->id, 'kind' => 'extension', 'date' => $v['date'],
+                'old_end_date' => $p->end_date, 'new_end_date' => $v['new_end_date'] ?? null, 'old_amount' => $p->budget_total,
+                'extra_amount' => (float) ($v['extra_amount'] ?? 0), 'reference' => $v['reference'] ?? null, 'notes' => $v['notes'] ?? null, 'user_id' => $r->user()->id]);
+            if (!empty($v['new_end_date'])) {
+                $p->end_date = $v['new_end_date'];
+            }
+            $p->budget_total = (float) $p->budget_total + (float) ($v['extra_amount'] ?? 0);
+            // an extension opens an automatically closed project again
+            if ($p->status_mode === 'auto' || $p->status === 'Closed') {
+                $p->status_mode = 'auto';
+                $p->status = $p->statusByDates();
+            }
+            $p->save();
+        });
+        return redirect()->route('projects.show', $p->id)->with('ok', 'Extension saved: ' . ($p->end_date ? 'ends ' . $p->end_date->format('d M Y') : '') . ', agreement ' . number_format((float) $p->budget_total, 2) . '.');
+    }
+
+    public function destroyAmendment(Request $r, int $id, int $amendment)
+    {
+        abort_unless($r->user()->hasPerm('master.projects.manage'), 403);
+        $a = \App\Models\ProjectAmendment::where('project_id', $id)->findOrFail($amendment);
+        $p = $a->project;
+        abort_unless($p->amendments()->first()?->id === $a->id, 422, 'Only the last extension can be removed.');
+        DB::transaction(function () use ($a, $p) {
+            if ($a->new_end_date) {
+                $p->end_date = $a->old_end_date;
+            }
+            $p->budget_total = (float) $p->budget_total - (float) $a->extra_amount;
+            if ($p->status_mode === 'auto') {
+                $p->status = $p->statusByDates();
+            }
+            $p->save();
+            $a->delete();
+        });
+        return back()->with('ok', 'Last extension removed: dates and amount are back.');
     }
 
     // ================================================================= one project
     public function show(Request $r, int $id)
     {
         $this->see($r);
+        Project::refreshStatuses();
         $p = Project::with(['currency', 'partner'])->findOrFail($id);
         $archived = $r->input('show') === 'archived';
         $lines = LineBudget::figures(BudgetLine::with('expenseAccount')->where('project_code', (string) $p->code)->where('active', !$archived)
@@ -317,6 +407,7 @@ class ProjectController extends Controller
             'archived' => $archived, 'counts' => $counts, 'rate' => LineBudget::rateOf($p), 'cur' => strtoupper($p->currency?->code ?? 'USD'),
             'funding' => FundingLine::with(['individual', 'budgetLine'])->where('project_code', (string) $p->code)->where('active', true)->get(),
             'canEdit' => $this->canEditLines($r), 'canEditProject' => $r->user()->hasPerm('master.projects.manage'),
+            'amendments' => $p->amendments()->with('user')->get(), 'rateSource' => LineBudget::rateSource($p),
         ]);
     }
 
@@ -384,6 +475,7 @@ class ProjectController extends Controller
     public function quickbooks(Request $r, int $id)
     {
         $this->see($r);
+        Project::refreshStatuses();
         $p = Project::with(['currency', 'partner'])->findOrFail($id);
         $lines = BudgetLine::with(['expenseAccount', 'incomeAccount'])->where('project_code', (string) $p->code)->where('active', true)->whereNull('qb_added_at')->orderBy('id')->get();
         $path = storage_path('app/tmp/' . uniqid('qbproject_') . '.xlsx');

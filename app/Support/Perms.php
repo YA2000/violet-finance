@@ -44,6 +44,7 @@ class Perms
                 'receipts.assign' => 'Choose the project of a payment (reporting)',
                 'receipts.record' => 'Record a payment in the system (AR)',
                 'receipts.view' => 'See all received payments',
+                'receipts.manage' => 'Correct or delete any received payment (admin)',
             ],
             'Payroll' => [
                 'payroll.manage' => 'Contracts, LOE of every employee, monthly payroll runs and allocation (HR)',
