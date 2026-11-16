@@ -8,6 +8,17 @@ Menu **Control → QuickBooks check** (`/reconcile`, ability `reports.view`). Co
 Every uploader the system makes writes the transaction number as `RefNumber`, so in QuickBooks the bill or journal entry has
 **No. = T2600123**. The check matches on that number — not on amounts or names.
 
+## Types of transactions (how Violet works)
+
+| Form in the system | In QuickBooks |
+|---|---|
+| PTR, JAR | **Bill** |
+| Journal | **Journal Entry**, or a **Payment** (bill payment) |
+
+`QbReconcile::KINDS` holds this map; `QbReconcile::kind()` reads the QuickBooks *Transaction Type* (Bill / Journal Entry /
+Bill Payment (Check) / Payment...). A number recorded as another type gets the status *Wrong type in QuickBooks*.
+The result page shows matched / to check per type (Bills, Journal entries, Payments).
+
 ## The file
 
 Any QuickBooks report exported to Excel or CSV with a number column and an amount column. Recommended:
@@ -35,7 +46,8 @@ date of the file). Amount = header amount in the payment currency; USD = sum of 
 | Not in QuickBooks | final in the system, not in the file | upload it (a note says if it was marked as uploaded) |
 | Cancelled, still in QuickBooks | cancelled in the system | void/delete it in QuickBooks |
 | Unknown number | a T-number the system never gave | entered by hand in QuickBooks with a wrong number |
-| Twice in QuickBooks | one number, several transactions | duplicate upload: delete one |
+| Wrong type in QuickBooks | e.g. a PTR recorded as a Journal Entry, a Journal as a Bill | re-enter it as the right type |
+| Twice in QuickBooks | one number, several transactions (another date or another type) | duplicate upload: delete one |
 | Not final in the system | in QuickBooks before the form was saved | save the form or remove it from QuickBooks |
 | Other period | final in the system with a date outside the period | dates differ between the two |
 

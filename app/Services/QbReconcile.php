@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Schema;
  *   unknown    a system-style number in QuickBooks that the system never gave
  *   draft      in QuickBooks, but the form in the system is not final
  *   double     the same number is more than one transaction in QuickBooks
+ *   type       recorded as another kind of transaction (a PTR as a journal entry, a journal as a bill...)
  * Rows of QuickBooks without a system number are counted apart (payments, deposits, opening balances...).
  */
 class QbReconcile
@@ -43,6 +44,31 @@ class QbReconcile
     ];
 
     public const NUMBER = '/\bT\d{7,}\b/i';
+
+    /**
+     * What each form becomes in QuickBooks (Violet's way of working):
+     *   PTR, JAR -> Bill        Journal -> Journal Entry, or a Payment (bill payment)
+     */
+    public const KINDS = ['ptr' => ['bill'], 'jar' => ['bill'], 'journal' => ['journal', 'payment']];
+
+    /** A QuickBooks transaction type -> bill / journal / payment / other. */
+    public static function kind(?string $type): ?string
+    {
+        $t = mb_strtolower(trim((string) $type));
+        if ($t === '') {
+            return null;
+        }
+        if (str_contains($t, 'payment') || str_contains($t, 'check') || str_contains($t, 'cheque')) {
+            return 'payment';
+        }
+        if (str_contains($t, 'bill')) {
+            return 'bill';
+        }
+        if (str_contains($t, 'journal')) {
+            return 'journal';
+        }
+        return 'other';
+    }
 
     // ---------------------------------------------------------------- reading the QuickBooks file
 
@@ -267,7 +293,7 @@ class QbReconcile
         foreach ($sys as $num => $s) {
             $q = $qb[$num] ?? null;
             $d = $s['doc'];
-            $row = ['num' => $num, 'doc_id' => $d->id, 'form' => strtoupper($d->form_code), 'date' => $d->date?->format('Y-m-d'), 'description' => $d->description,
+            $row = ['num' => $num, 'doc_id' => $d->id, 'form' => strtoupper($d->form_code), 'kind' => null, 'date' => $d->date?->format('Y-m-d'), 'description' => $d->description,
                 'sys_amount' => $s['amount'], 'sys_currency' => $s['currency'], 'sys_usd' => $s['usd'], 'uploaded' => (bool) $d->uploaded,
                 'qb_amount' => null, 'qb_foreign' => null, 'qb_date' => null, 'qb_type' => null, 'diff' => null, 'notes' => []];
             if (!$q) {
@@ -288,9 +314,15 @@ class QbReconcile
             $row['compared'] = $useForeign ? ($s['currency'] ?: 'payment currency') : 'USD';
             $row['diff'] = $a !== null ? round($b - $a, 2) : null;
             $row['status'] = $a === null || abs($b - $a) <= $tol ? 'ok' : 'amount';
-            if (count($q['dates']) > 1 || count($q['types']) > 1) {
+            $kinds = array_values(array_unique(array_filter(array_map([static::class, 'kind'], $q['types']))));
+            $row['kind'] = $kinds[0] ?? null;
+            $want = static::KINDS[$d->form_code] ?? null;
+            if ($want && $kinds && !array_intersect($kinds, $want)) {
+                $row['status'] = 'type';
+                $row['notes'][] = 'A ' . strtoupper($d->form_code) . ' goes to QuickBooks as ' . implode(' or ', array_map('ucfirst', $want)) . ', here it is ' . $row['qb_type'] . '.';
+            } elseif (count($q['dates']) > 1 || count($kinds) > 1) {
                 $row['status'] = 'double';
-                $row['notes'][] = 'In QuickBooks ' . count($q['dates']) . ' date(s), ' . count($q['types']) . ' type(s) under this number.';
+                $row['notes'][] = 'In QuickBooks under this number: ' . $row['qb_type'] . ' on ' . implode(', ', $q['dates']) . '.';
             }
             if ($row['qb_date'] && $row['date'] && $row['qb_date'] !== $row['date']) {
                 $row['notes'][] = 'Date in QuickBooks: ' . $row['qb_date'] . '.';
@@ -307,25 +339,34 @@ class QbReconcile
                 $d = $docs[$num] ?? null;
                 $status = !$d ? (($res[$num]->state ?? null) === 'cancel' ? 'cancelled' : 'unknown')
                     : ($d->state === 'cancel' ? 'cancelled' : ($d->state === 'done' ? 'period' : 'draft'));
-                $rows[] = ['num' => $num, 'doc_id' => $d?->id, 'form' => $d ? strtoupper($d->form_code) : null, 'date' => $d?->date?->format('Y-m-d'),
+                $rows[] = ['num' => $num, 'doc_id' => $d?->id, 'form' => $d ? strtoupper($d->form_code) : null, 'kind' => static::kind($q['types'][0] ?? null), 'date' => $d?->date?->format('Y-m-d'),
                     'description' => $d?->description ?? $q['name'], 'sys_amount' => $d?->amount !== null ? (float) $d->amount : null, 'sys_currency' => $d?->currency,
                     'sys_usd' => null, 'uploaded' => false, 'qb_amount' => round($q['amount'], 2), 'qb_foreign' => $q['foreign'] !== null ? round($q['foreign'], 2) : null,
                     'qb_date' => $q['dates'][0] ?? null, 'qb_type' => implode(', ', $q['types']), 'diff' => null, 'status' => $status,
                     'notes' => $status === 'period' ? ['Final in the system with the date ' . $d->date?->format('Y-m-d') . ', outside the period checked.'] : []];
             }
         }
-        $order = ['amount' => 0, 'missing' => 1, 'cancelled' => 2, 'unknown' => 3, 'double' => 4, 'draft' => 5, 'period' => 6, 'ok' => 7];
+        $order = ['amount' => 0, 'missing' => 1, 'cancelled' => 2, 'unknown' => 3, 'type' => 4, 'double' => 5, 'draft' => 6, 'period' => 7, 'ok' => 8];
         usort($rows, fn ($x, $y) => [$order[$x['status']], $x['num']] <=> [$order[$y['status']], $y['num']]);
         return $rows;
     }
 
     public static function summary(array $rows): array
     {
-        $c = array_fill_keys(['ok', 'amount', 'missing', 'cancelled', 'unknown', 'double', 'draft', 'period'], 0);
+        $c = array_fill_keys(['ok', 'amount', 'missing', 'cancelled', 'unknown', 'type', 'double', 'draft', 'period'], 0);
+        $by = [];      // per kind of QuickBooks transaction: matched / to check
         foreach ($rows as $r) {
             $c[$r['status']]++;
+            $k = $r['kind'] ?? (['PTR' => 'bill', 'JAR' => 'bill', 'JOURNAL' => 'journal'][$r['form'] ?? ''] ?? 'other');
+            $by[$k] ??= ['ok' => 0, 'issues' => 0];
+            if ($r['status'] === 'ok') {
+                $by[$k]['ok']++;
+            } elseif ($r['status'] !== 'period') {
+                $by[$k]['issues']++;
+            }
         }
-        $c['issues'] = $c['amount'] + $c['missing'] + $c['cancelled'] + $c['unknown'] + $c['double'] + $c['draft'];
+        $c['issues'] = $c['amount'] + $c['missing'] + $c['cancelled'] + $c['unknown'] + $c['type'] + $c['double'] + $c['draft'];
+        $c['kinds'] = $by;
         return $c;
     }
 
@@ -336,6 +377,7 @@ class QbReconcile
         'missing' => ['Not in QuickBooks', 'Final in the system, not found in the file'],
         'cancelled' => ['Cancelled, still in QuickBooks', 'Cancelled in the system but recorded in QuickBooks'],
         'unknown' => ['Unknown number', 'A T-number in QuickBooks that the system never gave'],
+        'type' => ['Wrong type in QuickBooks', 'PTR / JAR must be a Bill; Journal a Journal Entry or a Payment'],
         'double' => ['Twice in QuickBooks', 'The same number is more than one transaction'],
         'draft' => ['Not final in the system', 'In QuickBooks, but the form in the system is not saved as final'],
         'period' => ['Other period', 'Final in the system, but its date is outside the period checked'],

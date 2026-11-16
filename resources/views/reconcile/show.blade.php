@@ -11,13 +11,23 @@
 @endif
 
 <div class="stat-row" style="margin-bottom:18px">
-  @foreach(['ok' => 'tone-green-t', 'amount' => 'tone-orange-t', 'missing' => 'tone-red-t', 'cancelled' => 'tone-red-t', 'unknown' => 'tone-red-t', 'double' => 'tone-orange-t', 'draft' => 'tone-orange-t', 'period' => ''] as $k => $tone)
+  @foreach(['ok' => 'tone-green-t', 'amount' => 'tone-orange-t', 'missing' => 'tone-red-t', 'cancelled' => 'tone-red-t', 'unknown' => 'tone-red-t', 'type' => 'tone-orange-t', 'double' => 'tone-orange-t', 'draft' => 'tone-orange-t', 'period' => ''] as $k => $tone)
     @if($k === 'ok' || ($s[$k] ?? 0) > 0)
       <a class="stat {{ $tab === $k ? 'is-on' : '' }}" href="{{ request()->fullUrlWithQuery(['show' => $k]) }}"><b class="{{ ($s[$k] ?? 0) ? $tone : '' }}">{{ $s[$k] ?? 0 }}</b><span>{{ $labels[$k][0] }}</span><small>{{ $labels[$k][1] }}</small></a>
     @endif
   @endforeach
 </div>
 
+@if(!empty($s['kinds']))
+<div class="kind-row">
+  @foreach(['bill' => ['fa-file-invoice-dollar', 'Bills', 'PTR · JAR'], 'journal' => ['fa-book', 'Journal entries', 'Journal'], 'payment' => ['fa-money-check-dollar', 'Payments', 'Journal'], 'other' => ['fa-circle-question', 'Other', '']] as $k => [$ic, $name, $from])
+    @if(isset($s['kinds'][$k]))
+      <div class="kind"><i class="fa-solid {{ $ic }}"></i><div><b>{{ $name }}</b>@if($from)<small>from {{ $from }}</small>@endif</div>
+        <span class="pill st-done">{{ $s['kinds'][$k]['ok'] }}</span>@if($s['kinds'][$k]['issues'])<span class="pill st-cancel">{{ $s['kinds'][$k]['issues'] }}</span>@endif</div>
+    @endif
+  @endforeach
+</div>
+@endif
 <div class="seg-links" style="margin-bottom:12px">
   <a class="{{ $tab === 'issues' ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['show' => 'issues']) }}">To check <b>{{ $s['issues'] }}</b></a>
   <a class="{{ $tab === 'all' ? 'on' : '' }}" href="{{ request()->fullUrlWithQuery(['show' => 'all']) }}">All</a>
@@ -25,13 +35,13 @@
 
 <div class="panel">
   @if($rows->count())
-  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Status</th><th>Number</th><th>Form</th><th>Date</th><th>System</th><th>QuickBooks</th><th class="num">Difference</th><th>Notes</th></tr></thead><tbody>
+  <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Status</th><th>Number</th><th>Form</th><th>In QuickBooks</th><th>Date</th><th>System</th><th>QuickBooks</th><th class="num">Difference</th><th>Notes</th></tr></thead><tbody>
     @foreach($rows as $x)
-      @php($tone = ['ok' => 'st-done', 'amount' => 'st-to_pay', 'double' => 'st-to_pay', 'draft' => 'st-to_pay', 'period' => 'st-draft'][$x['status']] ?? 'st-cancel')
+      @php($tone = ['ok' => 'st-done', 'amount' => 'st-to_pay', 'type' => 'st-to_pay', 'double' => 'st-to_pay', 'draft' => 'st-to_pay', 'period' => 'st-draft'][$x['status']] ?? 'st-cancel')
       <tr>
         <td><span class="pill {{ $tone }}">{{ $labels[$x['status']][0] }}</span></td>
         <td class="nowrap">@if($x['doc_id'])<a href="{{ route('documents.show', $x['doc_id']) }}"><b>{{ $x['num'] }}</b></a>@else<b>{{ $x['num'] }}</b>@endif</td>
-        <td>{{ $x['form'] }}</td><td class="nowrap">{{ $x['date'] ?? $x['qb_date'] }}</td>
+        <td>{{ $x['form'] }}</td><td>{{ $x['qb_type'] ?: '—' }}</td><td class="nowrap">{{ $x['date'] ?? $x['qb_date'] }}</td>
         <td class="nowrap">@if($x['sys_amount'] !== null){{ number_format($x['sys_amount'], 2) }} {{ $x['sys_currency'] }}@if($x['sys_usd'] !== null && $x['sys_currency'] !== 'USD')<small class="sub">{{ number_format($x['sys_usd'], 2) }} USD</small>@endif @else — @endif</td>
         <td class="nowrap">@if($x['qb_amount'] !== null || $x['qb_foreign'] !== null)@if($x['qb_foreign'] !== null){{ number_format($x['qb_foreign'], 2) }}<small class="sub">{{ number_format($x['qb_amount'], 2) }} home</small>@else{{ number_format($x['qb_amount'], 2) }}@endif @else — @endif</td>
         <td class="num {{ ($x['diff'] ?? 0) != 0 ? 'danger-text' : '' }}">{{ $x['diff'] !== null ? number_format($x['diff'], 2) : '' }}@if(!empty($x['compared']) && ($x['diff'] ?? 0) != 0)<small class="sub">{{ $x['compared'] }}</small>@endif</td>

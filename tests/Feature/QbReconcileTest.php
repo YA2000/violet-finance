@@ -10,9 +10,9 @@ use Tests\TestCase;
 /** QuickBooks check: each transaction number of the file against the final forms of the system. */
 class QbReconcileTest extends TestCase
 {
-    private function doc(string $num, float $amount, string $cur = 'SYP', string $state = 'done', string $date = '2026-11-05'): Document
+    private function doc(string $num, float $amount, string $cur = 'SYP', string $state = 'done', string $date = '2026-11-05', string $form = 'ptr'): Document
     {
-        return Document::create(['form_code' => 'ptr', 'state' => $state, 'number' => $num,
+        return Document::create(['form_code' => $form, 'state' => $state, 'number' => $num,
             'date' => $date, 'currency' => $cur, 'amount' => $amount, 'user_id' => $this->admin()->id, 'data' => []]);
     }
 
@@ -110,5 +110,32 @@ class QbReconcileTest extends TestCase
         $run = \App\Models\QbReconciliation::firstOrFail();
         $this->assertSame(1, $run->summary['ok'], json_encode($run->results()));
         $this->assertSame(0, $run->summary['issues']);
+    }
+
+    public function test_each_form_must_be_the_right_type_in_quickbooks(): void
+    {
+        $this->doc('T2600010', 500, 'USD', 'done', '2026-11-05', 'ptr');      // Bill: right
+        $this->doc('T2600011', 800, 'USD', 'done', '2026-11-05', 'jar');      // Journal Entry: wrong
+        $this->doc('T2600012', 900, 'USD', 'done', '2026-11-05', 'journal');  // Journal Entry: right
+        $this->doc('T2600013', 700, 'USD', 'done', '2026-11-05', 'journal');  // Bill Payment: right
+        $this->doc('T2600014', 300, 'USD', 'done', '2026-11-05', 'journal');  // Bill: wrong
+        $file = $this->csv([
+            ['11/05/2026', 'Bill', 'T2600010', 'A', 'USD', '500.00', '500.00'],
+            ['11/05/2026', 'Journal Entry', 'T2600011', '', 'USD', '800.00', '800.00'],
+            ['11/05/2026', 'Journal Entry', 'T2600012', '', 'USD', '900.00', '900.00'],
+            ['11/05/2026', 'Bill Payment (Check)', 'T2600013', 'B', 'USD', '-700.00', '-700.00'],
+            ['11/05/2026', 'Bill', 'T2600014', 'C', 'USD', '300.00', '300.00'],
+        ]);
+        $this->actingAs($this->admin())->post('/reconcile', ['file' => $file]);
+        $run = \App\Models\QbReconciliation::firstOrFail();
+        $by = collect($run->results())->keyBy('num');
+        $this->assertSame('ok', $by['T2600010']['status']);
+        $this->assertSame('type', $by['T2600011']['status']);
+        $this->assertSame('ok', $by['T2600012']['status']);
+        $this->assertSame('ok', $by['T2600013']['status']);
+        $this->assertSame('type', $by['T2600014']['status']);
+        $this->assertSame(['ok' => 1, 'issues' => 1], $run->summary['kinds']['bill']);
+        $this->assertSame(1, $run->summary['kinds']['payment']['ok']);
+        $this->get('/reconcile/' . $run->id . '?show=all')->assertOk()->assertSee('Wrong type in QuickBooks')->assertSee('Payments');
     }
 }

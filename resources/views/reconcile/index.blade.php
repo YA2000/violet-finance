@@ -27,7 +27,8 @@
       2. Choose the period (for example the month).<br>
       3. Customize → Rows/Columns: keep <b>Date, Transaction Type, No., Name, Amount</b>; add <b>Foreign Amount</b> and <b>Currency</b> if you use more than one currency.<br>
       4. Export → <b>Export to Excel</b>, then upload the file here.<br><br>
-      The number of every form (T2600123) goes to QuickBooks as the <b>No.</b> of the bill or journal entry: that is how each line is matched.
+      The number of every form (T2600123) goes to QuickBooks as the <b>No.</b>: that is how each line is matched.<br>
+      <b>PTR</b> and <b>JAR</b> → <b>Bill</b> · <b>Journal</b> → <b>Journal Entry</b> or <b>Payment</b>. A number recorded as another type is shown apart.
       Other QuickBooks reports work too if they have a number column and an amount column.
     </div>
   </details>
