@@ -49,4 +49,18 @@ class PtrRatesTest extends TestCase
         $this->assertSame('pay', $t['mode']);
         $this->assertEqualsWithDelta(125.0, TreasuryRate::rateFor($t, 1622 * 125), 0.0001);
     }
+
+    public function test_rates_that_do_not_matter_are_hidden(): void
+    {
+        $f = FormRegistry::get('ptr');
+        $f->compute(['date' => '2026-11-01', 'invoice_currency_id' => $this->cur('USD')->id, 'payment_currency_id' => $this->cur('USD')->id]);
+        $this->assertArrayHasKey('inv_per_usd', $f->hiddenNow);
+        $this->assertArrayHasKey('pay_per_usd', $f->hiddenNow);
+        $this->assertArrayHasKey('exchange_rate', $f->hiddenNow);
+
+        $f->compute(['date' => '2026-11-01', 'invoice_currency_id' => $this->cur('USD')->id, 'payment_currency_id' => $this->cur('SYP')->id, 'pay_per_usd' => 122]);
+        $this->assertArrayHasKey('inv_per_usd', $f->hiddenNow);        // fixed to 1
+        $this->assertArrayNotHasKey('pay_per_usd', $f->hiddenNow);     // the one rate to type
+        $this->assertArrayNotHasKey('rate_check', $f->hiddenNow);
+    }
 }

@@ -110,7 +110,7 @@ document.addEventListener('alpine:init', () => {
 
   /* document entry form --------------------------------------------------- */
   Alpine.data('docForm', (cfg) => ({
-    data: cfg.data, labels: (Array.isArray(cfg.labels) ? {} : cfg.labels) || {}, ro: cfg.readonly, busy: false, dirty: false, timer: null, locks: {},
+    data: cfg.data, labels: (Array.isArray(cfg.labels) ? {} : cfg.labels) || {}, ro: cfg.readonly, busy: false, dirty: false, timer: null, locks: {}, hidden: cfg.hidden || {},
     computed: cfg.computed, tab: cfg.tab || 'lines',
     isRo() { return this.ro; },
     init() {
@@ -297,6 +297,9 @@ document.addEventListener('alpine:init', () => {
         const locks = {};
         for (const k of (r.locked || [])) { locks[k] = true; this.data[k] = d[k]; }
         this.locks = locks;
+        const hidden = {};
+        for (const k of (r.hidden || [])) hidden[k] = true;
+        this.hidden = hidden;
       } catch (e) { /* keep typing */ }
     },
     money(v, d = 2) { return fmtNum(v, d); },

@@ -16,7 +16,9 @@
       @if($p->endingSoon() && $p->isRunning())<span class="pill st-cancel">ends in {{ today()->diffInDays($p->end_date) }} days</span>@endif
       @if(!$p->inQuickBooks())<span class="pill st-to_pay">not in QuickBooks yet</span>@elseif($notInQb)<span class="pill st-to_pay">{{ $notInQb }} new lines not in QuickBooks</span>@endif</h1>
     <p>{{ collect([$p->partner?->name, $p->sector, $p->office, $cur])->filter()->implode(' · ') }}
-      · {{ $p->start_date?->format('d M Y') ?? '?' }} → {{ $p->end_date?->format('d M Y') ?? '?' }}@if($months !== null && $p->isRunning()) · <b>{{ number_format($months, 1) }} months left</b>@endif
+      @php($dates = $p->start_date || $p->end_date ? ($p->start_date?->format('d M Y') ?? 'no start date') . ' → ' . ($p->end_date?->format('d M Y') ?? 'no end date') : null)
+      · @if($dates){{ $dates }} @elseif($canEditProject)<a href="{{ route('projects.edit', $p->id) }}">Add the dates</a> @else no dates @endif
+      @if($months !== null && $p->isRunning()) · <b>{{ number_format($months, 1) }} months left</b>@endif
       @if($p->isRunning() && $months === 0.0)<span class="danger-text"> · the end date has passed</span>@endif</p>
   </div>
   <div class="btn-row">
@@ -39,9 +41,11 @@
 </div>
 @endunless
 <div class="people-row" style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 16px;font-size:13px">
-  @foreach(['MEAL' => $p->mealOfficer, 'Finance' => $p->financeOfficer, 'Program' => $p->programOfficer] as $role => $who)
-    <span><span class="hint">{{ $role }}:</span> <b>{{ $who?->name ?? '—' }}</b></span>
+  @php($people = array_filter(['MEAL' => $p->mealOfficer, 'Finance' => $p->financeOfficer, 'Program' => $p->programOfficer]))
+  @foreach($people as $role => $who)
+    <span><span class="hint">{{ $role }}</span> <b>{{ $who->name }}</b></span>
   @endforeach
+  @if(!$people && $canEditProject)<a class="hint" href="{{ route('projects.edit', $p->id) }}"><i class="fa-solid fa-user-plus"></i> Add the focal points</a>@endif
   @if($p->balance_date)<span class="hint" style="margin-inline-start:auto">Opening figures as of {{ $p->balance_date->format('d M Y') }}, then live from the system</span>@endif
 </div>
 
@@ -91,7 +95,7 @@
     <button type="button" class="btn btn-primary" @click="open = true"><i class="fa-solid fa-plus"></i> Add lines</button>
     <a class="btn" href="{{ route('projects.export', $p->id) }}"><i class="fa-solid fa-file-excel"></i> Lines file</a>
     <form method="post" action="{{ route('projects.import', $p->id) }}" enctype="multipart/form-data" style="display:flex;gap:6px">@csrf
-      <input type="file" name="file" accept=".xlsx" class="input" style="width:230px" required><button class="btn"><i class="fa-solid fa-upload"></i> Upload remaining</button></form>
+      <input type="file" name="file" accept=".xlsx" class="file-pick" required><button class="btn"><i class="fa-solid fa-upload"></i> Upload remaining</button></form>
   </div>
   <form class="panel" method="post" action="{{ route('projects.lines.add', $p->id) }}" x-show="open" x-cloak>@csrf
     <div class="panel-head"><h2>Add budget lines</h2><span class="right hint">Code = <b>{{ $p->code }}</b>-center-line. Tip: copy rows from Excel (center, line, sub, description, account, amount) and paste in the first box.</span></div>
@@ -125,7 +129,7 @@
   <span>Spent <b>{{ money($lines->sum(fn ($l) => (float) $l->spent_usd)) }} USD</b></span>
   <span>Remaining <b>{{ money($lines->sum(fn ($l) => (float) ($l->remaining_usd ?? $l->total_usd))) }} USD</b></span>
   @if($rateTxt)<span class="hint" style="margin-inline-start:auto" title="Expenses are valued at the rate of each transaction; the budget at this rate">Budget in USD at {{ $rateTxt }} · {{ ['received' => 'rate of the received payments', 'agreement' => 'agreement rate (no payment received yet)', 'table' => 'rate table (no payment, no agreement rate)'][$rateSource] ?? '' }}</span>@endif
-  @if($unknown)<span class="danger-text" style="flex-basis:100%">{{ $unknown }} lines without opening spent: type the remaining from QuickBooks once; after that PTR and JAR update it.</span>@endif
+  @if($unknown)<span class="setup-note" style="flex-basis:100%"><i class="fa-solid fa-circle-info"></i> One-time setup: type the remaining of {{ $unknown }} {{ $unknown === 1 ? 'line' : 'lines' }} from QuickBooks. After that every PTR and JAR updates it by itself.</span>@endif
 </div>
 
 <form method="post" action="{{ route('projects.lines.save', $p->id) }}" x-data="{ open: null, items: [], title: '', show(t, items) { this.title = t; this.items = items; this.open = true; } }">@csrf @method('PUT')
@@ -139,7 +143,7 @@
         @php($items = collect($l->doc_list)->sortBy('date')->values()->map(fn ($d) => ['url' => route('documents.show', $d['id']), 'no' => $d['number'], 'form' => strtoupper($d['form']), 'date' => $d['date'], 'note' => \Illuminate\Support\Str::limit((string) $d['note'], 80), 'paid' => money($d['paid']) . ' ' . $d['paid_cur'], 'usd' => money($d['usd'])])->all())
         @php($extra = array_values(array_filter([$l->opening_usd ? ['no' => 'Before the system', 'form' => '', 'date' => $l->spent_before_date ? \Illuminate\Support\Carbon::parse($l->spent_before_date)->format('Y-m-d') : '', 'note' => 'Spent before the system (QuickBooks)', 'paid' => '', 'usd' => money($l->opening_usd)] : null, $l->alloc_usd ? ['no' => 'Payroll & shared', 'form' => '', 'date' => '', 'note' => 'Approved allocation months', 'paid' => '', 'usd' => money($l->alloc_usd)] : null])))
         <tr>
-          <td><span class="ref">{{ $l->code }}</span>@if(!$l->qb_added_at)<span class="pill st-to_pay" style="height:18px;font-size:10.5px;margin-inline-start:6px">new</span>@endif<div class="hint">{{ \Illuminate\Support\Str::limit($l->description, 90) }}</div></td>
+          <td><span class="ref">{{ $l->code }}</span>@if(!$l->qb_added_at && $p->inQuickBooks())<span class="pill st-to_pay" style="height:18px;font-size:10.5px;margin-inline-start:6px">new</span>@endif<div class="hint">{{ \Illuminate\Support\Str::limit($l->description, 90) }}</div></td>
           <td class="hint">{{ $l->expenseAccount?->code }} {{ \Illuminate\Support\Str::limit($l->expenseAccount?->name, 24) }}</td>
           <td class="num">@if($editable)<input class="input num" name="total[{{ $l->id }}]" value="{{ old("total.$l->id", $l->total_amount) }}" style="width:120px">@else{{ money($l->total_amount) }}@endif</td>
           @if($cur !== 'USD')<td class="num">{{ $l->total_usd !== null ? money($l->total_usd) : '—' }}</td>@endif

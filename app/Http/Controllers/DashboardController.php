@@ -79,10 +79,10 @@ class DashboardController extends Controller
             $f = $figs[(string) $p->code] ?? null;
             $bal = $f && $f['received'] !== null && $f['spent'] !== null ? (float) $f['received'] - (float) $f['spent'] - (float) $f['overhead'] : null;
             if ($bal === null) {
-                return $p->end_date && $p->end_date->gte(today()->subDays(90)) ? ['p' => $p, 'why' => 'Ended - donor balance unknown'] : null;
+                return $p->end_date && $p->end_date->gte(today()->subDays(90)) ? ['p' => $p, 'why' => 'Ended - donor balance unknown', 'unknown' => true] : null;
             }
             return ['p' => $p, 'why' => $bal > 0 ? 'Ended - ' . money($bal) . ' ' . $f['cur'] . ' not spent' : 'Ended - ' . money(-$bal) . ' ' . $f['cur'] . ' due from the donor'];
-        })->filter()->merge($open->filter(fn ($p) => !$p->finance_officer_id || !$p->budget_total)->map(fn ($p) => ['p' => $p, 'why' => !$p->budget_total ? 'No agreement amount' : 'No finance focal point']))
+        })->filter()
             ->sortBy(fn ($x) => $x['p']->end_date)->values();
         return [
             'running' => $open->where('status', 'Ongoing')->count(),
@@ -91,7 +91,11 @@ class DashboardController extends Controller
             'year' => $year,
             'agreements' => $thisYear->groupBy(fn ($p) => $p->currency?->code ?? '?')->map(fn ($g) => ['n' => $g->count(), 'sum' => $g->sum(fn ($p) => (float) $p->budget_total)])->sortByDesc('sum'),
             'sectors' => $open->groupBy(fn ($p) => $p->sector ?: 'No sector')->map->count()->sortDesc(),
-            'attention' => $attention->take(8), 'attentionCount' => $attention->count(),
+            'attention' => $attention->reject(fn ($x) => !empty($x['unknown']))->take(6)->values(),
+            'attentionCount' => $attention->reject(fn ($x) => !empty($x['unknown']))->count(),
+            'unknownBalance' => $attention->filter(fn ($x) => !empty($x['unknown']))->count(),
+            // missing data is a one-time clean-up, not something to follow every day: one row, not 300
+            'missing' => $open->filter(fn ($p) => !$p->budget_total || !$p->finance_officer_id)->count(),
         ];
     }
 }

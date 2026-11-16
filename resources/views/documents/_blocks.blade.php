@@ -1,13 +1,11 @@
 {{-- form body built from the form builder: sections, tables, notes (in the builder's order) --}}
 @foreach($blocks as $bi => $b)
   @if($b['type'] === 'section' && ($b['style'] ?? '') === 'totals')
-    <div class="totals" style="margin:-6px 0 18px">
-      @foreach($b['fields'] as $f)
-        <div><small>{{ $f['label'] }}</small><b x-text="fmt(data.{{ $f['key'] }}, '{{ $f['fmt'] ?? 'text' }}')"></b></div>
-      @endforeach
-    </div>
+    {{-- shown in the bar at the bottom of the screen (documents/edit) --}}
   @elseif($b['type'] === 'section')
-    <div class="panel block-in" style="margin-bottom:18px; --d: {{ $bi * 40 }}ms">
+    @php($cond = array_values(array_map(fn ($f) => $f['key'], array_filter($b['fields'], fn ($f) => !empty($f['hide_when'])))))
+    <div class="panel block-in" style="margin-bottom:18px; --d: {{ $bi * 40 }}ms"
+      @if(count($cond) === count($b['fields'])) x-show="!@js($cond).every(k => hidden[k])" x-transition.opacity @endif>
       <div class="panel-body">
         @if($b['title'])<div class="section-title">{{ $b['title'] }}</div>@endif
         <div class="fgrid">
@@ -85,7 +83,12 @@
       <div class="note-block bil block-in" style="--d: {{ $bi * 40 }}ms">@foreach(preg_split('/\r?\n/u', trim($b['text'] ?? '')) as $li => $line)@php([$en, $ar] = array_pad(array_map('trim', explode('||', $line, 2)), 2, ''))
         <div class="bil-row {{ $li === 0 ? 'first' : '' }}"><span>{{ $en }}</span><span dir="rtl" lang="ar">{{ $ar }}</span></div>@endforeach</div>
     @else
+    @if(($b['style'] ?? '') !== 'heading' && !empty($b['title']) && mb_strlen($b['text'] ?? '') > 160)
+      <details class="disclosure block-in" style="--d: {{ $bi * 40 }}ms"><summary><i class="fa-solid fa-circle-info"></i> {{ $b['title'] }}<i class="fa-solid fa-chevron-down chev"></i></summary>
+        <div class="disclosure-body">{!! nl2br(e($b['text'] ?? '')) !!}</div></details>
+    @else
     <div class="note-block block-in {{ ($b['style'] ?? '') === 'heading' ? 'heading' : '' }}" style="--d: {{ $bi * 40 }}ms">@if(!empty($b['title']))<b class="nb-title">{{ $b['title'] }}</b>@endif{!! nl2br(e($b['text'] ?? '')) !!}</div>
+    @endif
     @endif
   @endif
 @endforeach

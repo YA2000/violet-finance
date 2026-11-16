@@ -9,7 +9,7 @@ class PagesTest extends TestCase
 {
     public static function pages(): array
     {
-        return array_map(fn ($u) => [$u], ['/', '/account', '/numbers', '/forms/ptr', '/forms/ptr/new', '/forms/jar/new', '/projects', '/projects/new',
+        return array_map(fn ($u) => [$u], ['/', '/account', '/numbers', '/forms/ptr', '/forms/ptr/new', '/forms/jar/new', '/projects', '/projects/1', '/projects/new',
             '/receipts', '/reports', '/reports/documents', '/reports/receipts', '/reports/numbers', '/reports/budget-lines', '/budget-lines',
             '/admin/rates', '/admin/audit', '/admin/audit?verify=1', '/admin/users', '/admin/roles', '/admin/settings', '/admin/forms', '/review', '/alerts']);
     }
@@ -35,6 +35,6 @@ class PagesTest extends TestCase
         // the page hides a broken tile (try/catch): check the tile itself
         $m = new \ReflectionMethod(\App\Http\Controllers\DashboardController::class, 'projects');
         $out = $m->invoke(app(\App\Http\Controllers\DashboardController::class));
-        $this->assertGreaterThan(0, $out['attentionCount']);
+        $this->assertGreaterThan(0, $out['missing']);
     }
 }

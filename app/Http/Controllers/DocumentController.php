@@ -81,7 +81,7 @@ class DocumentController extends Controller
         return view('documents.edit', [
             'doc' => $doc, 'form' => $form, 'new' => $new, 'ro' => $ro,
             'data' => $data, 'blocks' => FormView::blocks($form),
-            'client' => FormView::clientConfig($form),
+            'client' => FormView::clientConfig($form) + ['hidden' => static::hiddenFor($form, $data)],
             'openNotes' => $new ? 0 : $doc->reviewComments()->where('status', '!=', 'closed')->count(),
             'freeNumbers' => Reservation::where('user_id', $u->id)->where('state', 'reserved')->orderBy('number')->get(),
             'txnTypes' => TxnType::where('active', true)->orderBy('sequence')->get(),
@@ -89,6 +89,17 @@ class DocumentController extends Controller
             'payType' => TxnType::where('name', 'Bill Payment')->value('id') ?? TxnType::orderBy('sequence')->value('id'),
             'chain' => $new ? $this->previewChain($doc) : $doc->signatures()->with('individual')->get(),
         ]);
+    }
+
+    /** Fields hidden by their hide_when condition for this data (also for read-only forms, which are not recomputed). */
+    protected static function hiddenFor($form, array $data): array
+    {
+        try {
+            $form->compute($data);
+            return array_fill_keys(array_keys($form->hiddenNow), true);
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /** Signature steps of a not yet saved document (from Forms Management). */
@@ -148,7 +159,7 @@ class DocumentController extends Controller
             Workflow::finalize($doc->refresh(), $u);
             return $doc;
         });
-        return redirect()->route('documents.show', $doc)->with('ok', 'Saved.');
+        return redirect()->route('documents.show', $doc)->with('saved', true);
     }
 
     /** Signature fields posted with the form: signer[<sig id>] = individual id, signer_date[<sig id>] = date (new docs use the step order). */
@@ -187,7 +198,7 @@ class DocumentController extends Controller
     {
         $form = FormRegistry::get($code);
         $data = $form->normalize((array) $r->input('data', []), true);
-        return response()->json(['data' => $data, 'errors' => $form->errors, 'locked' => array_keys($form->locked)]);
+        return response()->json(['data' => $data, 'errors' => $form->errors, 'locked' => array_keys($form->locked), 'hidden' => array_keys($form->hiddenNow)]);
     }
 
     /** Reserve a new number (dialog) or use one of mine. */

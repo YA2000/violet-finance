@@ -115,7 +115,7 @@ class DynamicForm extends BaseForm
         $out = ['key' => $f['key'], 'label' => $f['label'] ?? $f['key'], 'required' => !empty($f['required']),
             'col' => (int) ($f['width'] ?? 4), 'w' => (int) ($f['width_px'] ?? 130), 'help' => $f['help'] ?? null,
             'hidden' => !empty($f['hidden']), 'print' => ($f['print'] ?? true) !== false, 'sum' => !empty($f['sum']),
-            'hint' => $f['hint'] ?? null, 'lock' => !empty($f['lock_when'])];
+            'hint' => $f['hint'] ?? null, 'lock' => !empty($f['lock_when']), 'hide_when' => $f['hide_when'] ?? null];
         switch ($type) {
             case 'formula':
                 $out['type'] = 'computed';
@@ -242,6 +242,9 @@ class DynamicForm extends BaseForm
     /** header inputs fixed by their lock_when condition in the last compute() */
     public array $locked = [];
 
+    /** header fields whose hide_when condition is true in the last compute() (shown again when it turns false) */
+    public array $hiddenNow = [];
+
     public function compute(array $d, array $meta = []): array
     {
         $this->errors = [];
@@ -283,6 +286,14 @@ class DynamicForm extends BaseForm
         }
         $passHeader();
         $passHeader();
+        // fields that are not relevant now (e.g. the exchange rates when everything is in US dollars)
+        $this->hiddenNow = [];
+        $ctx->at(null, null);
+        foreach ($this->fieldMap as $k => $f) {
+            if (!empty($f['hide_when']) && \App\Support\Formula\Evaluator::truthy($this->evalSafe($f['hide_when'], $ctx, $k))) {
+                $this->hiddenNow[$k] = true;
+            }
+        }
         return $d;
     }
 

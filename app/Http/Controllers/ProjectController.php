@@ -61,6 +61,9 @@ class ProjectController extends Controller
         if ($r->input('soon')) {
             $list = $list->filter->endingSoon();
         }
+        if ($r->input('missing')) {        // agreement amount or finance focal point not filled
+            $list = $list->filter(fn ($p) => !$p->budget_total || !$p->finance_officer_id);
+        }
         $figs = LineBudget::projectFigures($donor);
         $usd = fn ($p, $f) => ($v = in_array($f, ['remaining', 'spent', 'received', 'overhead']) ? ($figs[(string) $p->code][$f] ?? null) : $p->$f) !== null
             && ($rate = LineBudget::rateOf($p)) > 0 ? (float) $v * $rate : null;
@@ -137,7 +140,7 @@ class ProjectController extends Controller
             return back()->withErrors($errors)->withInput();
         }
         $n = $this->apply($projects, $clean);
-        return redirect()->route('projects.index', array_filter($r->only(['q', 'office', 'manager', 'cur', 'soon']) + ['edit' => 1]))->with('ok', "$n projects saved.");
+        return redirect()->route('projects.index', array_filter($r->only(['q', 'office', 'manager', 'cur', 'soon', 'missing']) + ['edit' => 1]))->with('ok', "$n projects saved.");
     }
 
     protected function apply($projects, array $clean): int

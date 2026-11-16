@@ -1,6 +1,6 @@
 {{-- one header field; $f = definition, model is data[key] --}}
 @php($k = $f['key'])
-<div class="field" style="grid-column: span {{ $f['col'] ?? 4 }}" :class="locks['{{ $k }}'] && 'is-locked'">
+<div class="field" style="grid-column: span {{ $f['col'] ?? 4 }}" :class="locks['{{ $k }}'] && 'is-locked'" @if(!empty($f['hide_when'])) x-show="!hidden['{{ $k }}']" x-transition.opacity.duration.200ms @endif>
   <label for="f_{{ $k }}">{{ $f['label'] }}@if(!empty($f['required']) && $f['type'] !== 'computed')<span class="req" title="Required">*</span>@endif
     @if(!empty($f['help']))<i class="fa-regular fa-circle-question muted" title="{{ $f['help'] }}"></i>@endif</label>
   @switch($f['type'])

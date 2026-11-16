@@ -42,6 +42,7 @@ class Upgrade
         V7::run();
         V8::run();
         V9::run();
+        V10::run();
     }
 
     /** Every column the versioned steps rely on exists. */

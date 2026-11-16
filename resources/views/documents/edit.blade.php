@@ -13,6 +13,16 @@
 @section('content')
 <div x-data="docForm(@js(['data' => $data, 'labels' => $data['_labels'] ?? [], 'readonly' => $ro,
       'computeUrl' => route('documents.compute', $form->code)] + $client))">
+@if(session('saved') && !$new)
+  <div class="done-card">
+    <span class="done-ic"><i class="fa-solid fa-check"></i></span>
+    <div class="grow"><b>{{ $doc->number ?: $form->short }} saved</b><small>Final and locked{{ $doc->amount ? ' · ' . number_format((float) $doc->amount, 2) . ' ' . $doc->currency : '' }}</small></div>
+    <div class="btn-row">
+      @if(count($form->reports))<a class="btn" href="{{ route('documents.print-all', $doc) }}" target="_blank"><i class="fa-solid fa-print"></i> Print</a>@endif
+      <a class="btn btn-primary" href="{{ route('documents.create', $form->code) }}"><i class="fa-solid fa-plus"></i> New {{ $form->short }}</a>
+    </div>
+  </div>
+@endif
 <form method="post" action="{{ $action }}" @submit="submit($event)" id="docform">
   @csrf
   @unless($new) @method('PUT') @endunless
@@ -26,7 +36,7 @@
         @if($doc->number)
           <span class="doc-number">{{ $doc->number }}</span>
         @else
-          <span class="doc-number empty">No transaction number yet</span>
+          <h1 class="doc-new">New {{ $form->short }}</h1>
         @endif
         <span class="stamp st-{{ $stateKey }}">{{ \App\Models\Document::STATES[$stateKey] }}</span>
         @if(!$new && $doc->isLocked())<span class="tag lock-tag" title="Saved forms are locked. Only an administrator can allow changes."><i class="fa-solid fa-lock"></i> Locked</span>@endif
@@ -51,9 +61,6 @@
       @endif
     </div>
     <div class="actions-bar">
-      @if($canEdit)
-        <button class="btn btn-primary" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> {{ !$new && $doc->state === 'done' ? 'Save and lock' : 'Save' }}</button>
-      @endif
       @if(!$new)
         @php($exports = $form->exports())
         @php($canUpl = $doc->state !== 'draft' && count($exports) && $u->hasPerm('form.' . $form->code . '.uploader'))
@@ -102,22 +109,26 @@
 
   @include('documents._blocks')
 
-  {{-- the same actions at the end of the form: no scrolling back up after the last line --}}
-  <div class="form-foot">
-    <span class="hint" x-show="dirty" x-cloak><i class="fa-solid fa-circle" style="font-size:7px; color:var(--warn)"></i> Unsaved changes</span>
-    <div class="btn-row" style="margin-left:auto">
-      @if(!$new)
-        @if(count($form->reports))<a class="btn" href="{{ route('documents.print-all', $doc) }}" target="_blank"><i class="fa-solid fa-print"></i> Print</a>@endif
-        @if($doc->state !== 'draft' && count($form->exports()) && $u->hasPerm('form.' . $form->code . '.uploader'))
-          <button type="button" class="btn" @click="$dispatch('uploader-open')"><i class="fa-solid fa-cloud-arrow-up"></i> Uploader</button>
-        @endif
-      @endif
+  @include('documents._signers')
+  {{-- one bar at the bottom of the screen: totals, unsaved changes, the only Save button --}}
+  @php($totals = collect($blocks)->first(fn ($b) => $b['type'] === 'section' && ($b['style'] ?? '') === 'totals'))
+  @if($canEdit || $totals)
+  <div class="form-bar" :class="dirty && 'is-dirty'">
+    @if($totals)
+      <div class="fb-totals">
+        @foreach($totals['fields'] as $f)
+          <div><small>{{ $f['label'] }}</small><b x-text="fmt(data.{{ $f['key'] }}, '{{ $f['fmt'] ?? 'text' }}')"></b></div>
+        @endforeach
+      </div>
+    @endif
+    <div class="fb-actions">
+      <span class="fb-dirty" x-show="dirty" x-cloak>Unsaved changes</span>
       @if($canEdit)
-        <button class="btn btn-primary btn-lg" type="submit" :disabled="busy"><i class="fa-regular fa-floppy-disk"></i> {{ !$new && $doc->state === 'done' ? 'Save and lock' : 'Save' }}</button>
+        <button class="btn btn-primary btn-lg" type="submit" :disabled="busy"><i class="fa-solid" :class="busy ? 'fa-circle-notch fa-spin' : 'fa-check'"></i> {{ !$new && $doc->state === 'done' ? 'Save and lock' : 'Save' }}</button>
       @endif
     </div>
   </div>
-  @include('documents._signers')
+  @endif
 </form>
 
 {{-- ============================================== payment / attachments / activity --}}
